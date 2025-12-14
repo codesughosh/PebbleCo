@@ -1,0 +1,24 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+header {
+  padding: 16px;
+  border-bottom: 1px solid #ddd;
+}
+
+nav a {
+  margin-right: 12px;
+  text-decoration: none;
+  color: black;
+}
+
+main {
+  padding: 24px;
+}
+
+button {
+  padding: 10px 16px;
+  cursor: pointer;
+}
