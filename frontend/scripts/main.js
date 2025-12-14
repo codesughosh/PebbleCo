@@ -1,5 +1,6 @@
 const shopBtn = document.getElementById("shopBtn");
+const shopSection = document.getElementById("shop");
 
 shopBtn.addEventListener("click", () => {
-  console.log("Shop button clicked");
+  shopSection.scrollIntoView({ behavior: "smooth" });
 });
