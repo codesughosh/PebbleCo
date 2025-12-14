@@ -22,3 +22,9 @@ button {
   padding: 10px 16px;
   cursor: pointer;
 }
+
+.header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
