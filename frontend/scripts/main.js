@@ -1,7 +1,15 @@
-fetch("components/header.html")
-  .then(response => response.text())
+fetch("/components/header.html")
+  .then(res => res.text())
   .then(data => {
-    document.getElementById("header").innerHTML = data;
+    const header = document.getElementById("header");
+    if (header) header.innerHTML = data;
+  });
+
+fetch("/components/footer.html")
+  .then(res => res.text())
+  .then(data => {
+    const footer = document.getElementById("footer");
+    if (footer) footer.innerHTML = data;
   });
 
 const shopBtn = document.getElementById("shopBtn");
