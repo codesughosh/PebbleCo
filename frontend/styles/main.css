@@ -63,3 +63,8 @@ footer {
   border-radius: 8px;
   text-align: center;
 }
+
+.product-card img {
+  width: 100%;
+  height: auto;
+}
