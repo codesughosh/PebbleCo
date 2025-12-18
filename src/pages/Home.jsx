@@ -2,33 +2,37 @@ import { useState } from "react";
 import ProductCard from "../components/ProductCard";
 import { products } from "../data/products";
 import "../styles/home.css";
+import slide1 from "../assets/slider/slide1.jpg";
+import slide2 from "../assets/slider/slide2.jpg";
+import slide3 from "../assets/slider/slide3.jpg";
+import { useEffect } from "react";
 
-const slides = [
-  "Handmade with love ✨",
-  "Cute. Minimal. Affordable.",
-  "Accessories that feel dreamy ☁️",
-];
+const slides = [slide1, slide2, slide3];
 
 function Home() {
   const [active, setActive] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActive((prev) => (prev + 1) % slides.length);
+    }, 5000);
 
+    return () => clearInterval(timer);
+  }, []);
   return (
     <div className="home">
-      <section className="hero">
-        <h1>PebbleCo</h1>
+      <section className="hero-slider">
+        <div className="slideshow full">
+          <img src={slides[active]} alt="PebbleCo slide" />
 
-        <div className="slideshow">
-          <p>{slides[active]}</p>
-        </div>
-
-        <div className="dots">
-          {slides.map((_, index) => (
-            <span
-              key={index}
-              className={index === active ? "dot active" : "dot"}
-              onClick={() => setActive(index)}
-            />
-          ))}
+          <div className="dots">
+            {slides.map((_, index) => (
+              <span
+                key={index}
+                className={index === active ? "dot active" : "dot"}
+                onClick={() => setActive(index)}
+              />
+            ))}
+          </div>
         </div>
       </section>
 

@@ -4,6 +4,7 @@ import Header from './components/Header'
 import Footer from './components/Footer'
 import Shop from './pages/Shop'
 import Cart from './pages/Cart'
+import Home from './pages/Home'
 
 function App() {
   const [cart, setCart] = useState(() => {
@@ -29,7 +30,7 @@ function App() {
         {showCart ? (
           <Cart cartItems={cart} />
         ) : (
-          <Shop onAddToCart={addToCart} />
+          <Home/>
         )}
       </main>
 
