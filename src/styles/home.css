@@ -1,0 +1,99 @@
+.home {
+  padding: 40px 20px;
+}
+
+.hero {
+  text-align: center;
+  padding: 80px 20px;
+  background: linear-gradient(180deg, #fdd2dc, #fceae4);
+  border-radius: 20px;
+}
+
+.hero h1 {
+  font-size: 48px;
+  font-weight: 600;
+  color: #5a2a36;
+}
+
+.hero p {
+  margin-top: 12px;
+  font-size: 18px;
+  color: #7a3b4a;
+}
+
+.slideshow {
+  margin-top: 20px;
+  font-size: 20px;
+  font-weight: 400;
+  color: #7a3b4a;
+  min-height: 28px;
+  transition: all 0.3s ease;
+}
+
+.dots {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  background-color: #f5b6c6;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.dot.active {
+  background-color: #5a2a36;
+}
+
+.top-sellers {
+  margin-top: 60px;
+}
+
+.top-sellers h2 {
+  text-align: center;
+  font-size: 26px;
+  margin-bottom: 24px;
+  color: #5a2a36;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 20px;
+}
+
+.collections {
+  margin-top: 80px;
+}
+
+.collections h2 {
+  text-align: center;
+  font-size: 26px;
+  margin-bottom: 24px;
+  color: #5a2a36;
+}
+
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 20px;
+}
+
+.collection-card {
+  background: linear-gradient(180deg, #fdd2dc, #fceae4);
+  border-radius: 20px;
+  padding: 40px 20px;
+  text-align: center;
+  font-weight: 500;
+  color: #5a2a36;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.collection-card:hover {
+  transform: translateY(-4px);
+}
