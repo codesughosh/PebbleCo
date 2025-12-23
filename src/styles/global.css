@@ -1,0 +1,109 @@
+/* =========================
+   GLOBAL STYLES
+========================= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #fceae4;
+  color: #3b2b2f;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5 {
+  font-weight: 500;
+  color: #3b2b2f;
+}
+
+/* Paragraphs */
+p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #6d4c55;
+}
+
+/* Utility */
+main {
+  min-height: calc(100vh - 120px);
+  background: #fceae4;
+  padding: 40px 20px 60px;
+}
+
+
+.policy-page {
+  max-width: 900px;
+  margin: 60px auto;
+  padding: 48px 40px;
+
+  background: #ffffff;
+  border-radius: 22px;
+
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+}
+
+/* Headings */
+.policy-page h1 {
+  font-size: 30px;
+  margin-bottom: 20px;
+  color: #3b2b2f;
+}
+
+/* Text */
+.policy-page p {
+  font-size: 15px;
+  line-height: 1.75;
+  color: #6b4c55;
+  margin-bottom: 14px;
+}
+
+/* Wrapper for all info/policy pages */
+.policy-wrapper {
+  padding: 40px 0;
+}
+
+/* =========================
+   ABOUT PAGE (ISOLATED)
+========================= */
+
+.about-page {
+  min-height: 100vh;
+  background: #fceae4;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 80px 20px;
+}
+
+.about-card {
+  max-width: 900px;
+  width: 100%;
+  background: #ffffff;
+  border-radius: 26px;
+  padding: 56px 48px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.12);
+}
+
+.about-card h1 {
+  font-size: 32px;
+  margin-bottom: 24px;
+  color: #3b2b2f;
+}
+
+.about-card p {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #6b4c55;
+  margin-bottom: 14px;
+}
+
