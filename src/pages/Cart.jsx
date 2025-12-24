@@ -1,79 +1,124 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "../styles/cart.css";
 import { Link } from "react-router-dom";
+import { auth } from "../firebase";
+import { supabase } from "../supabaseClient";
+import { onAuthStateChanged } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
+
 
 function Cart() {
-
-  console.log("CART COMPONENT RENDERED");
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: "Pearl Bracelet",
-      price: 399,
-      qty: 1,
-    },
-    {
-      id: 2,
-      name: "Pink Charm Necklace",
-      price: 499,
-      qty: 1,
-    },
-  ]);
-
+  const [cartItems, setCartItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [agreed, setAgreed] = useState(false);
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
-  const increaseQty = (id) => {
-    setCartItems((items) =>
-      items.map((item) =>
-        item.id === id ? { ...item, qty: item.qty + 1 } : item
-      )
-    );
+  // 🔹 Listen to auth state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // 🔹 Fetch cart when user is available
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    fetchCart();
+  }, [user]);
+
+  const fetchCart = async () => {
+    const { data, error } = await supabase
+      .from("cart")
+      .select(`
+        id,
+        quantity,
+        product:products (
+          id,
+          name,
+          price,
+          image_url
+        )
+      `)
+      .eq("user_id", user.uid);
+
+    if (error) {
+      console.error("Fetch cart error:", error);
+    } else {
+      setCartItems(data);
+    }
+
+    setLoading(false);
   };
 
-  const decreaseQty = (id) => {
-    setCartItems((items) =>
-      items.map((item) =>
-        item.id === id && item.qty > 1 ? { ...item, qty: item.qty - 1 } : item
-      )
-    );
+  const increaseQty = async (cartId, currentQty) => {
+    await supabase
+      .from("cart")
+      .update({ quantity: currentQty + 1 })
+      .eq("id", cartId);
+
+    fetchCart();
   };
 
-  const removeItem = (id) => {
-    setCartItems((items) => items.filter((item) => item.id !== id));
+  const decreaseQty = async (cartId, currentQty) => {
+    if (currentQty <= 1) return;
+
+    await supabase
+      .from("cart")
+      .update({ quantity: currentQty - 1 })
+      .eq("id", cartId);
+
+    fetchCart();
+  };
+
+  const removeItem = async (cartId) => {
+    await supabase.from("cart").delete().eq("id", cartId);
+    fetchCart();
   };
 
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.qty,
+    (sum, item) => sum + item.product.price * item.quantity,
     0
   );
-  const handleCheckout = () => {
-  if (!window.Razorpay) {
-    alert("Razorpay not loaded");
-    return;
-  }
 
-  const options = {
-    key: "rzp_test_1234567890", // dummy key for now
-    amount: subtotal * 100,
-    currency: "INR",
-    name: "PebbleCo",
-    description: "Order Payment",
-    prefill: {
-      email: "pebblecobusiness@gmail.com",
-    },
-    handler: function (response) {
-      alert("Payment successful (test)");
-      console.log(response);
-    },
-    theme: {
-      color: "#fdd2dc",
-    },
+  const handleCheckout = () => {
+    if (!window.Razorpay) {
+      alert("Razorpay not loaded");
+      return;
+    }
+
+    const options = {
+      key: "rzp_test_1234567890",
+      amount: subtotal * 100,
+      currency: "INR",
+      name: "PebbleCo",
+      description: "Order Payment",
+      handler: function () {
+        alert("Payment successful (test)");
+      },
+      theme: {
+        color: "#fdd2dc",
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
   };
 
-  const rzp = new window.Razorpay(options);
-  rzp.open();
-};
+  // 🔹 UI STATES
+  if (loading) {
+    return <p style={{ padding: "40px" }}>Loading cart...</p>;
+  }
 
+  if (!user) {
+    return <p style={{ padding: "40px" }}>Please login to view cart.</p>;
+  }
 
   return (
     <div className="cart-page">
@@ -90,24 +135,41 @@ function Cart() {
         </div>
       ) : (
         <div className="cart-layout">
-          {/* LEFT */}
           <div className="cart-items">
             {cartItems.map((item) => (
               <div className="cart-item" key={item.id}>
                 <div className="cart-item-image">🌸</div>
 
                 <div className="cart-item-info">
-                  <div className="cart-item-name">{item.name}</div>
-                  <div className="cart-item-price">₹{item.price}</div>
+                  <div className="cart-item-name">
+                    {item.product.name}
+                  </div>
+                  <div className="cart-item-price">
+                    ₹{item.product.price}
+                  </div>
                 </div>
 
                 <div className="cart-item-qty">
-                  <button onClick={() => decreaseQty(item.id)}>-</button>
-                  <span>{item.qty}</span>
-                  <button onClick={() => increaseQty(item.id)}>+</button>
+                  <button
+                    onClick={() =>
+                      decreaseQty(item.id, item.quantity)
+                    }
+                  >
+                    -
+                  </button>
+                  <span>{item.quantity}</span>
+                  <button
+                    onClick={() =>
+                      increaseQty(item.id, item.quantity)
+                    }
+                  >
+                    +
+                  </button>
                 </div>
 
-                <div className="cart-item-total">₹{item.price * item.qty}</div>
+                <div className="cart-item-total">
+                  ₹{item.product.price * item.quantity}
+                </div>
 
                 <button
                   className="cart-item-remove"
@@ -119,7 +181,6 @@ function Cart() {
             ))}
           </div>
 
-          {/* RIGHT */}
           <div className="cart-summary">
             <h2>Cart Totals</h2>
 
@@ -152,7 +213,11 @@ function Cart() {
               </span>
             </label>
 
-            <button className="checkout-btn" onClick={handleCheckout}>
+            <button
+  className="checkout-btn"
+  disabled={!agreed}
+  onClick={() => navigate("/checkout/delivery")}
+>
   Proceed to Checkout
 </button>
 

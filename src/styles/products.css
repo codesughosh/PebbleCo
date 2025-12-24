@@ -1,0 +1,38 @@
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 24px;
+  padding: 24px;
+}
+
+.product-card {
+  border: 1px solid #eee;
+  padding: 16px;
+  border-radius: 12px;
+  text-align: center;
+  background: #fff;
+}
+
+.product-image {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.product-card h3 {
+  margin: 12px 0 6px;
+}
+
+.price {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.product-card button {
+  padding: 10px 16px;
+  border-radius: 20px;
+  border: none;
+  background: #fdd2dc;
+  cursor: pointer;
+}
