@@ -16,6 +16,15 @@ import PrivacyPolicy from "./pages/policies/PrivacyPolicy";
 import Terms from "./pages/policies/Terms";
 import RefundPolicy from "./pages/policies/RefundPolicy";
 import ShippingPolicy from "./pages/policies/ShippingPolicy";
+import Products from "./pages/Products";
+import CheckoutDelivery from "./pages/CheckoutDelivery";
+import CheckoutAddress from "./pages/CheckoutAddress";
+import CheckoutSummary from "./pages/CheckoutSummary";
+import OrderSuccess from "./pages/OrderSuccess";
+import Orders from "./pages/Orders";
+
+import Product from "./pages/Product";
+import Category from "./pages/Category";
 
 function App() {
   const [cart, setCart] = useState(() => {
@@ -48,6 +57,15 @@ function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/refund-policy" element={<RefundPolicy />} />
           <Route path="/shipping-policy" element={<ShippingPolicy />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/checkout/delivery" element={<CheckoutDelivery />} />
+          <Route path="/checkout/address" element={<CheckoutAddress />} />
+          <Route path="/checkout/summary" element={<CheckoutSummary />} />
+          <Route path="/order-success" element={<OrderSuccess />} />
+          <Route path="/orders" element={<Orders />} />
+          <Route path="/product/:id" element={<Product />} />
+          <Route path="/category/:slug" element={<Category />} />
+
         </Routes>
       </main>
 

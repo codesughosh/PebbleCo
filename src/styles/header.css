@@ -166,3 +166,71 @@ top: -1px;
 .cart-icon {
   cursor: pointer;
 }
+
+/* ================= MOBILE NAV ONLY ================= */
+.mobile-hamburger {
+  display: none;
+}
+
+@media (max-width: 768px) {
+
+  /* hide bottom lace navbar */
+  .nav-bar {
+    display: none;
+  }
+
+  /* show hamburger in top row */
+  .mobile-hamburger {
+    display: block;
+    font-size: 22px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #5a2a36;
+    margin-right: 10px;
+  }
+
+  /* mobile menu container */
+  .mobile-nav {
+    background: #ffffff;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .mobile-nav a,
+  .mobile-link {
+    font-size: 14px;
+    color: #7a3b4a;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .mobile-submenu {
+    padding-left: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 13px;
+    color: #5a2a36;
+  }
+}
+
+/* ===== Smooth mobile nav animation ===== */
+
+/* ===== Smooth mobile nav animation (CORRECT WAY) ===== */
+
+.mobile-nav {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+
+.mobile-nav.open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
