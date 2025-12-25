@@ -9,6 +9,8 @@ function CheckoutSummary() {
   const navigate = useNavigate();
   const user = auth.currentUser;
 
+  const [createdOrder, setCreatedOrder] = useState(null);
+
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,14 +29,17 @@ function CheckoutSummary() {
   const fetchCart = async () => {
     const { data, error } = await supabase
       .from("cart")
-      .select(`
+      .select(
+        `
         id,
         quantity,
         product:products (
+        id,
           name,
           price
         )
-      `)
+      `
+      )
       .eq("user_id", user.uid);
 
     if (error) {
@@ -54,139 +59,121 @@ function CheckoutSummary() {
   // TEMP shipping fee logic
   const shippingFee = deliveryType === "shipping" ? 60 : 0;
   const total = subtotal + shippingFee;
-  
-
-  const saveOrder = async (paymentId) => {
-  // 1️⃣ Insert order and get generated ID
-  const { data: order, error: orderError } = await supabase
-    .from("orders")
-    .insert([
-      {
-        user_id: user.uid,
-        total: total,
-        payment_id: paymentId,
-        payment_status: "paid",
-        status: "paid",
-      },
-    ])
-    .select("id")
-    .single();
-
-  if (orderError) {
-    console.error("Order insert error:", orderError);
-    return;
-  }
-
-  // 2️⃣ Insert order items with order_id
-  const orderItems = cartItems.map((item) => ({
-    order_id: order.id,
-    product_id: item.product.id,
-    quantity: item.quantity,
-    price: item.product.price,
-  }));
-
-  const { error: itemsError } = await supabase
-    .from("order_items")
-    .insert(orderItems);
-
-  if (itemsError) {
-    console.error("Order items error:", itemsError);
-    return;
-  }
-
-  // 3️⃣ Clear cart
-  const { error: cartError } = await supabase
-    .from("cart")
-    .delete()
-    .eq("user_id", user.uid);
-
-  if (cartError) {
-    console.error("Cart clear error:", cartError);
-  }
-};
 
   const handlePayment = async () => {
-  try {
-    // 1️⃣ Create order from backend
-    const res = await fetch("http://localhost:5000/api/create-order", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ amount: total }),
-    });
+    try {
+      // 🔹 STEP A: create order in Supabase first
+      const shippingAddress =
+        deliveryType === "shipping"
+          ? JSON.parse(localStorage.getItem("shippingAddress"))
+          : null;
 
-    const orderData = await res.json();
+      const { data: order, error } = await supabase
+        .from("orders")
+        .insert([
+          {
+            user_id: user.uid,
+            total: total,
+            delivery_type: deliveryType,
+            shipping_address: shippingAddress, // ✅ THIS WAS MISSING
+            payment_status: "pending",
+            status: "pending",
+          },
+        ])
+        .select()
+        .single();
 
-    console.log("Order from backend:", orderData);
+      if (error) {
+        console.error("Order creation failed:", error);
+        alert("Could not create order");
+        return;
+      }
 
-    if (!orderData.orderId) {
-      alert("Order creation failed");
-      return;
-    }
+      setCreatedOrder(order);
 
-    // 2️⃣ Razorpay options
-    const options = {
-      key: "rzp_test_RvQ7AGVDDHfcJA", // 🔴 SAME test key as backend
-      order_id: orderData.orderId,
-      amount: orderData.amount, // paise
-      currency: "INR",
-      name: "PebbleCo",
-      description: "Order Payment",
-
-      handler: async function (response) {
-        console.log("🔥 Razorpay handler called");
-  console.log("Razorpay response:", response);
-  try {
-    const verifyRes = await fetch(
-      "http://localhost:5000/api/verify-payment",
-      {
+      // 1️⃣ Create order from backend
+      const res = await fetch("http://localhost:5000/api/create-order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(response),
+        body: JSON.stringify({ amount: total }),
+      });
+
+      const orderData = await res.json();
+
+      console.log("Order from backend:", orderData);
+
+      if (!orderData.orderId) {
+        alert("Order creation failed");
+        return;
       }
-    );
-    console.log("🔁 Verify response status:", verifyRes.status);
-    const verifyData = await verifyRes.json();
 
-    if (!verifyData.success) {
-      alert("Payment verification failed");
-      return;
-    }
-      // ✅ Payment verified → now save order
-    await saveOrder(response.razorpay_payment_id);
+      // 2️⃣ Razorpay options
+      const options = {
+        key: "rzp_test_RvQ7AGVDDHfcJA", // 🔴 SAME test key as backend
+        order_id: orderData.orderId,
+        amount: orderData.amount, // paise
+        currency: "INR",
+        name: "PebbleCo",
+        description: "Order Payment",
 
-    navigate("/order-success");
-  } catch (err) {
-    console.error("Verification error:", err);
-    alert("Payment verification error");
-  }
-},
+        handler: async function (response) {
+          try {
+            const verifyRes = await fetch(
+              "http://localhost:5000/api/verify-payment",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
 
+                  orderId: order.id, // ✅ FIXED
+                  userId: user.uid,
+                  cartItems: cartItems.map((i) => ({
+                    product_id: i.product.id,
+                    quantity: i.quantity,
+                    price: i.product.price,
+                  })),
+                }),
+              }
+            );
 
-      modal: {
-        ondismiss: function () {
-          console.log("Checkout closed");
+            const verifyData = await verifyRes.json();
+
+            if (!verifyData.success) {
+              alert("Payment verification failed");
+              return;
+            }
+
+            navigate(`/order-success/${order.id}`);
+          } catch (err) {
+            console.error(err);
+            alert("Payment verification error");
+          }
         },
-      },
 
-      theme: {
-        color: "#fdd2dc",
-      },
-    };
+        modal: {
+          ondismiss: function () {
+            console.log("Checkout closed");
+          },
+        },
 
-    // 3️⃣ Open Razorpay
-    const rzp = new window.Razorpay(options);
-    rzp.open();
-  } catch (err) {
-    console.error("Payment error:", err);
-    alert("Payment failed");
-  }
-};
+        theme: {
+          color: "#fdd2dc",
+        },
+      };
 
-
+      // 3️⃣ Open Razorpay
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      console.error("Payment error:", err);
+      alert("Payment failed");
+    }
+  };
 
   if (loading) {
     return <p style={{ padding: "40px" }}>Loading summary...</p>;

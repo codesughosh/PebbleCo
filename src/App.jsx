@@ -25,7 +25,7 @@ import Orders from "./pages/Orders";
 
 import Product from "./pages/Product";
 import Category from "./pages/Category";
-
+import AdminOrders from "./pages/AdminOrders";
 function App() {
   const [cart, setCart] = useState(() => {
     const savedCart = localStorage.getItem("pebbleco-cart");
@@ -61,10 +61,11 @@ function App() {
           <Route path="/checkout/delivery" element={<CheckoutDelivery />} />
           <Route path="/checkout/address" element={<CheckoutAddress />} />
           <Route path="/checkout/summary" element={<CheckoutSummary />} />
-          <Route path="/order-success" element={<OrderSuccess />} />
+          <Route path="/order-success/:orderId" element={<OrderSuccess />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/product/:id" element={<Product />} />
           <Route path="/category/:slug" element={<Category />} />
+          <Route path="/admin/orders" element={<AdminOrders />} />
 
         </Routes>
       </main>
