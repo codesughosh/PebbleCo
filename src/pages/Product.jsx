@@ -120,21 +120,35 @@ const deleteReview = async (reviewId) => {
     setLoading(false);
   };
 
-  const addToCart = () => {
-    const cart = JSON.parse(localStorage.getItem("pebbleco-cart")) || [];
-    const index = cart.findIndex(
-      (item) => item.product.id === product.id
-    );
+  const addToCart = async () => {
+  if (!user) {
+    alert("Please login to add items to cart");
+    return;
+  }
 
-    if (index !== -1) {
-      cart[index].quantity += quantity;
-    } else {
-      cart.push({ product, quantity });
-    }
+  const { data: existingItem } = await supabase
+    .from("cart")
+    .select("id, quantity")
+    .eq("user_id", user.uid)
+    .eq("product_id", product.id)
+    .single();
 
-    localStorage.setItem("pebbleco-cart", JSON.stringify(cart));
-    alert("Added to cart 🛒");
-  };
+  if (existingItem) {
+    await supabase
+      .from("cart")
+      .update({ quantity: existingItem.quantity + quantity })
+      .eq("id", existingItem.id);
+  } else {
+    await supabase.from("cart").insert({
+      user_id: user.uid,
+      product_id: product.id,
+      quantity: quantity,
+    });
+  }
+
+  alert("Added to cart");
+};
+
 
   /* ----------- SLIDER HANDLERS (MOBILE) ----------- */
 
