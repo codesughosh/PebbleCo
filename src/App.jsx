@@ -31,6 +31,9 @@ import TrackOrder from "./pages/TrackOrder";
 import PaymentProcessing from "./pages/PaymentProcessing";
 import PaymentFailed from "./pages/PaymentFailed";
 
+import Product from "./pages/Product";
+import Category from "./pages/Category";
+import AdminOrders from "./pages/AdminOrders";
 function App() {
   const [cart, setCart] = useState(() => {
     const savedCart = localStorage.getItem("pebbleco-cart");
