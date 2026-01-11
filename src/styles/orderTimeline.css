@@ -1,0 +1,82 @@
+.order-timeline {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+  position: relative;
+}
+
+/* STEP */
+.timeline-step {
+  position: relative;
+  text-align: center;
+  flex: 1;
+}
+
+/* DOT */
+.timeline-step .dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #f3cfd6;
+  margin: 0 auto;
+  z-index: 2;
+}
+
+.timeline-step.active .dot {
+  background: #d66b7d;
+  box-shadow: 0 0 0 4px rgba(214, 107, 125, 0.25);
+}
+
+/* LINE */
+.timeline-step .line {
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  width: 100%;
+  height: 3px;
+  background: #f3cfd6;
+  z-index: 1;
+}
+
+.timeline-step.active .line {
+  background: #d66b7d;
+}
+
+/* LABEL */
+.timeline-step span {
+  display: block;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #7a4a55;
+}
+
+/* =====================
+   MOBILE (VERTICAL)
+===================== */
+
+@media (max-width: 640px) {
+  .order-timeline {
+    flex-direction: column;
+    align-items: flex-start;
+    padding-left: 10px;
+  }
+
+  .timeline-step {
+    display: flex;
+    align-items: center;
+    text-align: left;
+    margin-bottom: 24px;
+  }
+
+  .timeline-step span {
+    margin-left: 12px;
+    margin-top: 0;
+  }
+
+  .timeline-step .line {
+    width: 3px;
+    height: 100%;
+    left: 8px;
+    top: 18px;
+  }
+}

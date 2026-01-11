@@ -1,6 +1,6 @@
 import "../styles/auth.css";
 import { Link } from "react-router-dom";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -10,10 +10,15 @@ import {
 import { auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
+import { Eye, EyeOff } from "lucide-react";
+
 
 function Signup() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
   const [name, setName] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -38,7 +43,7 @@ function Signup() {
         displayName: name,
       });
 
-    navigate("/");
+      navigate("/");
     } catch (err) {
       setError(err.message);
     }
@@ -53,15 +58,15 @@ function Signup() {
       setError(err.message);
     }
   };
-useEffect(() => {
-  const unsub = onAuthStateChanged(auth, (currentUser) => {
-    if (currentUser) {
-      navigate("/profile");
-    }
-  });
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        navigate("/profile");
+      }
+    });
 
-  return () => unsub();
-}, [navigate]);
+    return () => unsub();
+  }, [navigate]);
 
   return (
     <div className="auth-page">
@@ -83,30 +88,51 @@ useEffect(() => {
           onChange={(e) => setEmail(e.target.value)}
         />
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <div className="password-field">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <span
+            className="eye-btn"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? <Eye size={18} />: <EyeOff size={18} /> }
+          </span>
+        </div>
 
-        <input
-          type="password"
-          placeholder="Confirm password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-        />
+        <div className="password-field">
+          <input
+            type={showConfirmPassword ? "text" : "password"}
+            placeholder="Confirm password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
+          <span
+            className="eye-btn"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+          >
+            {showConfirmPassword ? <Eye size={18} />: <EyeOff size={18} /> }
+          </span>
+        </div>
+
         {error && <p className="auth-error">{error}</p>}
 
         <button onClick={handleSignup} className="primary-btn">
           Sign up
         </button>
 
-        <div className="auth-divider">or</div>
+        <div className="divider">
+  <span>or</span>
+</div>
 
-        <button onClick={handleGoogleSignup} className="google-btn">
-          Continue with Google
-        </button>
+
+        <button onClick={handleGoogleSignup} >
+  Continue with Google
+</button>
+
 
         <p className="auth-switch">
           Already have an account? <Link to="/login">Login</Link>

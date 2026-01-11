@@ -4,6 +4,7 @@ let shiprocketToken = null;
 
 export async function getShiprocketToken() {
   if (shiprocketToken) return shiprocketToken;
+console.log("Trying Shiprocket login...");
 
   const response = await axios.post(
     "https://apiv2.shiprocket.in/v1/external/auth/login",

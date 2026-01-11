@@ -22,6 +22,14 @@ import CheckoutAddress from "./pages/CheckoutAddress";
 import CheckoutSummary from "./pages/CheckoutSummary";
 import OrderSuccess from "./pages/OrderSuccess";
 import Orders from "./pages/Orders";
+import GlobalBackground from "./components/GlobalBackground";
+import Product from "./pages/Product";
+import Category from "./pages/Category";
+import AdminOrders from "./pages/AdminOrders";
+import NewArrivals from "./pages/NewArrivals";
+import TrackOrder from "./pages/TrackOrder";
+import PaymentProcessing from "./pages/PaymentProcessing";
+import PaymentFailed from "./pages/PaymentFailed";
 
 import Product from "./pages/Product";
 import Category from "./pages/Category";
@@ -42,6 +50,7 @@ function App() {
 
   return (
     <>
+      <GlobalBackground />
       <Header />
 
       <main>
@@ -66,7 +75,10 @@ function App() {
           <Route path="/product/:id" element={<Product />} />
           <Route path="/category/:slug" element={<Category />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
-
+          <Route path="/new-arrivals" element={<NewArrivals />} />
+          <Route path="/track" element={<TrackOrder />} />
+          <Route path="/payment/success/:orderId" element={<PaymentProcessing />}/>
+          <Route path="/payment/failed" element={<PaymentFailed />} />
         </Routes>
       </main>
 

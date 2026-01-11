@@ -16,6 +16,32 @@ function CheckoutSummary() {
 
   const deliveryType = localStorage.getItem("deliveryType");
   const address = JSON.parse(localStorage.getItem("shippingAddress"));
+  const inhandDetails = JSON.parse(localStorage.getItem("inhandDetails"));
+
+  useEffect(() => {
+  const deliveryType = localStorage.getItem("deliveryType");
+
+  if (!deliveryType) {
+    navigate("/checkout/address");
+    return;
+  }
+
+  if (deliveryType === "shipping") {
+    const address = JSON.parse(
+      localStorage.getItem("shippingAddress")
+    );
+
+    if (!address || address.locationResolved !== true) {
+      navigate("/checkout/address");
+    }
+  }
+
+  if (deliveryType === "inhand") {
+    // ✅ In-hand delivery does NOT need address
+    return;
+  }
+}, []);
+
 
   useEffect(() => {
     if (!user || !deliveryType || !address) {
@@ -74,6 +100,7 @@ function CheckoutSummary() {
           {
             user_id: user.uid,
             total: total,
+            customer_email: user.email,
             delivery_type: deliveryType,
             shipping_address: shippingAddress, // ✅ THIS WAS MISSING
             payment_status: "pending",
@@ -130,10 +157,23 @@ function CheckoutSummary() {
                   razorpay_payment_id: response.razorpay_payment_id,
                   razorpay_signature: response.razorpay_signature,
 
-                  orderId: order.id, // ✅ FIXED
+                  orderId: order.id,
                   userId: user.uid,
+                  deliveryType,
+
+                  customerName:
+                    deliveryType === "inhand"
+                      ? inhandDetails?.name
+                      : address?.name,
+
+                  customerPhone:
+                    deliveryType === "inhand"
+                      ? inhandDetails?.phone
+                      : address?.phone,
+
                   cartItems: cartItems.map((i) => ({
                     product_id: i.product.id,
+                    name: i.product.name, // ✅ ADD THIS LINE
                     quantity: i.quantity,
                     price: i.product.price,
                   })),
@@ -148,7 +188,7 @@ function CheckoutSummary() {
               return;
             }
 
-            navigate(`/order-success/${order.id}`);
+            navigate(`/payment/success/${order.id}`);
           } catch (err) {
             console.error(err);
             alert("Payment verification error");
@@ -168,6 +208,12 @@ function CheckoutSummary() {
 
       // 3️⃣ Open Razorpay
       const rzp = new window.Razorpay(options);
+
+      // 🔴 Handle payment failure
+      rzp.on("payment.failed", function () {
+        navigate("/payment/failed");
+      });
+
       rzp.open();
     } catch (err) {
       console.error("Payment error:", err);

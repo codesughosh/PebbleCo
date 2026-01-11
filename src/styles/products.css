@@ -36,3 +36,12 @@
   background: #fdd2dc;
   cursor: pointer;
 }
+
+
+@media (max-width: 768px) {
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+    padding: 12px !important;
+  }
+}

@@ -1,0 +1,87 @@
+/* =========================
+   WHY PEBBLECO
+========================= */
+
+.why-pebbleco {
+  margin-top: 90px;
+  padding: 70px 20px;
+  background: linear-gradient(
+    180deg,
+    #fceae4 0%,
+    #fff 45%,
+    #fceae4 100%
+  );
+  text-align: center;
+}
+
+.why-title {
+  font-size: 26px;
+  font-weight: 600;
+  color: #5a2a36;
+  margin-bottom: 8px;
+}
+
+.why-subtitle {
+  font-size: 14px;
+  color: #7a3c4a;
+  max-width: 520px;
+  margin: 0 auto 46px;
+  line-height: 1.6;
+}
+
+/* Grid */
+.why-grid {
+  max-width: 1050px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 26px;
+}
+
+/* Cards */
+.why-card {
+  background: linear-gradient(
+    180deg,
+    #fdd2dc,
+    #fceae4
+  );
+  border-radius: 22px;
+  padding: 28px 22px;
+  color: #5a2a36;
+  box-shadow: 0 10px 26px rgba(184, 107, 124, 0.18);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.why-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 36px rgba(184, 107, 124, 0.28);
+}
+
+.why-card h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.why-card p {
+  font-size: 14px;
+  color: #6a3441;
+  line-height: 1.6;
+}
+
+/* Mobile polish */
+@media (max-width: 768px) {
+  .why-pebbleco {
+    margin-top: 70px;
+    padding: 55px 16px;
+  }
+
+  .why-title {
+    font-size: 22px;
+  }
+
+  .why-subtitle {
+    font-size: 13.5px;
+    margin-bottom: 36px;
+  }
+}

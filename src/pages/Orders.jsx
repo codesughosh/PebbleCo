@@ -123,9 +123,7 @@ function Orders() {
                     <span>
                       {item.products?.name} × {item.quantity}
                     </span>
-                    <span>
-                      ₹{item.price_at_purchase * item.quantity}
-                    </span>
+                    
                   </div>
                 ))}
               </div>

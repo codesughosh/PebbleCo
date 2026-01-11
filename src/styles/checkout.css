@@ -93,3 +93,47 @@
   font-weight: bold;
   margin-top: 16px;
 }
+
+/* In-hand form – same style as address form */
+.inhand-box {
+  max-width: 420px;
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Text above inputs */
+.inhand-box p {
+  margin: 0;
+  color: #4a2a30;
+  font-size: 14.5px;
+}
+
+/* Make inputs look identical to address inputs */
+.inhand-box input {
+  width: 100%;
+  padding: 14px 18px;
+  font-size: 14.5px;
+  border-radius: 14px;
+  border: 1.5px solid #e6c3ca;
+  background: #ffffff;
+  outline: none;
+  color: #4a2a30;
+}
+
+.inhand-box input::placeholder {
+  color: #9a6b75;
+}
+
+.inhand-box input:focus {
+  border-color: #d98998;
+  box-shadow: 0 0 0 3px rgba(217, 137, 152, 0.18);
+}
+
+/* Free text */
+.inhand-box .free {
+  margin-top: 6px;
+  font-weight: 600;
+  color: #2e9c5f;
+}
