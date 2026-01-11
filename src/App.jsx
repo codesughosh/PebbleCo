@@ -23,9 +23,7 @@ import CheckoutSummary from "./pages/CheckoutSummary";
 import OrderSuccess from "./pages/OrderSuccess";
 import Orders from "./pages/Orders";
 import GlobalBackground from "./components/GlobalBackground";
-import Product from "./pages/Product";
-import Category from "./pages/Category";
-import AdminOrders from "./pages/AdminOrders";
+
 import NewArrivals from "./pages/NewArrivals";
 import TrackOrder from "./pages/TrackOrder";
 import PaymentProcessing from "./pages/PaymentProcessing";
