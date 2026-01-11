@@ -234,3 +234,10 @@ top: -1px;
   transform: translateY(0);
   pointer-events: auto;
 }
+
+.header-icons {
+  display: flex;
+  align-items: center;
+  gap: 30px; /* 👈 increase this value */
+  margin-right: 30px;
+}

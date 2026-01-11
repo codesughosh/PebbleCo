@@ -9,7 +9,7 @@ function Contact() {
       </p>
 
       <p>
-        📧 Email: <strong>pebblecobusiness@gmail.com</strong>
+        📧 Email: <strong>pebbleco.team@gmail.com</strong>
       </p>
     </div>
   );

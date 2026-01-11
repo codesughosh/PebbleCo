@@ -1,0 +1,77 @@
+.payment-status-page {
+  min-height: 100vh;
+  background: #fceae4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.payment-card {
+  background: #fff;
+  padding: 40px 28px;
+  border-radius: 22px;
+  text-align: center;
+  max-width: 360px;
+  width: 100%;
+}
+
+.payment-card h2 {
+  color: #3b2b2f;
+  margin-top: 16px;
+}
+
+.payment-card p {
+  color: #6b4c55;
+  font-size: 14px;
+}
+
+.soft-text {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* Spinner */
+.spinner {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 4px solid #f4a6b8;
+  border-top-color: transparent;
+  margin: 0 auto;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Failure */
+.fail-icon {
+  font-size: 36px;
+  color: #d66;
+}
+
+/* Buttons */
+.fail-actions {
+  margin-top: 24px;
+  display: flex;
+  gap: 12px;
+  flex-direction: column;
+}
+
+.fail-actions button {
+  padding: 12px;
+  border-radius: 999px;
+  border: none;
+  background: #f4a6b8;
+  color: white;
+  cursor: pointer;
+}
+
+.fail-actions button.secondary {
+  background: #f7d2db;
+  color: #3b2b2f;
+}

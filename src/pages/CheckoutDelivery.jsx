@@ -9,7 +9,7 @@ function CheckoutDelivery() {
   const handleContinue = () => {
     if (!deliveryType) return;
 
-    // Temporary storage (we'll replace with context later)
+    // store only delivery type
     localStorage.setItem("deliveryType", deliveryType);
 
     navigate("/checkout/address");

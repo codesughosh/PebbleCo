@@ -1,0 +1,18 @@
+.pebbleco-loader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #f4a6b8;
+  font-size: 14px;
+  justify-content: center;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

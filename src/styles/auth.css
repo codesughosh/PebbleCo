@@ -4,10 +4,11 @@
 
 .auth-page {
   min-height: 100vh;
-  background: #fceae4;
+  background: linear-gradient(180deg, #fdeae4, #fff5f3);
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 16px;
 }
 
 /* =====================
@@ -19,8 +20,9 @@
   max-width: 380px;
   background: #ffffff;
   padding: 36px;
-  border-radius: 20px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+  border-radius: 22px;
+  box-shadow: 0 25px 60px rgba(214, 107, 125, 0.18),
+    0 8px 18px rgba(0, 0, 0, 0.04);
   text-align: center;
 }
 
@@ -30,6 +32,7 @@
 
 .auth-title {
   font-size: 26px;
+  font-weight: 600;
   color: #3b2b2f;
   margin-bottom: 6px;
 }
@@ -50,19 +53,52 @@
   gap: 14px;
 }
 
+/* Inputs */
 .auth-card input {
   width: 100%;
-  padding: 14px;
-  border-radius: 12px;
-  border: 1px solid #f3c6c6;
-  background: #fff6f6;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid #f1cbd3;
+  background: #fff8f8;
   font-size: 14px;
+  transition: all 0.25s ease;
+}
+
+.auth-card input::placeholder {
+  color: #b69098;
 }
 
 .auth-card input:focus {
   outline: none;
   border-color: #d66b7d;
   background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(214, 107, 125, 0.12);
+}
+
+/* =====================
+   PASSWORD FIELD
+===================== */
+
+.password-field {
+  position: relative;
+}
+
+.eye-btn {
+  position: absolute;
+  right: 14px;
+  top: 0;
+  height: 100%;
+
+  cursor: pointer;
+  color: #a16b7a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.eye-btn:hover {
+  color: #7a3e4a;
 }
 
 /* =====================
@@ -74,12 +110,16 @@
   justify-content: space-between;
   align-items: center;
   font-size: 13px;
+  margin-top: 4px;
 }
 
 .remember {
   display: flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap; /* 🔥 prevents line break */
+  font-size: 13px;
+  color: #7c5b63;
 }
 
 .auth-card input[type="checkbox"] {
@@ -87,16 +127,33 @@
 }
 
 .forgot-btn {
-  background: none;
-  border: none;
-  color: #d66b7d;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+
   font-size: 13px;
+  color: #b5475b; /* PebbleCo rose */
+  font-weight: 500;
   cursor: pointer;
-  padding: 0;
 }
 
-.forgot-btn:hover {
+.forgot-btn:hover,
+.forgot-link:hover {
+  color: #8f3445;
   text-decoration: underline;
+}
+
+/* =====================
+   ERROR MESSAGE
+===================== */
+
+.auth-error {
+  color: #c0392b;
+  font-size: 13px;
+  margin-top: -4px;
+  text-align: left;
 }
 
 /* =====================
@@ -106,33 +163,35 @@
 .auth-card button {
   width: 100%;
   padding: 14px;
-  border-radius: 14px;
+  border-radius: 16px;
   border: none;
   font-size: 15px;
   cursor: pointer;
-  transition: 0.25s ease;
+  transition: all 0.25s ease;
 }
 
-/* Primary */
+/* Primary Login Button */
 .auth-card button:not(.google-btn) {
-  background: #d66b7d;
+  background: linear-gradient(135deg, #d66b7d, #e88998);
   color: white;
+  box-shadow: 0 12px 28px rgba(214, 107, 125, 0.4);
 }
 
 .auth-card button:not(.google-btn):hover {
-  background: #bf5a6b;
+  transform: translateY(-1px);
+  box-shadow: 0 16px 34px rgba(214, 107, 125, 0.5);
 }
 
-/* Google */
+/* Google Button */
 .google-btn {
   margin-top: 12px;
   background: #ffffff;
-  border: 1px solid #f3c6c6;
-  color: #333;
+  border: 1px solid #f1cbd3;
+  color: #3b2b2f;
 }
 
 .google-btn:hover {
-  background: #fff0f0;
+  background: #fff1f1;
 }
 
 /* =====================
@@ -154,7 +213,7 @@
   top: 50%;
   width: 40%;
   height: 1px;
-  background: #e6cfd6;
+  background: #ead0d6;
 }
 
 .divider::before {
@@ -169,29 +228,68 @@
    FOOTER TEXT
 ===================== */
 
-.switch-auth,
-.auth-switch {
+.switch-auth {
   margin-top: 22px;
   font-size: 14px;
+  color: #6f4e56;
 }
 
-.switch-auth a,
-.auth-switch a {
+.switch-auth a {
   color: #d66b7d;
+  font-weight: 500;
   text-decoration: none;
 }
 
-.switch-auth a:hover,
-.auth-switch a:hover {
+.switch-auth a:hover {
   text-decoration: underline;
 }
 
 /* =====================
-   ERROR
+   SIGNUP PAGE ALIGNMENT
+   (matches Login style)
 ===================== */
 
-.auth-error {
-  color: #c0392b;
+/* Signup title */
+.auth-card h2 {
+  font-size: 26px;
+  font-weight: 600;
+  color: #3b2b2f;
+  margin-bottom: 6px;
+}
+
+/* Signup subtitle */
+.auth-card p:first-of-type {
+  font-size: 14px;
+  color: #8a6a73;
+  margin-bottom: 26px;
+}
+
+/* Inputs spacing consistency */
+.auth-card input {
+  margin-bottom: 14px;
+}
+
+/* Divider text ("or") in signup */
+.auth-divider {
+  margin: 22px 0;
   font-size: 13px;
-  margin-top: -6px;
+  color: #9a7b84;
+  text-align: center;
+}
+
+/* Signup switch text */
+.auth-switch {
+  margin-top: 22px;
+  font-size: 14px;
+  color: #6f4e56;
+}
+
+.auth-switch a {
+  color: #d66b7d;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
 }

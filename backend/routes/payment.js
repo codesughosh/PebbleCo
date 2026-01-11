@@ -15,18 +15,20 @@ router.post("/create-order", async (req, res) => {
     const order = await razorpay.orders.create({
       amount: amount * 100, // INR → paise
       currency: "INR",
-      receipt: `pebbleco_${Date.now()}`,
+      receipt: `pebbleco_${Date.now()}`
     });
 
     res.json({
       orderId: order.id,
       amount: order.amount,
-      currency: order.currency,
+      currency: order.currency
     });
   } catch (err) {
     console.error("Create order error:", err);
     res.status(500).json({ error: "Failed to create order" });
   }
 });
+
+
 
 export default router;

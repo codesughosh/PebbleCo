@@ -1,17 +1,24 @@
 import { useEffect, useState, useRef } from "react";
 import ProductCard from "../components/ProductCard";
 import { products } from "../data/products";
+import WhyPebbleCo from "../components/WhyPebbleCo";
+import TopSellers from "../components/TopSellers";
+
 import "../styles/home.css";
+import { useNavigate } from "react-router-dom";
 
 import slide1 from "../assets/slider/1.jpg";
 import slide2 from "../assets/slider/2.jpg";
 import slide3 from "../assets/slider/3.jpg";
+
+import PebbleBackground from "../components/PebbleBackground";
 
 const slides = [slide1, slide2, slide3];
 
 function Home() {
   const [index, setIndex] = useState(1); // start from first real slide
   const trackRef = useRef(null);
+  const navigate = useNavigate();
 
   // auto slide
   useEffect(() => {
@@ -42,7 +49,8 @@ function Home() {
     };
 
     track.addEventListener("transitionend", handleTransitionEnd);
-    return () => track.removeEventListener("transitionend", handleTransitionEnd);
+    return () =>
+      track.removeEventListener("transitionend", handleTransitionEnd);
   }, [index]);
 
   // apply transform
@@ -55,7 +63,9 @@ function Home() {
   }, [index]);
 
   return (
-    <div className="home">
+    <PebbleBackground>
+      <div className="home px-4 md:px-8 lg:px-12">
+      
       {/* HERO SLIDER */}
       <section className="hero-slider">
         <div className="slider-viewport">
@@ -87,12 +97,7 @@ function Home() {
       {/* TOP SELLERS */}
       <section className="top-sellers">
         <h2>Top Sellers</h2>
-
-        <div className="product-grid">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        <TopSellers />
       </section>
 
       {/* COLLECTIONS */}
@@ -100,13 +105,41 @@ function Home() {
         <h2>Shop by Collection</h2>
 
         <div className="collection-grid">
-          <div className="collection-card">Bracelets</div>
-          <div className="collection-card">Necklaces</div>
-          <div className="collection-card">Rings</div>
-          <div className="collection-card">Gifts</div>
+          <div
+            className="collection-card"
+            onClick={() => navigate("/category/flower-bracelet")}
+          >
+            Flower Bracelets
+          </div>
+
+          <div
+            className="collection-card"
+            onClick={() => navigate("/category/charms")}
+          >
+            Charms
+          </div>
+
+          <div
+            className="collection-card"
+            onClick={() => navigate("/category/bead-bracelets")}
+          >
+            Bead Bracelets
+          </div>
+
+          <div
+            className="collection-card"
+            onClick={() => navigate("/category/necklace")}
+          >
+            Necklaces
+          </div>
         </div>
       </section>
+
+      {/* Hero / Slider */}
+      
+      <WhyPebbleCo />
     </div>
+    </PebbleBackground>
   );
 }
 

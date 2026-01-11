@@ -1,76 +1,75 @@
+import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { auth } from "../firebase";
 import { supabase } from "../supabaseClient";
+import "../styles/orderSuccess.css";
 
 function OrderSuccess() {
   const { orderId } = useParams();
-  const navigate = useNavigate();
-
   const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchOrder = async () => {
-      const user = auth.currentUser;
-      if (!user) {
-        navigate("/login");
-        return;
-      }
-
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("orders")
         .select("*")
         .eq("id", orderId)
-        .eq("user_id", user.uid)
         .single();
 
-      if (error || !data) {
-        navigate("/");
-        return;
-      }
-
       setOrder(data);
-      setLoading(false);
     };
 
     fetchOrder();
-  }, []);
+  }, [orderId]);
 
-  if (loading) {
-    return <p style={{ padding: "60px" }}>Loading order...</p>;
-  }
+  if (!order) return null;
 
   return (
-    <div style={{ padding: "60px", textAlign: "center" }}>
-      <h1>🎉 Order Placed Successfully!</h1>
+    <div className="order-success-page">
+      <div className="order-success-card">
+        <h1 className="order-success-title">Order Confirmed 🎉</h1>
+        <p className="order-success-subtitle">
+          Thank you for shopping with PebbleCo
+        </p>
 
-      <p>
-        <strong>Order ID:</strong> {order.id}
-      </p>
+        <div className="order-success-details">
+          <div className="order-success-row">
+            <span>Order ID</span>
+            <span>{order.id}</span>
+          </div>
 
-      <p>
-        <strong>Total Paid:</strong> ₹{order.total}
-      </p>
+          <div className="order-success-row">
+            <span>Total Paid</span>
+            <span>₹{order.total}</span>
+          </div>
 
-      <p>
-        <strong>Status:</strong> {order.payment_status}
-      </p>
+          <div className="order-success-row">
+            <span>Status</span>
+            <span>{order.status}</span>
+          </div>
 
-      <Link
-        to="/"
-        style={{
-          marginTop: "30px",
-          display: "inline-block",
-          padding: "10px 18px",
-          borderRadius: "20px",
-          background: "#fdd2dc",
-          color: "#000",
-          textDecoration: "none",
-        }}
-      >
-        Continue Shopping
-      </Link>
+          <div className="order-success-row">
+            <span>Delivery</span>
+            <span>
+              {order.delivery_type === "shipping"
+                ? "Home Delivery"
+                : "In-hand Delivery"}
+            </span>
+          </div>
+        </div>
+
+        <div className="order-success-actions">
+          <a
+            href={`http://localhost:5000/api/invoice/${order.id}`}
+            className="order-success-btn primary"
+          >
+            Download Invoice
+          </a>
+
+          <Link to="/orders" className="order-success-btn secondary">
+            View Orders
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

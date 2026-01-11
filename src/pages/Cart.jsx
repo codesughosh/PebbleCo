@@ -43,7 +43,7 @@ function Cart() {
           id,
           name,
           price,
-          image_url
+          images
         )
       `)
       .eq("user_id", user.uid);
@@ -138,7 +138,12 @@ function Cart() {
           <div className="cart-items">
             {cartItems.map((item) => (
               <div className="cart-item" key={item.id}>
-                <div className="cart-item-image">🌸</div>
+                <img
+  src={item.product.images?.[0]}
+  alt={item.product.name}
+  className="cart-item-image"
+/>
+
 
                 <div className="cart-item-info">
                   <div className="cart-item-name">
@@ -187,11 +192,6 @@ function Cart() {
             <div className="summary-row">
               <span>Subtotal</span>
               <span>₹{subtotal}</span>
-            </div>
-
-            <div className="summary-row">
-              <span>Shipping</span>
-              <span>Free</span>
             </div>
 
             <div className="summary-total">

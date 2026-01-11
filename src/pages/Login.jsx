@@ -10,9 +10,11 @@ import { auth } from "../firebase";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
+import { Eye, EyeOff } from "lucide-react";
 
 function Login() {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -46,20 +48,20 @@ function Login() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      navigate("/");  
+      navigate("/");
     } catch (err) {
       setError(err.message);
     }
   };
-useEffect(() => {
-  const unsub = onAuthStateChanged(auth, (currentUser) => {
-    if (currentUser) {
-      navigate("/profile");
-    }
-  });
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        navigate("/profile");
+      }
+    });
 
-  return () => unsub();
-}, [navigate]);
+    return () => unsub();
+  }, [navigate]);
 
   return (
     <div className="auth-page">
@@ -75,12 +77,20 @@ useEffect(() => {
             onChange={(e) => setEmail(e.target.value)}
           />
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <div className="password-field">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <span
+              className="eye-btn"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+            </span>
+          </div>
 
           <div className="auth-row">
             <label className="remember">
@@ -88,13 +98,13 @@ useEffect(() => {
               <span>Remember me</span>
             </label>
 
-            <button
-              type="button"
-              className="forgot-btn"
-              onClick={handleForgotPassword}
-            >
-              Forgot password?
-            </button>
+            <span
+  className="forgot-link"
+  onClick={handleForgotPassword}
+>
+  Forgot password?
+</span>
+
           </div>
           {error && <p className="auth-error">{error}</p>}
 

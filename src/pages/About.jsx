@@ -10,9 +10,6 @@ function About() {
         packed, and shipped all over India.
         </p>
         
-        <p>
-          Creators: Sughosh R Kulkarni, Pratheeksha KM
-        </p>
       </div>
     </div>
   );
