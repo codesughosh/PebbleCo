@@ -1,10 +1,23 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import ProductCard from "./ProductCard";
+import { auth } from "../firebase";
+import { addToCart } from "../services/cart";
 
 function TopSellers() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const handleAddToCart = async (product) => {
+    const user = auth.currentUser;
+
+    if (!user) {
+      alert("Please login to add items to cart");
+      return;
+    }
+
+    await addToCart(user.uid, product.id);
+    alert("Added to cart");
+  };
 
   useEffect(() => {
     fetchTopSellers();
@@ -53,9 +66,10 @@ function TopSellers() {
   if (loading || products.length === 0) return null;
 
   return (
-    <div className="products-grid">
+    <div className="product-grid">
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard key={product.id} product={product}
+        onAddToCart={handleAddToCart} />
       ))}
     </div>
   );

@@ -6,7 +6,6 @@ import Footer from "./components/Footer";
 
 import { Analytics } from "@vercel/analytics/react";
 
-
 import Home from "./pages/Home";
 import Cart from "./pages/Cart";
 import Login from "./pages/Login";
@@ -34,9 +33,8 @@ import PaymentFailed from "./pages/PaymentFailed";
 import Product from "./pages/Product";
 import Category from "./pages/Category";
 
-
 import AdminOrders from "./pages/AdminOrders";
-
+import ScrollToTop from "./components/ScrollToTop";
 function App() {
   const [cart, setCart] = useState(() => {
     const savedCart = localStorage.getItem("pebbleco-cart");
@@ -55,6 +53,7 @@ function App() {
     <>
       <GlobalBackground />
       <Header />
+      <ScrollToTop />
 
       <main>
         <Routes>
@@ -80,8 +79,13 @@ function App() {
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="/new-arrivals" element={<NewArrivals />} />
           <Route path="/track" element={<TrackOrder />} />
-          <Route path="/payment/success/:orderId" element={<PaymentProcessing />}/>
+          <Route
+            path="/payment/success/:orderId"
+            element={<PaymentProcessing />}
+          />
           <Route path="/payment/failed" element={<PaymentFailed />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/product/:id" element={<Product />} />
         </Routes>
       </main>
 

@@ -19,17 +19,23 @@ export default function Hero() {
 
   return (
     <section className="hero-slider">
-      <div className="slideshow full">
-        <img src={slides[active]} alt="PebbleCo slide" />
-        <div className="dots">
-          {slides.map((_, i) => (
-            <span
-              key={i}
-              className={i === active ? "dot active" : "dot"}
-              onClick={() => setActive(i)}
-            />
-          ))}
-        </div>
+      <div
+        className="hero-track"
+        style={{ transform: `translateX(-${active * 100}%)` }}
+      >
+        {slides.map((img, i) => (
+          <img key={i} src={img} alt="" className="hero-image" />
+        ))}
+      </div>
+
+      <div className="dots">
+        {slides.map((_, i) => (
+          <span
+            key={i}
+            className={i === active ? "dot active" : "dot"}
+            onClick={() => setActive(i)}
+          />
+        ))}
       </div>
     </section>
   );
