@@ -160,7 +160,22 @@
 
 @media (max-width: 768px) {
   .product-grid {
-    grid-template-columns: repeat(2, 240px);
+    grid-template-columns: 240px; /* 🔑 single column */
     justify-content: center;
+    row-gap: 25px;
+  }
+}
+
+
+.page-title {
+  text-align: center;
+  text-transform: capitalize;
+  margin-bottom: 24px;
+  color: #5a2a36;
+}
+
+@media (max-width: 768px) {
+  .page-title {
+    text-align: center;
   }
 }

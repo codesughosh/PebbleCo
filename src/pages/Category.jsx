@@ -46,7 +46,8 @@ function Category() {
 
   return (
     <div style={page}>
-      <h1 style={title}>{slug.replace("-", " ")}</h1>
+      <h1 className="page-title">{slug.replace("-", " ")}</h1>
+
 
       {products.length === 0 ? (
         <p>No products found.</p>

@@ -39,11 +39,15 @@
 }
 
 
+.products-grid {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 @media (max-width: 768px) {
   .products-grid {
-    grid-template-columns: repeat(2, 240px);
-    gap: 16px;
-    padding: 16px;
+    grid-template-columns: 240px; /* single column */
     justify-content: center;
+    margin: 0 auto;               /* 🔑 centers the grid itself */
   }
 }
