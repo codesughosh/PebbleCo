@@ -13,25 +13,27 @@
 ========================= */
 
 .hero-slider {
-  position: relative;
   width: 100%;
-  height: 380px;          /* 🔒 LOCKED HEIGHT */
+  height: 380px;
   overflow: hidden;
-  /*background: #fceae4;*/
   background: rgba(252, 234, 228, 0.85);
-
-  margin-top: 0;
-  padding-top: 0;
+  position: relative;
 }
 
-/* Hero image */
+
+
+
 .hero-image {
-  width: 100%;
-  height: 90%;
-  object-fit: cover;      /* 🔥 NO STRETCHING */
-  object-position: center;
+  flex: 0 0 100%;
+  width: 1100px;
+  height: 380px;
+
+  margin: 0 auto;          /* centers image */
+  object-fit: cover;
   display: block;
 }
+
+
 
 /* Lace effect ABOVE hero *
 
@@ -53,6 +55,16 @@
 }
 
 
+.dots {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 4;
+}
+
 .dot {
   width: 8px;
   height: 8px;
@@ -62,25 +74,12 @@
   opacity: 0.5;
 }
 
-.dots {
-  position: absolute;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 8px;
-}
 .dot.active {
   opacity: 1;
   background: #b86b7c;
 }
 
-/* Mobile hero height */
-@media (max-width: 768px) {
-  .hero-slider {
-    height: 260px;
-  }
-}
+
 
 /* =========================
    TOP SELLERS
@@ -99,9 +98,11 @@
 
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(3, 240px); /* max 3 cards */
+  gap: 24px;
+  justify-content: center;                /* 🔑 CENTER GRID */
 }
+
 
 /* =========================
    COLLECTIONS
@@ -137,4 +138,29 @@
 
 .collection-card:hover {
   transform: translateY(-4px);
+}
+
+@media (max-width: 768px) {
+  .hero-slider {
+    height: 260px;
+  }
+
+  .hero-image {
+    width: 360px;
+    height: 260px;
+  }
+}
+
+.hero-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.8s ease-in-out;
+}
+
+
+@media (max-width: 768px) {
+  .product-grid {
+    grid-template-columns: repeat(2, 240px);
+    justify-content: center;
+  }
 }

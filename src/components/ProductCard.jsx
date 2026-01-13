@@ -2,13 +2,26 @@ import "../styles/product-card.css";
 import { useNavigate } from "react-router-dom";
 
 function ProductCard({ product, onAddToCart }) {
+  const navigate = useNavigate();
+
+  const goToProduct = () => {
+    navigate(`/product/${product.id}`);
+  };
+
   return (
-    <div className="product-card">
+    <div className="product-card" onClick={goToProduct}>
       <img
-        src={product.image_url || "/placeholder.png"}
+        src={
+          product.image_url ||
+          product.images?.[0] ||
+          product.image_urls?.[0] ||
+          "/placeholder.png"
+        }
         alt={product.name}
         className="product-image"
       />
+
+      <h3 className="product-name">{product.name}</h3>
 
       <div className="price-row">
         {product.original_price && (
@@ -28,7 +41,15 @@ function ProductCard({ product, onAddToCart }) {
         </span>
       )}
 
-      <button onClick={() => onAddToCart(product)}>Add to Cart</button>
+      {/* 🔴 Stop click bubbling here */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onAddToCart && onAddToCart(product);
+        }}
+      >
+        Add to Cart
+      </button>
     </div>
   );
 }
