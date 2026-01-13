@@ -127,7 +127,6 @@ function Header() {
           </li>
         </ul>
       </nav>
-      {mobileNavOpen && (
         <div className={`mobile-nav ${mobileNavOpen ? "open" : ""}`}>
           <Link to="/" onClick={() => setMobileNavOpen(false)}>
             Home
@@ -179,7 +178,8 @@ function Header() {
             Contact
           </Link>
         </div>
-      )}
+      
+    
     </header>
   );
 }

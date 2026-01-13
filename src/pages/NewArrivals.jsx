@@ -33,7 +33,8 @@ function NewArrivals() {
 
   return (
     <div className="products-page">
-      <h1>New Arrivals</h1>
+      <h1 className="page-title">New Arrivals</h1>
+
 
       <div className="products-grid">
         {products.map((product) => (
