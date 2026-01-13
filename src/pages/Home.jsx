@@ -121,7 +121,7 @@ function Home() {
 
           <div
             className="collection-card"
-            onClick={() => navigate("/category/bead-bracelets")}
+            onClick={() => navigate("/category/bead-bracelet")}
           >
             Bead Bracelets
           </div>
