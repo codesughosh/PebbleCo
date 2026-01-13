@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 
+import { Analytics } from "@vercel/analytics/react";
+
+
 import Home from "./pages/Home";
 import Cart from "./pages/Cart";
 import Login from "./pages/Login";
@@ -30,7 +33,16 @@ import PaymentFailed from "./pages/PaymentFailed";
 
 import Product from "./pages/Product";
 import Category from "./pages/Category";
+
+
 import AdminOrders from "./pages/AdminOrders";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <App />
+    <Analytics />
+  </React.StrictMode>
+);
 function App() {
   const [cart, setCart] = useState(() => {
     const savedCart = localStorage.getItem("pebbleco-cart");
