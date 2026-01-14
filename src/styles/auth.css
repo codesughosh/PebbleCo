@@ -6,9 +6,10 @@
   min-height: 100vh;
   background: linear-gradient(180deg, #fdeae4, #fff5f3);
   display: flex;
-  align-items: center;
   justify-content: center;
   padding: 16px;
+   align-items: flex-start;   /* 🔥 move to top */
+  padding-top: 80px;
 }
 
 /* =====================
