@@ -2,7 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import "../styles/orderSuccess.css";
-
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 function OrderSuccess() {
   const { orderId } = useParams();
   const [order, setOrder] = useState(null);
@@ -59,7 +59,7 @@ function OrderSuccess() {
 
         <div className="order-success-actions">
           <a
-            href={`http://localhost:5000/api/invoice/${order.id}`}
+            href={`${BACKEND_URL}/api/invoice/${order.id}`}
             className="order-success-btn primary"
           >
             Download Invoice
