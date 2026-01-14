@@ -99,7 +99,7 @@ function Header() {
 
           <li className="dropdown">
             <span className="dropdown-title">
-              Shop By <span className="caret">⌄</span>
+              Shop By <span className="caret"> v</span>
             </span>
 
             <ul className="dropdown-menu">
