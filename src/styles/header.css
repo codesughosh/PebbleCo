@@ -327,3 +327,10 @@ top: -1px;
   }
 }
 
+@media (max-width: 768px) {
+  .header-icons {
+    margin-right: 0px;   /* reduce to move left */
+    /* or */
+    /* margin-right: 24px; */ /* increase to move right */
+  }
+}
