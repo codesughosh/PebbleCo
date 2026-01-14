@@ -51,3 +51,28 @@
     margin: 0 auto;               /* 🔑 centers the grid itself */
   }
 }
+
+
+.desc-wrapper {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-6px);
+
+  transition:
+    max-height 0.4s ease,
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+
+.desc-wrapper.open {
+  max-height: 2000px; /* enough for long text */
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.desc-text {
+  margin-top: 16px;
+  line-height: 1.7;
+  white-space: pre-line;
+}

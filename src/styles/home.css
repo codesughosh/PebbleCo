@@ -179,3 +179,7 @@
     text-align: center;
   }
 }
+
+.hero-slider {
+  cursor: pointer;
+}

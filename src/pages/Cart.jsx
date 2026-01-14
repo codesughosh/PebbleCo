@@ -6,7 +6,6 @@ import { supabase } from "../supabaseClient";
 import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 
-
 function Cart() {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +35,8 @@ function Cart() {
   const fetchCart = async () => {
     const { data, error } = await supabase
       .from("cart")
-      .select(`
+      .select(
+        `
         id,
         quantity,
         product:products (
@@ -45,7 +45,8 @@ function Cart() {
           price,
           images
         )
-      `)
+      `
+      )
       .eq("user_id", user.uid);
 
     if (error) {
@@ -139,35 +140,22 @@ function Cart() {
             {cartItems.map((item) => (
               <div className="cart-item" key={item.id}>
                 <img
-  src={item.product.images?.[0]}
-  alt={item.product.name}
-  className="cart-item-image"
-/>
-
+                  src={item.product.images?.[0]}
+                  alt={item.product.name}
+                  className="cart-item-image"
+                />
 
                 <div className="cart-item-info">
-                  <div className="cart-item-name">
-                    {item.product.name}
-                  </div>
-                  <div className="cart-item-price">
-                    ₹{item.product.price}
-                  </div>
+                  <div className="cart-item-name">{item.product.name}</div>
+                  <div className="cart-item-price">₹{item.product.price}</div>
                 </div>
 
                 <div className="cart-item-qty">
-                  <button
-                    onClick={() =>
-                      decreaseQty(item.id, item.quantity)
-                    }
-                  >
+                  <button onClick={() => decreaseQty(item.id, item.quantity)}>
                     -
                   </button>
                   <span>{item.quantity}</span>
-                  <button
-                    onClick={() =>
-                      increaseQty(item.id, item.quantity)
-                    }
-                  >
+                  <button onClick={() => increaseQty(item.id, item.quantity)}>
                     +
                   </button>
                 </div>
@@ -207,20 +195,24 @@ function Cart() {
               />
               <span>
                 I agree to the{" "}
-                <a href="#" className="terms-link">
+                <a
+                  href="/terms"
+                  className="terms-link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   Terms & Conditions
                 </a>
               </span>
             </label>
 
             <button
-  className="checkout-btn"
-  disabled={!agreed}
-  onClick={() => navigate("/checkout/delivery")}
->
-  Proceed to Checkout
-</button>
-
+              className="checkout-btn"
+              disabled={!agreed}
+              onClick={() => navigate("/checkout/delivery")}
+            >
+              Proceed to Checkout
+            </button>
           </div>
         </div>
       )}

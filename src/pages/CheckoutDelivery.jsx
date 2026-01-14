@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/checkout.css";
+import { Truck, GraduationCap } from "lucide-react";
 
 function CheckoutDelivery() {
   const [deliveryType, setDeliveryType] = useState(null);
@@ -27,7 +28,11 @@ function CheckoutDelivery() {
           }`}
           onClick={() => setDeliveryType("shipping")}
         >
-          <h2>🚚 Shipping</h2>
+          <h2 className="delivery-title">
+            <Truck size={22} strokeWidth={2} />
+            <span>  Shipping</span>
+          </h2>
+
           <p>Delivered anywhere in India</p>
           <p className="note">Shipping charges apply</p>
         </div>
@@ -39,7 +44,11 @@ function CheckoutDelivery() {
           }`}
           onClick={() => setDeliveryType("inhand")}
         >
-          <h2>🎓 In-Hand Delivery</h2>
+          <h2 className="delivery-title">
+            <GraduationCap size={22} strokeWidth={2} />
+            <span>  In-Hand Delivery</span>
+          </h2>
+
           <p>Collect at SJCE College, Mysuru</p>
           <p className="note free">Free</p>
         </div>

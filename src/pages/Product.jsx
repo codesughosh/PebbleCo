@@ -309,11 +309,12 @@ function Product() {
             />
           </div>
 
-          {openDesc && (
-            <div style={{ marginTop: "16px" }}>
-              <p style={{ whiteSpace: "pre-line" }}>{product.long_description}</p>
-            </div>
-          )}
+          {/* 👇 ALWAYS RENDERED */}
+  <div className={`desc-wrapper ${openDesc ? "open" : ""}`}>
+    <p className="desc-text">{product.long_description}</p>
+  </div>
+
+          
         </section>
 
         {/* REVIEWS */}

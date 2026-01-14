@@ -27,7 +27,10 @@ function Header() {
       <div className="header-top">
         <div className="header-spacer" />
 
-        <div className="logo">PebbleCo</div>
+        <Link to="/" className="logo">
+  PebbleCo
+</Link>
+
 
         <div className="header-icons">
           <button

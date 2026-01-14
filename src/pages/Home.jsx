@@ -19,6 +19,8 @@ function Home() {
   const [index, setIndex] = useState(1); // start from first real slide
   const trackRef = useRef(null);
   const navigate = useNavigate();
+  
+const collectionsRef = useRef(null);
 
   // auto slide
   useEffect(() => {
@@ -65,80 +67,87 @@ function Home() {
   return (
     <PebbleBackground>
       <div className="home px-4 md:px-8 lg:px-12">
-      
-      {/* HERO SLIDER */}
-      <section className="hero-slider">
-        <div className="slider-viewport">
-          <div className="slider-track" ref={trackRef}>
-            {/* clone last */}
-            <img src={slides[slides.length - 1]} className="hero-image" />
+        {/* HERO SLIDER */}
+        <section
+          className="hero-slider"
+          onClick={() =>
+            collectionsRef.current?.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            })
+          }
+        >
+          <div className="slider-viewport">
+            <div className="slider-track" ref={trackRef}>
+              {/* clone last */}
+              <img src={slides[slides.length - 1]} className="hero-image" />
 
-            {/* real slides */}
-            {slides.map((img, i) => (
-              <img key={i} src={img} className="hero-image" />
+              {/* real slides */}
+              {slides.map((img, i) => (
+                <img key={i} src={img} className="hero-image" />
+              ))}
+
+              {/* clone first */}
+              <img src={slides[0]} className="hero-image" />
+            </div>
+          </div>
+
+          <div className="dots">
+            {slides.map((_, i) => (
+              <span
+                key={i}
+                className={index - 1 === i ? "dot active" : "dot"}
+                onClick={() => setIndex(i + 1)}
+              />
             ))}
-
-            {/* clone first */}
-            <img src={slides[0]} className="hero-image" />
           </div>
-        </div>
+        </section>
 
-        <div className="dots">
-          {slides.map((_, i) => (
-            <span
-              key={i}
-              className={index - 1 === i ? "dot active" : "dot"}
-              onClick={() => setIndex(i + 1)}
-            />
-          ))}
-        </div>
-      </section>
+        {/* TOP SELLERS */}
+        <section className="top-sellers">
+          <h2>Top Sellers</h2>
+          <TopSellers />
+        </section>
 
-      {/* TOP SELLERS */}
-      <section className="top-sellers">
-        <h2>Top Sellers</h2>
-        <TopSellers />
-      </section>
+        {/* COLLECTIONS */}
+        <section className="collections" ref={collectionsRef}>
+          <h2>Shop by Collection</h2>
 
-      {/* COLLECTIONS */}
-      <section className="collections">
-        <h2>Shop by Collection</h2>
+          <div className="collection-grid">
+            <div
+              className="collection-card"
+              onClick={() => navigate("/category/flower-bracelet")}
+            >
+              Flower Bracelets
+            </div>
 
-        <div className="collection-grid">
-          <div
-            className="collection-card"
-            onClick={() => navigate("/category/flower-bracelet")}
-          >
-            Flower Bracelets
+            <div
+              className="collection-card"
+              onClick={() => navigate("/category/charms")}
+            >
+              Charms
+            </div>
+
+            <div
+              className="collection-card"
+              onClick={() => navigate("/category/bead-bracelet")}
+            >
+              Bead Bracelets
+            </div>
+
+            <div
+              className="collection-card"
+              onClick={() => navigate("/category/necklace")}
+            >
+              Necklaces
+            </div>
           </div>
+        </section>
 
-          <div
-            className="collection-card"
-            onClick={() => navigate("/category/charms")}
-          >
-            Charms
-          </div>
+        {/* Hero / Slider */}
 
-          <div
-            className="collection-card"
-            onClick={() => navigate("/category/bead-bracelet")}
-          >
-            Bead Bracelets
-          </div>
-
-          <div
-            className="collection-card"
-            onClick={() => navigate("/category/necklace")}
-          >
-            Necklaces
-          </div>
-        </div>
-      </section>
-
-      {/* Hero / Slider */}
-      
-      <WhyPebbleCo />
-    </div>
+        <WhyPebbleCo />
+      </div>
     </PebbleBackground>
   );
 }

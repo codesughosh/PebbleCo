@@ -3,7 +3,7 @@ import "../styles/WhyPebbleCo.css";
 const reasons = [
   {
     title: "Handmade with care",
-    desc: "Every piece is thoughtfully designed and handcrafted, never mass-produced."
+    desc: "Each piece is carefully handcrafted, not mass-produced."
   },
   {
     title: "Minimal & timeless",
@@ -11,7 +11,7 @@ const reasons = [
   },
   {
     title: "Student-led & affordable",
-    desc: "Quality accessories at honest prices, built with passion, not profit-first."
+    desc: "Quality accessories at honest prices, made with passion."
   },
   {
     title: "Made to gift, made to keep",
@@ -24,7 +24,7 @@ export default function WhyPebbleCo() {
     <section className="why-pebbleco">
       <h2 className="why-title">Why PebbleCo?</h2>
       <p className="why-subtitle">
-        Thoughtful accessories made for everyday moments.
+        Thoughtful accessories for everyday wear.
       </p>
 
       <div className="why-grid">
