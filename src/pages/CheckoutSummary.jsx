@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { supabase } from "../supabaseClient";
 import "../styles/checkout.css";
-const BACKEND_URL = "http://localhost:5000";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 function CheckoutSummary() {
   const navigate = useNavigate();
@@ -19,32 +19,34 @@ function CheckoutSummary() {
   const inhandDetails = JSON.parse(localStorage.getItem("inhandDetails"));
 
   useEffect(() => {
-  const deliveryType = localStorage.getItem("deliveryType");
+    const deliveryType = localStorage.getItem("deliveryType");
 
-  if (!deliveryType) {
-    navigate("/checkout/address");
-    return;
-  }
-
-  if (deliveryType === "shipping") {
-    const address = JSON.parse(
-      localStorage.getItem("shippingAddress")
-    );
-
-    if (!address || address.locationResolved !== true) {
+    if (!deliveryType) {
       navigate("/checkout/address");
+      return;
     }
-  }
 
-  if (deliveryType === "inhand") {
-    // ✅ In-hand delivery does NOT need address
-    return;
-  }
-}, []);
+    if (deliveryType === "shipping") {
+      const address = JSON.parse(localStorage.getItem("shippingAddress"));
 
+      if (!address || address.locationResolved !== true) {
+        navigate("/checkout/address");
+      }
+    }
+
+    if (deliveryType === "inhand") {
+      // ✅ In-hand delivery does NOT need address
+      return;
+    }
+  }, []);
 
   useEffect(() => {
-    if (!user || !deliveryType || !address) {
+    if (!user || !deliveryType) {
+      navigate("/cart");
+      return;
+    }
+
+    if (deliveryType === "shipping" && !address) {
       navigate("/cart");
       return;
     }
@@ -119,7 +121,7 @@ function CheckoutSummary() {
       setCreatedOrder(order);
 
       // 1️⃣ Create order from backend
-      const res = await fetch("http://localhost:5000/api/create-order", {
+      const res = await fetch(`${BACKEND_URL}/api/create-order`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -138,7 +140,7 @@ function CheckoutSummary() {
 
       // 2️⃣ Razorpay options
       const options = {
-        key: "rzp_test_RvQ7AGVDDHfcJA", // 🔴 SAME test key as backend
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // 🔴 SAME test key as backend
         order_id: orderData.orderId,
         amount: orderData.amount, // paise
         currency: "INR",
@@ -147,39 +149,36 @@ function CheckoutSummary() {
 
         handler: async function (response) {
           try {
-            const verifyRes = await fetch(
-              "http://localhost:5000/api/verify-payment",
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
+            const verifyRes = await fetch(`${BACKEND_URL}/api/verify-payment`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
 
-                  orderId: order.id,
-                  userId: user.uid,
-                  deliveryType,
+                orderId: order.id,
+                userId: user.uid,
+                deliveryType,
 
-                  customerName:
-                    deliveryType === "inhand"
-                      ? inhandDetails?.name
-                      : address?.name,
+                customerName:
+                  deliveryType === "inhand"
+                    ? inhandDetails?.name
+                    : address?.name,
 
-                  customerPhone:
-                    deliveryType === "inhand"
-                      ? inhandDetails?.phone
-                      : address?.phone,
+                customerPhone:
+                  deliveryType === "inhand"
+                    ? inhandDetails?.phone
+                    : address?.phone,
 
-                  cartItems: cartItems.map((i) => ({
-                    product_id: i.product.id,
-                    name: i.product.name, // ✅ ADD THIS LINE
-                    quantity: i.quantity,
-                    price: i.product.price,
-                  })),
-                }),
-              }
-            );
+                cartItems: cartItems.map((i) => ({
+                  product_id: i.product.id,
+                  name: i.product.name, // ✅ ADD THIS LINE
+                  quantity: i.quantity,
+                  price: i.product.price,
+                })),
+              }),
+            });
 
             const verifyData = await verifyRes.json();
 

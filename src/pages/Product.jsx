@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { ChevronDown } from "lucide-react";
 
 function Product() {
   const { id } = useParams();
-
+  const [openDesc, setOpenDesc] = useState(false);
   const [product, setProduct] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -286,8 +287,33 @@ function Product() {
 
         {/* DESCRIPTION */}
         <section style={section}>
-          <h2>Product Description</h2>
-          <p style={sectionText}>{product.description}</p>
+          <div
+            onClick={() => setOpenDesc(!openDesc)}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              cursor: "pointer",
+              borderBottom: "1px solid #ddd",
+              paddingBottom: "12px",
+            }}
+          >
+            <h3 style={{ margin: 0 }}>Product Description</h3>
+
+            <ChevronDown
+              size={22}
+              style={{
+                transform: openDesc ? "rotate(180deg)" : "rotate(0deg)",
+                transition: "transform 0.3s ease",
+              }}
+            />
+          </div>
+
+          {openDesc && (
+            <div style={{ marginTop: "16px" }}>
+              <p style={{ whiteSpace: "pre-line" }}>{product.long_description}</p>
+            </div>
+          )}
         </section>
 
         {/* REVIEWS */}
