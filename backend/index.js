@@ -8,12 +8,18 @@ import adminOrdersRoutes from "./routes/adminOrders.js";
 import { sendOrderEmail } from "./utils/sendOrderEmail.js";
 import trackingRoutes from "./routes/tracking.js";
 
+
 dotenv.config();
 console.log("RZP KEY:", process.env.RAZORPAY_KEY_ID);
 
 const app = express();
-
-app.use(cors());
+app.use(cors({
+  origin: [
+    "https://pebbleco.shop",
+    "https://www.pebbleco.shop"
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 app.get("/", (req, res) => {
@@ -43,5 +49,5 @@ app.use("/api", billingInvoiceRoutes);
 app.use("/api/admin", adminOrdersRoutes);
 app.use("/api", trackingRoutes);
 app.listen(PORT, () => {
-  console.log(`Backend running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
