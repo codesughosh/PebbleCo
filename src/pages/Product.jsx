@@ -53,48 +53,71 @@ function Product() {
   };
 
   const submitReview = async () => {
-    if (!user) {
-      alert("Please log in to submit a review");
-      return;
+  if (!user) {
+    alert("Please log in to submit a review");
+    return;
+  }
+
+  if (rating === 0) {
+    alert("Please select a star rating");
+    return;
+  }
+
+  const token = await user.getIdToken(); // 🔑 FIREBASE TOKEN
+
+  const res = await fetch(
+    `${import.meta.env.VITE_BACKEND_URL}/api/reviews`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, // 🔑 REQUIRED
+      },
+      body: JSON.stringify({
+        product_id: product.id,
+        rating,
+        comment: reviewText,
+      }),
     }
+  );
 
-    if (rating === 0) {
-      alert("Please select a star rating");
-      return;
-    }
+  if (!res.ok) {
+    alert("Failed to submit review");
+    return;
+  }
 
-    const username = user.displayName || user.email;
-    const userEmail = user.email;
+  setRating(0);
+  setReviewText("");
+  fetchReviews();
+};
 
-    const { error } = await supabase.from("reviews").insert({
-      product_id: product.id,
-      rating,
-      comment: reviewText,
-      username,
-      user_email: userEmail,
-    });
-
-    if (!error) {
-      setRating(0);
-      setReviewText("");
-      fetchReviews(); // refresh reviews
-    }
-  };
 
   const deleteReview = async (reviewId) => {
-    const confirmDelete = window.confirm("Delete this review?");
-    if (!confirmDelete) return;
+  const confirmDelete = window.confirm("Delete this review?");
+  if (!confirmDelete) return;
 
-    const { error } = await supabase
-      .from("reviews")
-      .delete()
-      .eq("id", reviewId);
+  const token = await user.getIdToken(); // 🔑 FIREBASE TOKEN
 
-    if (!error) {
-      fetchReviews(); // refresh list
+  const res = await fetch(
+    `${import.meta.env.VITE_BACKEND_URL}/api/reviews/${reviewId}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`, // 🔑 REQUIRED
+      },
     }
-  };
+  );
 
+  if (!res.ok) {
+    alert("Failed to delete review");
+    return;
+  }
+
+  fetchReviews();
+};
+
+
+  
   const fetchProduct = async () => {
     const { data, error } = await supabase
       .from("products")

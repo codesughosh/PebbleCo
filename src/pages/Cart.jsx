@@ -89,28 +89,37 @@ function Cart() {
   );
 
   const handleCheckout = () => {
-    if (!window.Razorpay) {
-      alert("Razorpay not loaded");
-      return;
-    }
+  if (!window.Razorpay) {
+    alert("Razorpay not loaded");
+    return;
+  }
 
-    const options = {
-      key: "rzp_test_1234567890",
-      amount: subtotal * 100,
-      currency: "INR",
-      name: "PebbleCo",
-      description: "Order Payment",
-      handler: function () {
-        alert("Payment successful (test)");
-      },
-      theme: {
-        color: "#fdd2dc",
-      },
-    };
+  const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
-    const rzp = new window.Razorpay(options);
-    rzp.open();
+  if (!razorpayKey) {
+    alert("Razorpay key missing");
+    return;
+  }
+
+  const options = {
+    key: razorpayKey,
+    amount: subtotal * 100,
+    currency: "INR",
+    name: "PebbleCo",
+    description: "Order Payment",
+    handler: function (response) {
+      console.log("Payment success:", response);
+      alert("Payment successful");
+    },
+    theme: {
+      color: "#fdd2dc",
+    },
   };
+
+  const rzp = new window.Razorpay(options);
+  rzp.open();
+};
+
 
   // 🔹 UI STATES
   if (loading) {

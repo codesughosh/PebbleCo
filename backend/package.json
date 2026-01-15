@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@supabase/supabase-js": "^2.39.7",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "dotenv": "^17.2.3",
@@ -18,7 +19,6 @@
     "firebase-admin": "^13.6.0",
     "pdfkit": "^0.17.2",
     "razorpay": "^2.9.6",
-    "sib-api-v3-sdk": "^8.5.0",
-    "@supabase/supabase-js": "^2.39.7"
+    "sib-api-v3-sdk": "^8.5.0"
   }
 }

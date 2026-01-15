@@ -7,6 +7,13 @@ import billingInvoiceRoutes from "./routes/billingInvoice.js";
 import adminOrdersRoutes from "./routes/adminOrders.js";
 import { sendOrderEmail } from "./utils/sendOrderEmail.js";
 import trackingRoutes from "./routes/tracking.js";
+import { createClient } from "@supabase/supabase-js";
+import { verifyFirebaseUser } from "./middleware/auth.js";
+
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 
 dotenv.config();
@@ -50,4 +57,40 @@ app.use("/api/admin", adminOrdersRoutes);
 app.use("/api", trackingRoutes);
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+app.post("/api/reviews", verifyFirebaseUser, async (req, res) => {
+  const { product_id, rating, comment } = req.body;
+  const user = req.user;
+
+  const { error } = await supabaseAdmin.from("reviews").insert({
+    product_id,
+    rating,
+    comment,
+    username: user.name || user.email,
+    user_email: user.email,
+  });
+
+  if (error) {
+    return res.status(500).json({ error: "Failed to submit review" });
+  }
+
+  res.json({ success: true });
+});
+
+app.delete("/api/reviews/:id", verifyFirebaseUser, async (req, res) => {
+  const reviewId = req.params.id;
+  const user = req.user;
+
+  const { error } = await supabaseAdmin
+    .from("reviews")
+    .delete()
+    .eq("id", reviewId)
+    .eq("user_email", user.email);
+
+  if (error) {
+    return res.status(403).json({ error: "Not allowed" });
+  }
+
+  res.json({ success: true });
 });
