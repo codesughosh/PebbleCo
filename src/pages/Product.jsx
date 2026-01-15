@@ -395,10 +395,10 @@ function Product() {
                 width: "100%",
                 display: "flex",
                 justifyContent: "center",
-                marginTop: "12px",
+                marginTop: "18px",
               }}
             >
-              <p>No reviews yet. Be the first 💖</p>
+              <p>--- No reviews yet. Be the first! ---</p>
             </div>
           )}
 
