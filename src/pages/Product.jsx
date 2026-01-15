@@ -221,7 +221,6 @@ function Product() {
               </div>
             )}
 
-
             {/* THUMBNAILS (DESKTOP) */}
             {!isMobile && (
               <div style={thumbRow}>
@@ -390,7 +389,17 @@ function Product() {
               Submit Review
             </button>
           </div>
-          {reviews.length === 0 && <p>No reviews yet. Be the first 💖</p>}
+          <p
+            style={{
+              background: "#fff",
+              padding: "8px 16px",
+              borderRadius: "999px",
+              color: "#7a3b4a",
+              fontSize: "14px",
+            }}
+          >
+            No reviews yet. Be the first 💖
+          </p>
 
           {reviews.map((r) => (
             <div
@@ -443,8 +452,8 @@ function Product() {
           </button>
         </div>
       )}
-      
-            <CartToast show={showToast} onClose={() => setShowToast(false)} />
+
+      <CartToast show={showToast} onClose={() => setShowToast(false)} />
     </>
   );
 }
