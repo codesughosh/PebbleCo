@@ -24,7 +24,7 @@ router.patch("/orders/:id", verifyAdmin, async (req, res) => {
   // 1️⃣ Get existing order (needed for email)
   const { data: order, error: fetchError } = await supabase
     .from("orders")
-    .select("customer_email, customer_name, delivery_type")
+    .select("customer_email, customer_name, delivery_type, total")
     .eq("id", req.params.id)
     .single();
 
@@ -53,7 +53,9 @@ router.patch("/orders/:id", verifyAdmin, async (req, res) => {
       to: order.customer_email,
       customerName: order.customer_name,
       orderId: req.params.id,
+      total: order.total,
       deliveryType: order.delivery_type,
+      type: "delivered",
     });
   }
 

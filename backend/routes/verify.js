@@ -59,6 +59,8 @@ router.post("/verify-payment", async (req, res) => {
   }
 
   try {
+
+    
     // ✅ 1. Confirm order exists
     const { data: order, error: orderError } = await supabase
       .from("orders")
@@ -88,29 +90,40 @@ if (insertError) {
   throw insertError;
 }
 
+
+const computedTotal = cartItems.reduce(
+  (sum, item) =>
+    sum + item.quantity * (item.price_at_purchase ?? item.price),
+  0
+);
+
 console.log("✅ Order items inserted:", orderItems);
 
-    // ✅ 3. Update order
     const { error: updateError } = await supabase
-      .from("orders")
-      .update({
-        status: "paid",
-        payment_status: "success",
-        payment_id: razorpay_payment_id,
+  .from("orders")
+  .update({
+    status: "paid",
+    payment_status: "success",
+    payment_id: razorpay_payment_id,
+    total: computedTotal,
+    customer_name: customerName,
+    customer_phone: customerPhone,
+  })
+  .eq("id", orderId);
 
-        // ✅ SAVE CUSTOMER DETAILS AFTER VERIFICATION
-        customer_name: customerName,
-        customer_phone: customerPhone,
-      })
-      .eq("id", orderId);
+  if (updateError) {
+  throw updateError;
+}
+
+
     if (order.customer_email) {
       console.log("📧 Sending order email to:", order.customer_email);
 
       await sendOrderEmail({
         to: order.customer_email,
-        customerName: order.customer_name || "Customer",
+        customerName: customerName || "Customer",
         orderId: order.id,
-        total: order.total,
+        total: computedTotal,
       });
     } else {
       console.error("❌ No customer email found, email not sent");
@@ -124,9 +137,6 @@ console.log("✅ Order items inserted:", orderItems);
       .eq("status", "pending")
       .neq("id", orderId);
 
-    if (updateError) {
-      throw updateError;
-    }
 
     // ✅ 4. Clear cart
     const { error: cartError } = await supabase
@@ -151,11 +161,9 @@ if (order.delivery_type === "shipping" && order.shipping_address) {
       throw new Error("No order items found for Shiprocket");
     }
 
-    const finalCustomerName =
-  order.customer_name || req.body.customerName || "Customer";
+    const finalCustomerName = customerName || "Customer";
 
-const finalCustomerPhone =
-  order.customer_phone || req.body.customerPhone || "9999999999";
+const finalCustomerPhone = customerPhone || "9999999999";
 
 
     // 2️⃣ Create Shiprocket order
