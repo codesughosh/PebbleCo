@@ -3,7 +3,7 @@
   grid-template-columns: repeat(auto-fit, 260px);
   gap: 24px;
   padding: 24px;
-  justify-content: start;
+  justify-content: center;
 }
 
 .product-card {
