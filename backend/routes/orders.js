@@ -4,7 +4,52 @@ import verifyUser from "../middleware/verifyUser.js";
 
 const router = express.Router();
 
-// Get single order (Order Success page)
+/**
+ * ===============================
+ * GET /api/orders
+ * → My Orders page
+ * ===============================
+ */
+router.get("/", verifyUser, async (req, res) => {
+  const userId = req.user.uid;
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select(`
+      id,
+      total,
+      status,
+      payment_status,
+      delivery_type,
+      created_at,
+      order_items (
+        quantity,
+        price_at_purchase,
+        products ( name )
+      )
+    `)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+
+  res.json({
+    success: true,
+    orders: data,
+  });
+});
+
+/**
+ * ==================================
+ * GET /api/orders/:orderId
+ * → Order Success page
+ * ==================================
+ */
 router.get("/:orderId", verifyUser, async (req, res) => {
   const { orderId } = req.params;
   const userId = req.user.uid;
@@ -35,6 +80,5 @@ router.get("/:orderId", verifyUser, async (req, res) => {
     order: data,
   });
 });
-
 
 export default router;
