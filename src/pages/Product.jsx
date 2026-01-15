@@ -135,33 +135,36 @@ function Product() {
   };
 
   const addToCart = async () => {
-    if (!user) {
-      alert("Please login to add items to cart");
-      return;
-    }
+  if (!user) {
+    alert("Please login to add items to cart");
+    return;
+  }
 
-    const { data: existingItem } = await supabase
-      .from("cart")
-      .select("id, quantity")
-      .eq("user_id", user.uid)
-      .eq("product_id", product.id)
-      .single();
+  const token = await user.getIdToken();
 
-    if (existingItem) {
-      await supabase
-        .from("cart")
-        .update({ quantity: existingItem.quantity + quantity })
-        .eq("id", existingItem.id);
-    } else {
-      await supabase.from("cart").insert({
-        user_id: user.uid,
+  const res = await fetch(
+    `${import.meta.env.VITE_BACKEND_URL}/api/cart`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
         product_id: product.id,
-        quantity: quantity,
-      });
+        quantity,
+      }),
     }
+  );
 
-    alert("Added to cart");
-  };
+  if (!res.ok) {
+    alert("Failed to add to cart");
+    return;
+  }
+
+  alert("Added to cart");
+};
+
 
   /* ----------- SLIDER HANDLERS (MOBILE) ----------- */
 

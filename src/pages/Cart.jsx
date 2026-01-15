@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import "../styles/cart.css";
 import { Link } from "react-router-dom";
 import { auth } from "../firebase";
-import { supabase } from "../supabaseClient";
 import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 
@@ -33,55 +32,54 @@ function Cart() {
   }, [user]);
 
   const fetchCart = async () => {
-    const { data, error } = await supabase
-      .from("cart")
-      .select(
-        `
-        id,
-        quantity,
-        product:products (
-          id,
-          name,
-          price,
-          images
-        )
-      `
-      )
-      .eq("user_id", user.uid);
+    try {
+      const token = await user.getIdToken();
 
-    if (error) {
-      console.error("Fetch cart error:", error);
-    } else {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/cart`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
       setCartItems(data);
+    } catch (err) {
+      console.error("Fetch cart error:", err);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
-  const increaseQty = async (cartId, currentQty) => {
-    await supabase
-      .from("cart")
-      .update({ quantity: currentQty + 1 })
-      .eq("id", cartId);
+  const updateQty = async (cartId, quantity) => {
+    const token = await user.getIdToken();
 
-    fetchCart();
-  };
-
-  const decreaseQty = async (cartId, currentQty) => {
-    if (currentQty <= 1) return;
-
-    await supabase
-      .from("cart")
-      .update({ quantity: currentQty - 1 })
-      .eq("id", cartId);
+    await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/cart/${cartId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ quantity }),
+    });
 
     fetchCart();
   };
 
   const removeItem = async (cartId) => {
-    await supabase.from("cart").delete().eq("id", cartId);
-    fetchCart();
-  };
+  const token = await user.getIdToken();
+
+  await fetch(
+    `${import.meta.env.VITE_BACKEND_URL}/api/cart/${cartId}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  fetchCart();
+};
 
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
@@ -89,37 +87,36 @@ function Cart() {
   );
 
   const handleCheckout = () => {
-  if (!window.Razorpay) {
-    alert("Razorpay not loaded");
-    return;
-  }
+    if (!window.Razorpay) {
+      alert("Razorpay not loaded");
+      return;
+    }
 
-  const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+    const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
-  if (!razorpayKey) {
-    alert("Razorpay key missing");
-    return;
-  }
+    if (!razorpayKey) {
+      alert("Razorpay key missing");
+      return;
+    }
 
-  const options = {
-    key: razorpayKey,
-    amount: subtotal * 100,
-    currency: "INR",
-    name: "PebbleCo",
-    description: "Order Payment",
-    handler: function (response) {
-      console.log("Payment success:", response);
-      alert("Payment successful");
-    },
-    theme: {
-      color: "#fdd2dc",
-    },
+    const options = {
+      key: razorpayKey,
+      amount: subtotal * 100,
+      currency: "INR",
+      name: "PebbleCo",
+      description: "Order Payment",
+      handler: function (response) {
+        console.log("Payment success:", response);
+        alert("Payment successful");
+      },
+      theme: {
+        color: "#fdd2dc",
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
   };
-
-  const rzp = new window.Razorpay(options);
-  rzp.open();
-};
-
 
   // 🔹 UI STATES
   if (loading) {
@@ -160,11 +157,16 @@ function Cart() {
                 </div>
 
                 <div className="cart-item-qty">
-                  <button onClick={() => decreaseQty(item.id, item.quantity)}>
+                  <button
+                    onClick={() => {
+                      if (item.quantity > 1)
+                        updateQty(item.id, item.quantity - 1);
+                    }}
+                  >
                     -
                   </button>
                   <span>{item.quantity}</span>
-                  <button onClick={() => increaseQty(item.id, item.quantity)}>
+                  <button onClick={() => updateQty(item.id, item.quantity + 1)}>
                     +
                   </button>
                 </div>
