@@ -10,6 +10,7 @@ import trackingRoutes from "./routes/tracking.js";
 import { createClient } from "@supabase/supabase-js";
 import { verifyFirebaseUser } from "./middleware/auth.js";
 import cartRoutes from "./routes/cart.js";
+import userOrdersRoutes from "./routes/orders.js";
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -52,6 +53,7 @@ app.get("/test-order-email", async (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 app.use("/api/cart", cartRoutes);
+app.use("/api/orders", userOrdersRoutes);
 app.use("/api", paymentRoutes);
 app.use("/api", verifyRoutes);
 app.use("/api", billingInvoiceRoutes);
