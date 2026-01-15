@@ -11,8 +11,6 @@ function CheckoutSummary() {
   const navigate = useNavigate();
   const user = auth.currentUser;
 
-  const [createdOrder, setCreatedOrder] = useState(null);
-
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -91,74 +89,58 @@ function CheckoutSummary() {
   const shippingFee = deliveryType === "shipping" ? 60 : 0;
   const total = subtotal + shippingFee;
 
+  if (!user) {
+  alert("Please log in to continue");
+  return;
+}
+
   const handlePayment = async () => {
-    if (isPaying) return; // 🛑 block double clicks
+  if (isPaying) return;
 
-    try {
-      setIsPaying(true); // 🔒 lock button
+  try {
+    setIsPaying(true);
 
-      // 🔹 STEP A: create order in Supabase first
-      const shippingAddress =
-        deliveryType === "shipping"
-          ? JSON.parse(localStorage.getItem("shippingAddress"))
-          : null;
+    // 1️⃣ Create order via backend (NOT Supabase)
+    const res = await fetch(`${BACKEND_URL}/api/create-order`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        amount: total,
+        userId: user.uid,
+        customerEmail: user.email,
+        deliveryType,
+        shippingAddress:
+          deliveryType === "shipping" ? address : null,
+        inhandDetails:
+          deliveryType === "inhand" ? inhandDetails : null,
+      }),
+    });
 
-      const { data: order, error } = await supabase
-        .from("orders")
-        .insert([
-          {
-            user_id: user.uid,
-            total: total,
-            customer_email: user.email,
-            delivery_type: deliveryType,
-            shipping_address: shippingAddress, // ✅ THIS WAS MISSING
-            payment_status: "pending",
-            status: "pending",
-          },
-        ])
-        .select()
-        .single();
+    if (!res.ok) {
+      throw new Error("Could not create order");
+    }
 
-      if (error) {
-        console.error("Order creation failed:", error);
-        alert("Could not create order");
-        setIsPaying(false);
-        return;
-      }
+    const { orderId, dbOrderId, amount } = await res.json();
 
-      setCreatedOrder(order);
+    if (!orderId || !dbOrderId) {
+      throw new Error("Invalid order response");
+    }
 
-      // 1️⃣ Create order from backend
-      const res = await fetch(`${BACKEND_URL}/api/create-order`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ amount: total }),
-      });
+    // 2️⃣ Open Razorpay
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+      order_id: orderId,
+      amount: amount,
+      currency: "INR",
+      name: "PebbleCo",
 
-      const orderData = await res.json();
-
-      console.log("Order from backend:", orderData);
-
-      if (!orderData.orderId) {
-        alert("Order creation failed");
-        setIsPaying(false);
-        return;
-      }
-
-      // 2️⃣ Razorpay options
-      const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // 🔴 SAME test key as backend
-        order_id: orderData.orderId,
-        amount: orderData.amount, // paise
-        currency: "INR",
-        name: "PebbleCo",
-        description: "Order Payment",
-
-        handler: async function (response) {
-          try {
-            const verifyRes = await fetch(`${BACKEND_URL}/api/verify-payment`, {
+      handler: async function (response) {
+        try {
+          const verifyRes = await fetch(
+            `${BACKEND_URL}/api/verify-payment`,
+            {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -166,7 +148,7 @@ function CheckoutSummary() {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
 
-                orderId: order.id,
+                orderId: dbOrderId,
                 userId: user.uid,
                 deliveryType,
 
@@ -180,57 +162,51 @@ function CheckoutSummary() {
                     ? inhandDetails?.phone
                     : address?.phone,
 
-                cartItems: cartItems.map((i) => ({
-                  product_id: i.product.id,
-                  name: i.product.name, // ✅ ADD THIS LINE
-                  quantity: i.quantity,
-                  price: i.product.price,
+                cartItems: cartItems.map((item) => ({
+                  product_id: item.product.id,
+                  name: item.product.name,
+                  quantity: item.quantity,
+                  price: item.product.price,
                 })),
               }),
-            });
-
-            const verifyData = await verifyRes.json();
-
-            if (!verifyData.success) {
-              alert("Payment verification failed");
-              setIsPaying(false);
-              return;
             }
+          );
 
-            navigate(`/payment/success/${order.id}`);
-          } catch (err) {
-            console.error(err);
-            alert("Payment verification error");
+          const verifyData = await verifyRes.json();
+
+          if (!verifyData.success) {
+            throw new Error("Payment verification failed");
           }
+
+          navigate(`/payment/success/${dbOrderId}`);
+        } catch (err) {
+          console.error(err);
+          alert("Payment verification failed");
+          setIsPaying(false);
+        }
+      },
+
+      modal: {
+        ondismiss: function () {
+          setIsPaying(false);
         },
+      },
+    };
 
-        modal: {
-          ondismiss: function () {
-            console.log("Checkout closed");
-            setIsPaying(false); // 🔓 unlock
-          },
-        },
+    const rzp = new window.Razorpay(options);
 
-        theme: {
-          color: "#fdd2dc",
-        },
-      };
-
-      // 3️⃣ Open Razorpay
-      const rzp = new window.Razorpay(options);
-
-      // 🔴 Handle payment failure
-      rzp.on("payment.failed", function () {
-        navigate("/payment/failed");
-      });
-
-      rzp.open();
-    } catch (err) {
-      console.error("Payment error:", err);
-      alert("Payment failed");
+    rzp.on("payment.failed", function () {
+      navigate("/payment/failed");
       setIsPaying(false);
-    }
-  };
+    });
+
+    rzp.open();
+  } catch (err) {
+    console.error(err);
+    alert("Payment failed");
+    setIsPaying(false);
+  }
+};
 
   if (loading) {
     return <p style={{ padding: "40px" }}>Loading summary...</p>;
@@ -267,24 +243,30 @@ function CheckoutSummary() {
       </div>
 
       <button
-  className="checkout-continue"
-  onClick={handlePayment}
-  disabled={isPaying}
-  style={{
-    opacity: isPaying ? 0.6 : 1,
-    cursor: isPaying ? "not-allowed" : "pointer",
-  }}
->
-  {isPaying ? (
-    <span style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
-      <Loader2 size={16} className="animate-spin" />
-      Processing Payment
-    </span>
-  ) : (
-    <>Pay ₹{total}</>
-  )}
-</button>
-
+        className="checkout-continue"
+        onClick={handlePayment}
+        disabled={isPaying}
+        style={{
+          opacity: isPaying ? 0.6 : 1,
+          cursor: isPaying ? "not-allowed" : "pointer",
+        }}
+      >
+        {isPaying ? (
+          <span
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              justifyContent: "center",
+            }}
+          >
+            <Loader2 size={16} className="animate-spin" />
+            Processing Payment
+          </span>
+        ) : (
+          <>Pay ₹{total}</>
+        )}
+      </button>
     </div>
   );
 }
