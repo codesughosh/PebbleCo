@@ -76,3 +76,9 @@
   line-height: 1.7;
   white-space: pre-line;
 }
+
+.products-page {
+  min-height: 100vh;
+  padding-bottom: 80px;
+  display: block;
+}

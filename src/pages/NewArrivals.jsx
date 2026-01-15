@@ -16,7 +16,7 @@ function NewArrivals() {
       .from("products")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(12); // optional
+      .limit(6); // optional
 
     if (!error) {
       setProducts(data);
