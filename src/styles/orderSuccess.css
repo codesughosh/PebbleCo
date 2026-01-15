@@ -116,3 +116,30 @@
     font-size: 20px;
   }
 }
+
+.order-loading-container {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.order-loading-icon {
+  width: 48px;
+  height: 48px;
+  color: #6b4eff; /* PebbleCo accent */
+  animation: spin 1s linear infinite;
+}
+
+.order-loading-text {
+  margin-top: 12px;
+  font-size: 15px;
+  color: #666;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

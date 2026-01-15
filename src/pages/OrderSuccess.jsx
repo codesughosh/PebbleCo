@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import "../styles/orderSuccess.css";
+import { Loader2 } from "lucide-react";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 function OrderSuccess() {
@@ -32,7 +33,15 @@ function OrderSuccess() {
     fetchOrder();
   }, [orderId]);
 
-  if (!order) return <p>Loading order…</p>;
+  if (!order) {
+  return (
+    <div className="order-loading-container">
+      <Loader2 className="order-loading-icon" />
+      <p className="order-loading-text">Loading your order…</p>
+    </div>
+  );
+}
+
 
   return (
     <div className="order-success-page">
