@@ -51,6 +51,10 @@ app.get("/test-order-email", async (req, res) => {
   }
 });
 
+app.get("/health", (req, res) => {
+  res.status(200).send("ok");
+});
+
 const PORT = process.env.PORT || 5000;
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", ordersRoutes);
