@@ -27,25 +27,28 @@ function AdminOrders() {
       }
 
       setUser(u);
-      fetchOrders();
+      fetchOrders(u);
     });
 
     return () => unsub();
   }, []);
 
   const fetchOrders = async (u) => {
-    const token = await u.getIdToken();
+  if (!u) return;
 
-    const res = await fetch(`${API_BASE}/api/admin/orders`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+  const token = await u.getIdToken();
 
-    const data = await res.json();
-    setOrders(data || []);
-    setLoading(false);
-  };
+  const res = await fetch(`${API_BASE}/api/admin/orders`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  setOrders(data || []);
+  setLoading(false);
+};
+
 
   const updateOrder = async (orderId, updates) => {
     const token = await user.getIdToken();
@@ -59,7 +62,7 @@ function AdminOrders() {
       body: JSON.stringify(updates),
     });
 
-    fetchOrders();
+    fetchOrders(user);
   };
 
   /* ---------------- UI STATES ---------------- */
