@@ -1,6 +1,7 @@
 import express from "express";
 import { supabase } from "../supabase.js";
-import verifyFirebaseToken from "../middleware/auth.js";
+import { verifyFirebaseUser as verifyFirebaseToken } from "../middleware/auth.js";
+
 
 const router = express.Router();
 
