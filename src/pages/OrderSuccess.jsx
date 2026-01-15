@@ -35,7 +35,7 @@ function OrderSuccess() {
 
   if (!order) {
   return (
-    <div className="order-loading-container">
+    <div className="order-loading-top">
       <Loader2 className="order-loading-icon" />
       <p className="order-loading-text">Loading your order…</p>
     </div>
