@@ -16,7 +16,6 @@ function mapStatus(status) {
   return "packed";
 }
 
-
 const API_BASE = import.meta.env.VITE_BACKEND_URL;
 
 export default function TrackOrder() {
@@ -24,7 +23,7 @@ export default function TrackOrder() {
   const [loading, setLoading] = useState(false);
   const [tracking, setTracking] = useState(null);
   const [error, setError] = useState("");
-console.log("API BASE =", API_BASE);
+  console.log("API BASE =", API_BASE);
 
   const fetchTracking = async (id = orderId) => {
     if (!id) {
@@ -44,7 +43,7 @@ console.log("API BASE =", API_BASE);
         throw new Error(data.message || "Tracking not available yet");
       }
 
-      setTracking(data.tracking);
+      setTracking(data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -88,44 +87,55 @@ console.log("API BASE =", API_BASE);
           <h3>Shipment Status</h3>
 
           <div className="tracking-info">
-            <p>
-              <strong>Status:</strong>{" "}
-              {tracking.tracking_data?.shipment_status || "Unknown"}
-            </p>
-            <p>
-              <strong>Courier:</strong>{" "}
-              {tracking.tracking_data?.courier_name || "—"}
-            </p>
-            <p>
-              <strong>AWB:</strong>{" "}
-              {tracking.tracking_data?.awb_code || "—"}
-            </p>
+            {tracking.type === "inhand" ? (
+              <p>
+                <strong>Status:</strong> {tracking.tracking.status}
+              </p>
+            ) : (
+              <>
+                <p>
+                  <strong>Status:</strong>{" "}
+                  {tracking.tracking?.tracking_data?.shipment_status || "—"}
+                </p>
+                <p>
+                  <strong>Courier:</strong>{" "}
+                  {tracking.tracking?.tracking_data?.courier_name || "—"}
+                </p>
+                <p>
+                  <strong>AWB:</strong>{" "}
+                  {tracking.tracking?.tracking_data?.awb_code || "—"}
+                </p>
+              </>
+            )}
           </div>
 
-          
-
           <OrderTimeline
-  currentStatus={mapStatus(tracking?.tracking_data?.shipment_status)}
-/>
-
-
+            currentStatus={
+              tracking.type === "inhand"
+                ? tracking.tracking.status
+                : mapStatus(tracking.tracking?.tracking_data?.shipment_status)
+            }
+          />
 
           <div className="timeline">
-            {tracking.tracking_data?.shipment_track?.length ? (
-              tracking.tracking_data.shipment_track.map((event, i) => (
-                <div key={i} className="timeline-item">
-                  <span className="dot" />
-                  <div>
-                    <p className="event">{event.status}</p>
-                    <p className="date">{event.date}</p>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="muted">
-                Tracking updates will appear once shipped.
-              </p>
-            )}
+            {tracking.type === "shipping" &&
+              (tracking.tracking?.tracking_data?.shipment_track?.length ? (
+                tracking.tracking.tracking_data.shipment_track.map(
+                  (event, i) => (
+                    <div key={i} className="timeline-item">
+                      <span className="dot" />
+                      <div>
+                        <p className="event">{event.status}</p>
+                        <p className="date">{event.date}</p>
+                      </div>
+                    </div>
+                  )
+                )
+              ) : (
+                <p className="muted">
+                  Tracking updates will appear once shipped.
+                </p>
+              ))}
           </div>
         </div>
       )}

@@ -1,7 +1,10 @@
 import admin from "firebase-admin";
 import fs from "fs";
+import dotenv from "dotenv";
 
-// 🔹 Read service account JSON manually
+dotenv.config();
+
+// 🔹 Read service account JSON
 const serviceAccount = JSON.parse(
   fs.readFileSync("./serviceAccountKey.json", "utf8")
 );
@@ -11,8 +14,13 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-// 🔹 PUT YOUR FIREBASE UID HERE
-const ADMIN_UID = "rts8YoPCLbgSzksVfxKMp1brv3E2";
+// 🔹 Read ADMIN UID from env
+const ADMIN_UID = process.env.ADMIN_UID;
+
+if (!ADMIN_UID) {
+  console.error("❌ ADMIN_UID is missing in .env");
+  process.exit(1);
+}
 
 async function setAdmin() {
   await admin.auth().setCustomUserClaims(ADMIN_UID, {

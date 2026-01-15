@@ -1,11 +1,11 @@
 import express from "express";
 import { supabase } from "../supabase.js";
 import { sendOrderEmail } from "../utils/sendOrderEmail.js";
-
+import { verifyAdmin } from "../middleware/adminAuth.js";
 const router = express.Router();
 
 /* Get all orders */
-router.get("/orders", async (req, res) => {
+router.get("/orders", verifyAdmin, async (req, res) => {
   const { data, error } = await supabase
     .from("orders")
     .select(`
@@ -18,7 +18,7 @@ router.get("/orders", async (req, res) => {
   res.json(data);
 });
 
-router.patch("/orders/:id", async (req, res) => {
+router.patch("/orders/:id", verifyAdmin, async (req, res) => {
   const { status, shipment_status, awb_code, courier_name } = req.body;
 
   // 1️⃣ Get existing order (needed for email)
