@@ -1,6 +1,5 @@
 import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { supabase } from "../supabaseClient";
 import "../styles/orderSuccess.css";
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 function OrderSuccess() {
@@ -8,18 +7,27 @@ function OrderSuccess() {
   const [order, setOrder] = useState(null);
 
   useEffect(() => {
-    const fetchOrder = async () => {
-      const { data } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("id", orderId)
-        .single();
+  const fetchOrder = async () => {
+    try {
+      const res = await fetch(
+        `${BACKEND_URL}/api/orders/${orderId}`
+      );
 
-      setOrder(data);
-    };
+      const data = await res.json();
 
-    fetchOrder();
-  }, [orderId]);
+      if (!data.success) {
+        throw new Error("Order not found");
+      }
+
+      setOrder(data.order);
+    } catch (err) {
+      console.error("Failed to load order:", err);
+    }
+  };
+
+  fetchOrder();
+}, [orderId]);
+
 
   if (!order) return null;
 
