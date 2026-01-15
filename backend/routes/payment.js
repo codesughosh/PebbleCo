@@ -1,6 +1,6 @@
 import express from "express";
 import razorpay from "../razorpay.js";
-import { supabaseAdmin } from "../supabaseAdmin.js";
+import { supabase} from "../supabase.js";
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ router.post("/create-order", async (req, res) => {
     }
 
     // 1️⃣ Create DB order first (Supabase)
-    const { data: dbOrder, error } = await supabaseAdmin
+    const { data: dbOrder, error } = await supabase
       .from("orders")
       .insert([
         {
