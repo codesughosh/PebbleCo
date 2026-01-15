@@ -1,7 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import "../styles/orderSuccess.css";
-import { supabase } from "../supabaseClient";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 function OrderSuccess() {
@@ -11,20 +10,7 @@ function OrderSuccess() {
   useEffect(() => {
     const fetchOrder = async () => {
   try {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session) {
-      console.error("No active session");
-      return;
-    }
-
-    const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}`, {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    });
+    const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}`);
 
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}`);
@@ -46,7 +32,7 @@ function OrderSuccess() {
     fetchOrder();
   }, [orderId]);
 
-  if (!order) return null;
+  if (!order) return <p>Loading order…</p>;
 
   return (
     <div className="order-success-page">

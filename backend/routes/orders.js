@@ -50,9 +50,8 @@ router.get("/", verifyUser, async (req, res) => {
  * → Order Success page
  * ==================================
  */
-router.get("/:orderId", verifyUser, async (req, res) => {
+router.get("/:orderId", async (req, res) => {
   const { orderId } = req.params;
-  const userId = req.user.uid;
 
   const { data, error } = await supabase
     .from("orders")
@@ -65,7 +64,6 @@ router.get("/:orderId", verifyUser, async (req, res) => {
       )
     `)
     .eq("id", orderId)
-    .eq("user_id", userId)
     .single();
 
   if (error || !data) {
