@@ -1,7 +1,7 @@
 .loader-overlay {
   position: fixed;
   inset: 0;
-  background: #fff7f9;
+  background: #f8d2c8;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -14,8 +14,9 @@
 
 .loader-logo {
   width: 120px;
-  animation: pulse 1.6s ease-in-out infinite;
+  animation: smoothPulse 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
+
 
 .loader-text {
   margin-top: 14px;
@@ -25,17 +26,17 @@
   letter-spacing: 1px;
 }
 
-@keyframes pulse {
+@keyframes smoothPulse {
   0% {
     transform: scale(1);
-    opacity: 0.8;
+    opacity: 0.85;
   }
   50% {
-    transform: scale(1.08);
+    transform: scale(1.05);
     opacity: 1;
   }
   100% {
     transform: scale(1);
-    opacity: 0.8;
+    opacity: 0.85;
   }
 }

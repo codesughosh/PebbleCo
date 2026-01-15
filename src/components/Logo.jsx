@@ -11,7 +11,6 @@ function Loader({ loading }) {
           alt="PebbleCo"
           className="loader-logo"
         />
-        <div className="loader-text">PebbleCo</div>
       </div>
     </div>
   );
