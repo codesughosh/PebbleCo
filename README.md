@@ -75,4 +75,5 @@ This project is proprietary and confidential.
 
 Unauthorized copying, modification, distribution, or use of this software is strictly prohibited.
 
-© PebbleCo. All rights reserved.
+<p align="center">© PebbleCo. All rights reserved.</p>
+
