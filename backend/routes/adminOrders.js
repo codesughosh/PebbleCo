@@ -1,5 +1,6 @@
 import express from "express";
 import { supabase } from "../supabase.js";
+import { sendOrderEmail } from "../utils/sendOrderEmail.js";
 
 const router = express.Router();
 
@@ -17,11 +18,22 @@ router.get("/orders", async (req, res) => {
   res.json(data);
 });
 
-/* Update order status */
 router.patch("/orders/:id", async (req, res) => {
   const { status, shipment_status, awb_code, courier_name } = req.body;
 
-  const { error } = await supabase
+  // 1️⃣ Get existing order (needed for email)
+  const { data: order, error: fetchError } = await supabase
+    .from("orders")
+    .select("customer_email, customer_name, delivery_type")
+    .eq("id", req.params.id)
+    .single();
+
+  if (fetchError || !order) {
+    return res.status(404).json({ error: "Order not found" });
+  }
+
+  // 2️⃣ Update order
+  const { error: updateError } = await supabase
     .from("orders")
     .update({
       status,
@@ -31,8 +43,22 @@ router.patch("/orders/:id", async (req, res) => {
     })
     .eq("id", req.params.id);
 
-  if (error) return res.status(500).json(error);
+  if (updateError) {
+    return res.status(500).json(updateError);
+  }
+
+  // 3️⃣ SEND EMAIL ONLY WHEN DELIVERED
+  if (status === "delivered") {
+    await sendOrderEmail({
+      to: order.customer_email,
+      customerName: order.customer_name,
+      orderId: req.params.id,
+      deliveryType: order.delivery_type,
+    });
+  }
+
   res.json({ success: true });
 });
+
 
 export default router;
