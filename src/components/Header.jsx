@@ -134,7 +134,7 @@ function Header() {
           <Link to="/" onClick={() => setMobileNavOpen(false)}>
             Home
           </Link>
-          <Link to="/new" onClick={() => setMobileNavOpen(false)}>
+          <Link to="/new-arrivals" onClick={() => setMobileNavOpen(false)}>
             New Arrivals
           </Link>
 
