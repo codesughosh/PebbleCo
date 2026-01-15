@@ -45,7 +45,7 @@ router.post("/create-order", async (req, res) => {
     const razorpayOrder = await razorpay.orders.create({
       amount: amount * 100, // INR → paise
       currency: "INR",
-      receipt: `pebbleco_${dbOrder.id}`,
+      receipt: dbOrder.id.slice(0, 40),
     });
 
     // 3️⃣ Respond with BOTH IDs
