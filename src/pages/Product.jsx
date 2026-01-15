@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { ChevronDown } from "lucide-react";
+import CartToast from "../components/CartToast";
 
 function Product() {
   const { id } = useParams();
@@ -18,6 +19,7 @@ function Product() {
   const [reviewText, setReviewText] = useState("");
   const [reviews, setReviews] = useState([]);
   const [user, setUser] = useState(null);
+  const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
     const auth = getAuth();
@@ -53,21 +55,19 @@ function Product() {
   };
 
   const submitReview = async () => {
-  if (!user) {
-    alert("Please log in to submit a review");
-    return;
-  }
+    if (!user) {
+      alert("Please log in to submit a review");
+      return;
+    }
 
-  if (rating === 0) {
-    alert("Please select a star rating");
-    return;
-  }
+    if (rating === 0) {
+      alert("Please select a star rating");
+      return;
+    }
 
-  const token = await user.getIdToken(); // 🔑 FIREBASE TOKEN
+    const token = await user.getIdToken(); // 🔑 FIREBASE TOKEN
 
-  const res = await fetch(
-    `${import.meta.env.VITE_BACKEND_URL}/api/reviews`,
-    {
+    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reviews`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -78,46 +78,42 @@ function Product() {
         rating,
         comment: reviewText,
       }),
+    });
+
+    if (!res.ok) {
+      alert("Failed to submit review");
+      return;
     }
-  );
 
-  if (!res.ok) {
-    alert("Failed to submit review");
-    return;
-  }
-
-  setRating(0);
-  setReviewText("");
-  fetchReviews();
-};
-
+    setRating(0);
+    setReviewText("");
+    fetchReviews();
+  };
 
   const deleteReview = async (reviewId) => {
-  const confirmDelete = window.confirm("Delete this review?");
-  if (!confirmDelete) return;
+    const confirmDelete = window.confirm("Delete this review?");
+    if (!confirmDelete) return;
 
-  const token = await user.getIdToken(); // 🔑 FIREBASE TOKEN
+    const token = await user.getIdToken(); // 🔑 FIREBASE TOKEN
 
-  const res = await fetch(
-    `${import.meta.env.VITE_BACKEND_URL}/api/reviews/${reviewId}`,
-    {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`, // 🔑 REQUIRED
-      },
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/reviews/${reviewId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`, // 🔑 REQUIRED
+        },
+      }
+    );
+
+    if (!res.ok) {
+      alert("Failed to delete review");
+      return;
     }
-  );
 
-  if (!res.ok) {
-    alert("Failed to delete review");
-    return;
-  }
+    fetchReviews();
+  };
 
-  fetchReviews();
-};
-
-
-  
   const fetchProduct = async () => {
     const { data, error } = await supabase
       .from("products")
@@ -135,16 +131,14 @@ function Product() {
   };
 
   const addToCart = async () => {
-  if (!user) {
-    alert("Please login to add items to cart");
-    return;
-  }
+    if (!user) {
+      alert("Please login to add items to cart");
+      return;
+    }
 
-  const token = await user.getIdToken();
+    const token = await user.getIdToken();
 
-  const res = await fetch(
-    `${import.meta.env.VITE_BACKEND_URL}/api/cart`,
-    {
+    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/cart`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -154,17 +148,15 @@ function Product() {
         product_id: product.id,
         quantity,
       }),
+    });
+
+    if (!res.ok) {
+      alert("Failed to add to cart");
+      return;
     }
-  );
 
-  if (!res.ok) {
-    alert("Failed to add to cart");
-    return;
-  }
-
-  alert("Added to cart");
-};
-
+    setShowToast(true);
+  };
 
   /* ----------- SLIDER HANDLERS (MOBILE) ----------- */
 
@@ -228,6 +220,7 @@ function Product() {
                 ))}
               </div>
             )}
+
 
             {/* THUMBNAILS (DESKTOP) */}
             {!isMobile && (
@@ -336,11 +329,9 @@ function Product() {
           </div>
 
           {/* 👇 ALWAYS RENDERED */}
-  <div className={`desc-wrapper ${openDesc ? "open" : ""}`}>
-    <p className="desc-text">{product.long_description}</p>
-  </div>
-
-          
+          <div className={`desc-wrapper ${openDesc ? "open" : ""}`}>
+            <p className="desc-text">{product.long_description}</p>
+          </div>
         </section>
 
         {/* REVIEWS */}
@@ -452,6 +443,8 @@ function Product() {
           </button>
         </div>
       )}
+      
+            <CartToast show={showToast} onClose={() => setShowToast(false)} />
     </>
   );
 }

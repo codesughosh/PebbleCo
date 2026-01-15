@@ -3,10 +3,13 @@ import { supabase } from "../supabaseClient";
 import ProductCard from "./ProductCard";
 import { auth } from "../firebase";
 import { addToCart } from "../services/cart";
+import CartToast from "../components/CartToast";
 
 function TopSellers() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showToast, setShowToast] = useState(false);
+
   const handleAddToCart = async (product) => {
     const user = auth.currentUser;
 
@@ -16,7 +19,7 @@ function TopSellers() {
     }
 
     await addToCart(user.uid, product.id);
-    alert("Added to cart");
+    setShowToast(true);
   };
 
   useEffect(() => {
@@ -66,12 +69,19 @@ function TopSellers() {
   if (loading || products.length === 0) return null;
 
   return (
+    <>
     <div className="product-grid">
       {products.map((product) => (
-        <ProductCard key={product.id} product={product}
-        onAddToCart={handleAddToCart} />
+        <ProductCard
+          key={product.id}
+          product={product}
+          onAddToCart={handleAddToCart}
+        />
       ))}
     </div>
+    
+    <CartToast show={showToast} onClose={() => setShowToast(false)} />
+      </>
   );
 }
 
