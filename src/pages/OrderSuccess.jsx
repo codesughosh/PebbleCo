@@ -1,33 +1,50 @@
 import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import "../styles/orderSuccess.css";
+import { supabase } from "../supabaseClient";
+
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 function OrderSuccess() {
   const { orderId } = useParams();
   const [order, setOrder] = useState(null);
 
   useEffect(() => {
-  const fetchOrder = async () => {
-    try {
-      const res = await fetch(
-        `${BACKEND_URL}/api/orders/${orderId}`
-      );
+    const fetchOrder = async () => {
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-      const data = await res.json();
-
-      if (!data.success) {
-        throw new Error("Order not found");
-      }
-
-      setOrder(data.order);
-    } catch (err) {
-      console.error("Failed to load order:", err);
+    if (!session) {
+      console.error("No active session");
+      return;
     }
-  };
 
-  fetchOrder();
-}, [orderId]);
+    const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}`, {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
 
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+
+    if (!data.success) {
+      throw new Error(data.message);
+    }
+
+    setOrder(data.order);
+  } catch (err) {
+    console.error("Failed to load order:", err);
+  }
+};
+
+
+    fetchOrder();
+  }, [orderId]);
 
   if (!order) return null;
 

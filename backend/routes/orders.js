@@ -4,8 +4,9 @@ import verifyUser from "../middleware/verifyUser.js";
 
 const router = express.Router();
 
-// Get logged-in user's orders
-router.get("/", verifyUser, async (req, res) => {
+// Get single order (Order Success page)
+router.get("/:orderId", verifyUser, async (req, res) => {
+  const { orderId } = req.params;
   const userId = req.user.uid;
 
   const { data, error } = await supabase
@@ -18,14 +19,22 @@ router.get("/", verifyUser, async (req, res) => {
         products ( name )
       )
     `)
+    .eq("id", orderId)
     .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+    .single();
 
-  if (error) {
-    return res.status(500).json({ error: error.message });
+  if (error || !data) {
+    return res.status(404).json({
+      success: false,
+      message: "Order not found",
+    });
   }
 
-  res.json({ orders: data });
+  res.json({
+    success: true,
+    order: data,
+  });
 });
+
 
 export default router;
