@@ -1,10 +1,8 @@
 import "../styles/logo-loader.css";
 
-function Loader({ loading }) {
-  if (!loading) return null;
-
+function Loader({ loading, fadeOut }) {
   return (
-    <div className="loader-overlay">
+    <div className={`loader-overlay ${fadeOut ? "fade-out" : ""}`}>
       <div className="loader-content">
         <img
           src="/logo.png"

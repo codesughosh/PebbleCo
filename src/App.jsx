@@ -39,6 +39,7 @@ import AdminOrders from "./pages/AdminOrders";
 import ScrollToTop from "./components/ScrollToTop";
 function App() {
   const [loading, setLoading] = useState(true);
+  const [fadeOut, setFadeOut] = useState(false);
 
   const [cart, setCart] = useState(() => {
     const savedCart = localStorage.getItem("pebbleco-cart");
@@ -54,63 +55,67 @@ function App() {
   }, [cart]);
 
   useEffect(() => {
-  const timer = setTimeout(() => {
-    setLoading(false);
-  }, 1200); // minimum brand display time
+    const timer = setTimeout(() => {
+      setFadeOut(true); // start fade
+      setTimeout(() => {
+        setLoading(false); // remove loader after fade
+      }, 600); // must match CSS fade duration
+    }, 1200); // how long loader stays visible
 
-  return () => clearTimeout(timer);
-}, []);
-
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <>
-    <Loader loading={loading} />
-  {!loading && (
-    <>
-      <GlobalBackground />
-      <Header />
-      <ScrollToTop />
+      <Loader loading={loading} fadeOut={fadeOut} />
+      {!loading && (
+        <>
+          <GlobalBackground />
+          <Header />
+          <ScrollToTop />
 
-      <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/cart" element={<Cart cartItems={cart} />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/refund-policy" element={<RefundPolicy />} />
-          <Route path="/shipping-policy" element={<ShippingPolicy />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/checkout/delivery" element={<CheckoutDelivery />} />
-          <Route path="/checkout/address" element={<CheckoutAddress />} />
-          <Route path="/checkout/summary" element={<CheckoutSummary />} />
-          <Route path="/order-success/:orderId" element={<OrderSuccess />} />
-          <Route path="/orders" element={<Orders />} />
-          <Route path="/product/:id" element={<Product />} />
-          <Route path="/category/:slug" element={<Category />} />
-          <Route path="/admin/orders" element={<AdminOrders />} />
-          <Route path="/new-arrivals" element={<NewArrivals />} />
-          <Route path="/track" element={<TrackOrder />} />
-          <Route
-            path="/payment/success/:orderId"
-            element={<PaymentProcessing />}
-          />
-          <Route path="/payment/failed" element={<PaymentFailed />} />
-          <Route path="/" element={<Home />} />
-          <Route path="/product/:id" element={<Product />} />
-        </Routes>
-      </main>
+          <main>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/cart" element={<Cart cartItems={cart} />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/refund-policy" element={<RefundPolicy />} />
+              <Route path="/shipping-policy" element={<ShippingPolicy />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/checkout/delivery" element={<CheckoutDelivery />} />
+              <Route path="/checkout/address" element={<CheckoutAddress />} />
+              <Route path="/checkout/summary" element={<CheckoutSummary />} />
+              <Route
+                path="/order-success/:orderId"
+                element={<OrderSuccess />}
+              />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/product/:id" element={<Product />} />
+              <Route path="/category/:slug" element={<Category />} />
+              <Route path="/admin/orders" element={<AdminOrders />} />
+              <Route path="/new-arrivals" element={<NewArrivals />} />
+              <Route path="/track" element={<TrackOrder />} />
+              <Route
+                path="/payment/success/:orderId"
+                element={<PaymentProcessing />}
+              />
+              <Route path="/payment/failed" element={<PaymentFailed />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/product/:id" element={<Product />} />
+            </Routes>
+          </main>
 
-      <Footer />
+          <Footer />
+        </>
+      )}
     </>
-  )}
-  </>
   );
 }
-
 
 export default App;
