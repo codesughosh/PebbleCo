@@ -9,7 +9,6 @@ function Orders() {
   const [loading, setLoading] = useState(true);
   const API_BASE = import.meta.env.VITE_BACKEND_URL;
 
-
   // 🔐 Auth listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -24,21 +23,19 @@ function Orders() {
     else setLoading(false);
   }, [user]);
 
+  const fetchOrders = async () => {
+    const token = await user.getIdToken();
 
-const fetchOrders = async () => {
-  const token = await user.getIdToken();
+    const res = await fetch(`${API_BASE}/api/orders`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-  const res = await fetch(`${API_BASE}/api/orders`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const data = await res.json();
-  setOrders(data.orders || []);
-  setLoading(false);
-};
-
+    const data = await res.json();
+    setOrders(data.orders || []);
+    setLoading(false);
+  };
 
   // 🌀 UI STATES
   if (loading) {
@@ -54,7 +51,15 @@ const fetchOrders = async () => {
       <h1>Your Orders</h1>
 
       {orders.length === 0 ? (
-        <p>No orders placed yet.</p>
+        <div
+          style={{
+            width: "100%",
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
+          <p>No orders placed yet.</p>
+        </div>
       ) : (
         <div className="orders-list">
           {orders.map((order) => (
@@ -67,9 +72,7 @@ const fetchOrders = async () => {
 
               <div className="order-row">
                 <span className="label">Date</span>
-                <span>
-                  {new Date(order.created_at).toLocaleDateString()}
-                </span>
+                <span>{new Date(order.created_at).toLocaleDateString()}</span>
               </div>
 
               <div className="order-row">
@@ -79,16 +82,12 @@ const fetchOrders = async () => {
 
               <div className="order-row">
                 <span className="label">Payment</span>
-                <span className="paid">
-                  {order.payment_status || "Paid"}
-                </span>
+                <span className="paid">{order.payment_status || "Paid"}</span>
               </div>
 
               <div className="order-row">
                 <span className="label">Order Status</span>
-                <span className="status">
-                  {order.status || "Processing"}
-                </span>
+                <span className="status">{order.status || "Processing"}</span>
               </div>
 
               <div className="order-row">
@@ -109,7 +108,6 @@ const fetchOrders = async () => {
                     <span>
                       {item.products?.name} × {item.quantity}
                     </span>
-                    
                   </div>
                 ))}
               </div>
