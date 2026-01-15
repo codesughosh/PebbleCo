@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 
+import Loader from "./components/Logo";
+
 import { Analytics } from "@vercel/analytics/react";
 
 import Home from "./pages/Home";
@@ -36,6 +38,8 @@ import Category from "./pages/Category";
 import AdminOrders from "./pages/AdminOrders";
 import ScrollToTop from "./components/ScrollToTop";
 function App() {
+  const [loading, setLoading] = useState(true);
+
   const [cart, setCart] = useState(() => {
     const savedCart = localStorage.getItem("pebbleco-cart");
     return savedCart ? JSON.parse(savedCart) : [];
@@ -49,7 +53,19 @@ function App() {
     localStorage.setItem("pebbleco-cart", JSON.stringify(cart));
   }, [cart]);
 
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    setLoading(false);
+  }, 1200); // minimum brand display time
+
+  return () => clearTimeout(timer);
+}, []);
+
+
   return (
+    <>
+    <Loader loading={loading} />
+  {!loading && (
     <>
       <GlobalBackground />
       <Header />
@@ -91,7 +107,10 @@ function App() {
 
       <Footer />
     </>
+  )}
+  </>
   );
 }
+
 
 export default App;
