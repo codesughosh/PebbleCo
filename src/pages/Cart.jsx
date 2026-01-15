@@ -120,12 +120,37 @@ function Cart() {
 
   // 🔹 UI STATES
   if (loading) {
-    return <p style={{ padding: "40px" }}>Loading cart...</p>;
-  }
+  return (
+    <div
+      style={{
+        minHeight: "60vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        textAlign: "center",
+      }}
+    >
+      <p>Loading products...</p>
+    </div>
+  );
+}
+
 
   if (!user) {
-    return <p style={{ padding: "40px" }}>Please login to view cart.</p>;
-  }
+  return (
+    <div
+      style={{
+        minHeight: "60vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        textAlign: "center",
+      }}
+    >
+      <p>Please login to view cart.</p>
+    </div>
+  );
+}
 
   return (
     <div className="cart-page">
