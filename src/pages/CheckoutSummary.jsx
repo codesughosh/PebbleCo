@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
+
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { supabase } from "../supabaseClient";
@@ -17,6 +19,7 @@ function CheckoutSummary() {
   const deliveryType = localStorage.getItem("deliveryType");
   const address = JSON.parse(localStorage.getItem("shippingAddress"));
   const inhandDetails = JSON.parse(localStorage.getItem("inhandDetails"));
+  const [isPaying, setIsPaying] = useState(false);
 
   useEffect(() => {
     const deliveryType = localStorage.getItem("deliveryType");
@@ -89,7 +92,11 @@ function CheckoutSummary() {
   const total = subtotal + shippingFee;
 
   const handlePayment = async () => {
+    if (isPaying) return; // 🛑 block double clicks
+
     try {
+      setIsPaying(true); // 🔒 lock button
+
       // 🔹 STEP A: create order in Supabase first
       const shippingAddress =
         deliveryType === "shipping"
@@ -115,6 +122,7 @@ function CheckoutSummary() {
       if (error) {
         console.error("Order creation failed:", error);
         alert("Could not create order");
+        setIsPaying(false);
         return;
       }
 
@@ -135,6 +143,7 @@ function CheckoutSummary() {
 
       if (!orderData.orderId) {
         alert("Order creation failed");
+        setIsPaying(false);
         return;
       }
 
@@ -184,6 +193,7 @@ function CheckoutSummary() {
 
             if (!verifyData.success) {
               alert("Payment verification failed");
+              setIsPaying(false);
               return;
             }
 
@@ -197,6 +207,7 @@ function CheckoutSummary() {
         modal: {
           ondismiss: function () {
             console.log("Checkout closed");
+            setIsPaying(false); // 🔓 unlock
           },
         },
 
@@ -217,6 +228,7 @@ function CheckoutSummary() {
     } catch (err) {
       console.error("Payment error:", err);
       alert("Payment failed");
+      setIsPaying(false);
     }
   };
 
@@ -254,9 +266,25 @@ function CheckoutSummary() {
         </div>
       </div>
 
-      <button className="checkout-continue" onClick={handlePayment}>
-        Pay ₹{total}
-      </button>
+      <button
+  className="checkout-continue"
+  onClick={handlePayment}
+  disabled={isPaying}
+  style={{
+    opacity: isPaying ? 0.6 : 1,
+    cursor: isPaying ? "not-allowed" : "pointer",
+  }}
+>
+  {isPaying ? (
+    <span style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
+      <Loader2 size={16} className="animate-spin" />
+      Processing Payment
+    </span>
+  ) : (
+    <>Pay ₹{total}</>
+  )}
+</button>
+
     </div>
   );
 }
