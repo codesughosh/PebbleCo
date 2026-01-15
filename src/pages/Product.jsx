@@ -389,17 +389,18 @@ function Product() {
               Submit Review
             </button>
           </div>
-          <p
-            style={{
-              background: "#fff",
-              padding: "8px 16px",
-              borderRadius: "999px",
-              color: "#7a3b4a",
-              fontSize: "14px",
-            }}
-          >
-            No reviews yet. Be the first 💖
-          </p>
+          {reviews.length === 0 && (
+            <div
+              style={{
+                width: "100%",
+                display: "flex",
+                justifyContent: "center",
+                marginTop: "12px",
+              }}
+            >
+              <p>No reviews yet. Be the first 💖</p>
+            </div>
+          )}
 
           {reviews.map((r) => (
             <div
