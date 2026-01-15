@@ -25,7 +25,8 @@ app.use(cors({
     "https://pebbleco.shop",
     "https://www.pebbleco.shop"
   ],
-  credentials: true
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 app.use(express.json());
 
@@ -55,9 +56,6 @@ app.use("/api", verifyRoutes);
 app.use("/api", billingInvoiceRoutes);
 app.use("/api/admin", adminOrdersRoutes);
 app.use("/api", trackingRoutes);
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
 
 app.post("/api/reviews", verifyFirebaseUser, async (req, res) => {
   const { product_id, rating, comment } = req.body;
@@ -93,4 +91,8 @@ app.delete("/api/reviews/:id", verifyFirebaseUser, async (req, res) => {
   }
 
   res.json({ success: true });
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
