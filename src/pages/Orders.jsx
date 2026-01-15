@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { auth } from "../firebase";
-import { supabase } from "../supabaseClient";
 import { onAuthStateChanged } from "firebase/auth";
 import "../styles/orders.css";
 
@@ -8,6 +7,8 @@ function Orders() {
   const [user, setUser] = useState(null);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const API_BASE = import.meta.env.VITE_BACKEND_URL;
+
 
   // 🔐 Auth listener
   useEffect(() => {
@@ -19,40 +20,25 @@ function Orders() {
 
   // 📦 Fetch orders
   useEffect(() => {
-    if (user) fetchOrders(user.uid);
+    if (user) fetchOrders();
     else setLoading(false);
   }, [user]);
 
-  const fetchOrders = async (userId) => {
-    const { data, error } = await supabase
-      .from("orders")
-      .select(`
-        id,
-        total,
-        status,
-        payment_status,
-        delivery_type,
-        created_at,
-        order_items (
-          id,
-          quantity,
-          price_at_purchase,
-          products (
-            name
-          )
-        )
-      `)
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Fetch orders error:", error);
-    } else {
-      setOrders(data);
-    }
+const fetchOrders = async () => {
+  const token = await user.getIdToken();
 
-    setLoading(false);
-  };
+  const res = await fetch(`${API_BASE}/api/orders`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  setOrders(data.orders || []);
+  setLoading(false);
+};
+
 
   // 🌀 UI STATES
   if (loading) {
