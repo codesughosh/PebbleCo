@@ -1,16 +1,78 @@
-# React + Vite
+# PebbleCo
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Overview
+PebbleCo is a private, production-focused web application built for internal business use.  
+The system is designed for performance, security, and operational scalability.
 
-Currently, two official plugins are available:
+This repository is not intended for public installation or external deployment.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## Purpose
+- Internal business platform  
+- Secure product browsing and cart management  
+- Payment processing and order handling  
+- Automated communication and logistics management  
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Frontend
+- React  
+- Vite  
+- Tailwind CSS  
+- Lucide Icons  
+
+### Backend
+- Node.js  
+- Express  
+
+### Database
+- Supabase (PostgreSQL with Row Level Security)
+
+### Authentication
+- Firebase
+
+### Payments
+- Razorpay
+
+### Communication
+- Brevo (Automated Email System)
+
+### Logistics
+- Shiprocket (Shipping and Order Fulfillment)
+
+### Deployment
+- Render (Backend)  
+- Vercel (Frontend)
+
+---
+
+## Features
+- Secure user authentication  
+- Role-based data access using RLS  
+- Product catalog management  
+- Cart and checkout system  
+- Razorpay payment integration  
+- Automated email notifications via Brevo  
+- Shipping and fulfillment integration with Shiprocket  
+- Order tracking and status management  
+- Environment-based configuration  
+- Production-focused architecture  
+
+---
+
+## Setup
+This project is restricted for internal business use.
+
+Local setup, deployment, and environment configuration are maintained privately and are not documented in this repository.
+
+---
+
+## License
+This project is proprietary and confidential.
+
+Unauthorized copying, modification, distribution, or use of this software is strictly prohibited.
+
+© PebbleCo. All rights reserved.
