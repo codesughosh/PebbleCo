@@ -90,57 +90,53 @@ function CheckoutSummary() {
   const total = subtotal + shippingFee;
 
   if (!user) {
-  alert("Please log in to continue");
-  return;
-}
+    alert("Please log in to continue");
+    return;
+  }
 
   const handlePayment = async () => {
-  if (isPaying) return;
+    if (isPaying) return;
 
-  try {
-    setIsPaying(true);
+    try {
+      setIsPaying(true);
 
-    // 1️⃣ Create order via backend (NOT Supabase)
-    const res = await fetch(`${BACKEND_URL}/api/create-order`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        amount: total,
-        userId: user.uid,
-        customerEmail: user.email,
-        deliveryType,
-        shippingAddress:
-          deliveryType === "shipping" ? address : null,
-        inhandDetails:
-          deliveryType === "inhand" ? inhandDetails : null,
-      }),
-    });
+      // 1️⃣ Create order via backend (NOT Supabase)
+      const res = await fetch(`${BACKEND_URL}/api/create-order`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: total,
+          userId: user.uid,
+          customerEmail: user.email,
+          deliveryType,
+          shippingAddress: deliveryType === "shipping" ? address : null,
+          inhandDetails: deliveryType === "inhand" ? inhandDetails : null,
+        }),
+      });
 
-    if (!res.ok) {
-      throw new Error("Could not create order");
-    }
+      if (!res.ok) {
+        throw new Error("Could not create order");
+      }
 
-    const { orderId, dbOrderId, amount } = await res.json();
+      const { orderId, dbOrderId, amount } = await res.json();
 
-    if (!orderId || !dbOrderId) {
-      throw new Error("Invalid order response");
-    }
+      if (!orderId || !dbOrderId) {
+        throw new Error("Invalid order response");
+      }
 
-    // 2️⃣ Open Razorpay
-    const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-      order_id: orderId,
-      amount: amount,
-      currency: "INR",
-      name: "PebbleCo",
+      // 2️⃣ Open Razorpay
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        order_id: orderId,
+        amount: amount,
+        currency: "INR",
+        name: "PebbleCo",
 
-      handler: async function (response) {
-        try {
-          const verifyRes = await fetch(
-            `${BACKEND_URL}/api/verify-payment`,
-            {
+        handler: async function (response) {
+          try {
+            const verifyRes = await fetch(`${BACKEND_URL}/api/verify-payment`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -169,44 +165,40 @@ function CheckoutSummary() {
                   price: item.product.price,
                 })),
               }),
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (!verifyData.success) {
+              throw new Error("Payment verification failed");
             }
-          );
 
-          const verifyData = await verifyRes.json();
-
-          if (!verifyData.success) {
-            throw new Error("Payment verification failed");
+            console.log("Navigating to success with order:", dbOrderId);
+            navigate(`/payment/success/${dbOrderId}`);
+          } catch (err) {
+            console.error(err);
+            alert("Payment verification failed");
+            setIsPaying(false);
           }
-
-          navigate(`/payment/success/${dbOrderId}`);
-        } catch (err) {
-          console.error(err);
-          alert("Payment verification failed");
-          setIsPaying(false);
-        }
-      },
-
-      modal: {
-        ondismiss: function () {
-          setIsPaying(false);
         },
-      },
-    };
 
-    const rzp = new window.Razorpay(options);
+        modal: {
+          ondismiss: function () {
+            setIsPaying(false);
+          },
+        },
+      };
 
-    rzp.on("payment.failed", function () {
-      navigate("/payment/failed");
+      const rzp = new window.Razorpay(options);
+
+
+      rzp.open();
+    } catch (err) {
+      console.error(err);
+      alert("Payment failed");
       setIsPaying(false);
-    });
-
-    rzp.open();
-  } catch (err) {
-    console.error(err);
-    alert("Payment failed");
-    setIsPaying(false);
-  }
-};
+    }
+  };
 
   if (loading) {
     return <p style={{ padding: "40px" }}>Loading summary...</p>;
