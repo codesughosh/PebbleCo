@@ -174,7 +174,7 @@ Your PebbleCo order has been delivered successfully. We truly hope it brought a 
             <!-- Button -->
             <tr>
               <td align="center" style="padding-top:26px;">
-                <a href="https://pebbleco.in/track?orderId=${orderId}" style="
+                <a href="https://pebbleco.shop/track?orderId=${orderId}" style="
                   display:inline-block;
                   background:linear-gradient(135deg,#f4b6c2,#e89aa8);
                   color:#ffffff;
