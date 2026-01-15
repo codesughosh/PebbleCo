@@ -10,6 +10,14 @@ export async function sendOrderEmail({
   total,
   type, // "confirmed" | "shipped" | "delivered"
 }) {
+
+  const safeTotal =
+  typeof total === "number"
+    ? total.toFixed(2)
+    : total
+    ? Number(total).toFixed(2)
+    : "—";
+
   const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
   let subject = "Your PebbleCo order is confirmed";
   let message = `
@@ -23,12 +31,39 @@ Great news! Your order has been shipped and is on its way to you.
 `;
   }
 
-  if (type === "delivered") {
-    subject = "Your PebbleCo order has been delivered";
-    message = `
-We hope you loved your PebbleCo piece. Your order has been delivered successfully.
+  let deliveredBlock = "";
+
+if (type === "delivered") {
+  subject = "Your PebbleCo order has been delivered 💗";
+  message = `
+Your PebbleCo order has been delivered successfully. We truly hope it brought a smile to you.
 `;
-  }
+
+  deliveredBlock = `
+  <tr>
+    <td align="center" style="padding-top:22px;">
+      <p style="
+        font-size:15px;
+        color:#3b2b2f;
+        margin:0 0 10px;
+        font-weight:500;
+      ">
+        ✨ Your order journey is complete ✨
+      </p>
+
+      <p style="
+        font-size:13px;
+        color:#8a6f75;
+        margin:0;
+        line-height:1.6;
+      ">
+        If you loved your PebbleCo piece, we’d be so happy if you shared your experience with us.
+      </p>
+    </td>
+  </tr>
+  `;
+}
+
 
   await apiInstance.sendTransacEmail({
     sender: {
@@ -125,7 +160,7 @@ We hope you loved your PebbleCo piece. Your order has been delivered successfull
                         <strong>Order ID:</strong> ${orderId}
                       </p>
                       <p style="margin:0 0 6px;">
-                        <strong>Total:</strong> ₹${total}
+                        <strong>Total:</strong> ₹${safeTotal}
                       </p>
                       <p style="margin:0;">
                         <strong>Payment:</strong> Successful
@@ -135,7 +170,7 @@ We hope you loved your PebbleCo piece. Your order has been delivered successfull
                 </table>
               </td>
             </tr>
-
+          ${deliveredBlock}
             <!-- Button -->
             <tr>
               <td align="center" style="padding-top:26px;">
