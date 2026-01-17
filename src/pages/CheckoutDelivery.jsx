@@ -18,7 +18,7 @@ function CheckoutDelivery() {
 
   return (
     <div className="checkout-page">
-      <h1>Select Delivery Method</h1>
+      <h1>Delivery Type:</h1>
 
       <div className="delivery-options">
         {/* SHIPPING */}
@@ -34,7 +34,7 @@ function CheckoutDelivery() {
           </h2>
 
           <p>Delivered anywhere in India</p>
-          <p className="note">Shipping charges apply</p>
+          <p className="note">*Shipping charges apply</p>
         </div>
 
         {/* IN-HAND */}
@@ -46,10 +46,10 @@ function CheckoutDelivery() {
         >
           <h2 className="delivery-title">
             <GraduationCap size={22} strokeWidth={2} />
-            <span>  In-Hand Delivery</span>
+            <span>  In-Hand</span>
           </h2>
 
-          <p>Collect at SJCE College, Mysuru</p>
+          <p>Collect at JSSSTU, Mysuru</p>
           <p className="note free">Free</p>
         </div>
       </div>
