@@ -67,7 +67,7 @@ function CheckoutSummary() {
           name,
           price
         )
-      `
+      `,
       )
       .eq("user_id", user.uid);
 
@@ -82,7 +82,7 @@ function CheckoutSummary() {
 
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
-    0
+    0,
   );
 
   // TEMP shipping fee logic
@@ -113,6 +113,14 @@ function CheckoutSummary() {
           deliveryType,
           shippingAddress: deliveryType === "shipping" ? address : null,
           inhandDetails: deliveryType === "inhand" ? inhandDetails : null,
+
+          // ✅ SEND CART ITEMS TO BACKEND
+          cartItems: cartItems.map((item) => ({
+            product_id: item.product.id,
+            name: item.product.name,
+            quantity: item.quantity,
+            price: item.product.price,
+          })),
         }),
       });
 
@@ -190,7 +198,6 @@ function CheckoutSummary() {
       };
 
       const rzp = new window.Razorpay(options);
-
 
       rzp.open();
     } catch (err) {

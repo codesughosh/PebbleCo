@@ -13,6 +13,7 @@ router.post("/create-order", async (req, res) => {
       deliveryType,
       shippingAddress,
       inhandDetails,
+      cartItems, // ✅ NEW
     } = req.body;
 
     if (!amount || !userId) {
@@ -39,6 +40,28 @@ router.post("/create-order", async (req, res) => {
     if (error) {
       console.error("DB order insert failed:", error);
       return res.status(500).json({ error: "DB order creation failed" });
+    }
+
+    // 1.5️⃣ Insert order items immediately (before payment)
+    if (!cartItems || cartItems.length === 0) {
+      return res.status(400).json({ error: "Cart is empty" });
+    }
+
+    const orderItems = cartItems.map((item) => ({
+      order_id: dbOrder.id,
+      product_id: item.product_id,
+      product_name: item.name,
+      quantity: item.quantity,
+      price_at_purchase: item.price,
+    }));
+
+    const { error: itemsError } = await supabase
+      .from("order_items")
+      .insert(orderItems);
+
+    if (itemsError) {
+      console.error("Order items insert failed:", itemsError);
+      return res.status(500).json({ error: "Failed to insert order items" });
     }
 
     // 2️⃣ Create Razorpay order
