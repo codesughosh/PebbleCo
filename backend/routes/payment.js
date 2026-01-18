@@ -1,6 +1,6 @@
 import express from "express";
 import razorpay from "../razorpay.js";
-import { supabase} from "../supabase.js";
+import { supabase } from "../supabase.js";
 
 const router = express.Router();
 
@@ -48,10 +48,16 @@ router.post("/create-order", async (req, res) => {
       receipt: dbOrder.id.slice(0, 40),
     });
 
+    // 2.5️⃣ Save Razorpay order ID in DB
+    await supabase
+      .from("orders")
+      .update({ razorpay_order_id: razorpayOrder.id })
+      .eq("id", dbOrder.id);
+
     // 3️⃣ Respond with BOTH IDs
     res.json({
       orderId: razorpayOrder.id, // Razorpay order id
-      dbOrderId: dbOrder.id,     // Supabase orders UUID
+      dbOrderId: dbOrder.id, // Supabase orders UUID
       amount: razorpayOrder.amount,
     });
   } catch (err) {
