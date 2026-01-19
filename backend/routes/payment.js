@@ -56,10 +56,11 @@ router.post("/create-order", async (req, res) => {
     }));
 
     const { error: itemsError } = await supabase
-      .from("order_items")
-      .upsert(orderItems, {
+  .from("pending_order_items")
+  .upsert(orderItems, {
     onConflict: "order_id,product_id",
   });
+
 
     if (itemsError) {
       console.error("Order items insert failed:", itemsError);
