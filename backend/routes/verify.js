@@ -58,76 +58,73 @@ router.post("/verify-payment", async (req, res) => {
     }
   }
 
+
   try {
+  // ✅ 1. Confirm order exists
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", orderId)
+    .single();
 
-    
-    // ✅ 1. Confirm order exists
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("id", orderId)
-      .single();
+  if (orderError || !order) {
+    return res
+      .status(404)
+      .json({ success: false, message: "Order not found" });
+  }
 
-    if (orderError || !order) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Order not found" });
-    }
+  // ✅ 2. Fetch existing order items (already inserted in payment.js)
+  const { data: existingOrderItems, error: fetchItemsError } = await supabase
+    .from("order_items")
+    .select("*")
+    .eq("order_id", orderId);
 
-    const orderItems = cartItems.map((item) => ({
-      order_id: orderId,
-      product_id: item.product_id,
-      product_name: item.name, // ✅ FIX
-      quantity: item.quantity,
-      price_at_purchase: item.price_at_purchase ?? item.price,
-    }));
+  if (fetchItemsError || !existingOrderItems || existingOrderItems.length === 0) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "Order items not found" 
+    });
+  }
 
-    const { error: insertError } = await supabase
-  .from("order_items")
-  .insert(orderItems);
+  // ✅ 3. Calculate total from existing items
+  const computedTotal = existingOrderItems.reduce(
+    (sum, item) => sum + item.quantity * item.price_at_purchase,
+    0
+  );
 
-if (insertError) {
-  throw insertError;
-}
+  console.log("✅ Using existing order items:", existingOrderItems);
 
+  // ✅ 4. Update order with payment details
+  const { error: updateError } = await supabase
+    .from("orders")
+    .update({
+      status: "paid",
+      payment_status: "success",
+      payment_id: razorpay_payment_id,
+      total: computedTotal,
+      customer_name: customerName,
+      customer_phone: customerPhone,
+    })
+    .eq("id", orderId);
 
-const computedTotal = cartItems.reduce(
-  (sum, item) =>
-    sum + item.quantity * (item.price_at_purchase ?? item.price),
-  0
-);
+    if (updateError) {
+    throw updateError;
+  }
 
-console.log("✅ Order items inserted:", orderItems);
+  console.log("✅ Order items verified:", existingOrderItems);
 
-    const { error: updateError } = await supabase
-  .from("orders")
-  .update({
-    status: "paid",
-    payment_status: "success",
-    payment_id: razorpay_payment_id,
-    total: computedTotal,
-    customer_name: customerName,
-    customer_phone: customerPhone,
-  })
-  .eq("id", orderId);
+  if (order.customer_email) {
+    console.log("📧 Sending order email to:", order.customer_email);
 
-  if (updateError) {
-  throw updateError;
-}
-
-
-    if (order.customer_email) {
-      console.log("📧 Sending order email to:", order.customer_email);
-
-      await sendOrderEmail({
-        to: order.customer_email,
-        customerName: customerName || "Customer",
-        orderId: order.id,
-        total: computedTotal,
-      });
-    } else {
-      console.error("❌ No customer email found, email not sent");
-    }
+    await sendOrderEmail({
+      to: order.customer_email,
+      customerName: customerName || "Customer",
+      orderId: order.id,
+      total: computedTotal,
+    });
+  } else {
+    console.error("❌ No customer email found, email not sent");
+  }
 
     // 🧹 CLEAN DUPLICATE PENDING ORDERS (same user)
     await supabase
