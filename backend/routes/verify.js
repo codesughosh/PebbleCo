@@ -36,12 +36,10 @@ router.post("/verify-payment", async (req, res) => {
 
   // 🔐 SIGNATURE VERIFICATION
   const body = razorpay_order_id + "|" + razorpay_payment_id;
-
   const expectedSignature = crypto
     .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
     .update(body)
     .digest("hex");
-
   if (expectedSignature !== razorpay_signature) {
     return res
       .status(400)
@@ -59,77 +57,104 @@ router.post("/verify-payment", async (req, res) => {
   }
 
   try {
-
-    
     // ✅ 1. Confirm order exists
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .select("*")
       .eq("id", orderId)
       .single();
-
     if (orderError || !order) {
       return res
         .status(404)
         .json({ success: false, message: "Order not found" });
     }
 
-    const orderItems = cartItems.map((item) => ({
-      order_id: orderId,
-      product_id: item.product_id,
-      product_name: item.name, // ✅ FIX
-      quantity: item.quantity,
-      price_at_purchase: item.price_at_purchase ?? item.price,
-    }));
+    // If already marked as paid, skip updating and simply proceed
+    const alreadySuccess = order.payment_status === "success";
+    if (!alreadySuccess) {
+      // 🔒 Verify pending_order_items exist (ensures valid cart)
+      const { data: pendingItems, error: pendingError } = await supabase
+        .from("pending_order_items")
+        .select("*")
+        .eq("order_id", orderId);
+      if (pendingError) {
+        console.error("❌ Error fetching pending_order_items:", pendingError);
+        throw new Error("Failed to fetch pending order items");
+      }
+      if (!pendingItems || pendingItems.length === 0) {
+        console.error(`❌ No pending_order_items for order ${orderId}`);
+        throw new Error("Pending order items missing — cannot proceed");
+      }
 
-    const { error: insertError } = await supabase
-  .from("order_items")
-  .insert(orderItems);
+      // Compute total from cart items (for record)
+      const computedTotal = cartItems.reduce(
+        (sum, item) =>
+          sum + item.quantity * (item.price_at_purchase ?? item.price),
+        0
+      );
 
-if (insertError) {
-  throw insertError;
-}
+      // ✅ 2. Update order status to paid/success (fires trigger to move items)
+      const { error: updateError } = await supabase
+        .from("orders")
+        .update({
+          status: "paid",
+          payment_status: "success",
+          payment_id: razorpay_payment_id,
+          total: computedTotal,
+          customer_name: customerName,
+          customer_phone: customerPhone,
+        })
+        .eq("id", orderId);
+      if (updateError) {
+        console.error("❌ Error updating order status:", updateError);
+        throw updateError;
+      }
+      console.log(`✅ Order ${orderId} marked as paid`);
+    } else {
+      console.log(`ℹ️ Order ${orderId} was already paid; skipping update`);
+    }
 
+    // ✅ 3. Verify order_items moved by trigger
+    const { data: orderItems, error: itemsError } = await supabase
+      .from("order_items")
+      .select("*")
+      .eq("order_id", orderId);
+    if (itemsError) {
+      console.error("❌ Error fetching order_items after payment:", itemsError);
+      throw new Error("Failed to fetch order items after payment");
+    }
+    if (!orderItems || orderItems.length === 0) {
+      console.error(
+        `❌ No order_items found for order ${orderId} after payment`
+      );
+      throw new Error(
+        "Order items missing after payment - trigger might have failed"
+      );
+    }
+    console.log(`✅ Found ${orderItems.length} order_items for order ${orderId}`);
 
-const computedTotal = cartItems.reduce(
-  (sum, item) =>
-    sum + item.quantity * (item.price_at_purchase ?? item.price),
-  0
-);
-
-console.log("✅ Order items inserted:", orderItems);
-
-    const { error: updateError } = await supabase
-  .from("orders")
-  .update({
-    status: "paid",
-    payment_status: "success",
-    payment_id: razorpay_payment_id,
-    total: computedTotal,
-    customer_name: customerName,
-    customer_phone: customerPhone,
-  })
-  .eq("id", orderId);
-
-  if (updateError) {
-  throw updateError;
-}
-
-
+    // ✅ 4. Send confirmation email if email exists
     if (order.customer_email) {
       console.log("📧 Sending order email to:", order.customer_email);
-
+      // Use stored total or compute if not set
+      const totalToEmail =
+        order.total ??
+        cartItems.reduce(
+          (sum, item) =>
+            sum + item.quantity * (item.price_at_purchase ?? item.price),
+          0
+        );
       await sendOrderEmail({
         to: order.customer_email,
         customerName: customerName || "Customer",
         orderId: order.id,
-        total: computedTotal,
+        total: totalToEmail,
       });
     } else {
       console.error("❌ No customer email found, email not sent");
     }
 
-    // 🧹 CLEAN DUPLICATE PENDING ORDERS (same user)
+    // 🧹 CLEAN DUPLICATE PENDING ORDERS (same user, if any)
     await supabase
       .from("orders")
       .delete()
@@ -137,72 +162,60 @@ console.log("✅ Order items inserted:", orderItems);
       .eq("status", "pending")
       .neq("id", orderId);
 
-
-    // ✅ 4. Clear cart
+    // ✅ 5. Clear cart
     const { error: cartError } = await supabase
       .from("cart")
       .delete()
       .eq("user_id", userId);
-
     if (cartError) {
+      console.error("❌ Error clearing cart:", cartError);
       throw cartError;
     }
 
-    // 🚚 Create Shiprocket order (only for shipping)
-if (order.delivery_type === "shipping" && order.shipping_address) {
-  try {
-    // 1️⃣ Fetch order items from DB (single source of truth)
-    const { data: dbOrderItems, error: itemsError } = await supabase
-      .from("order_items")
-      .select("*")
-      .eq("order_id", orderId);
+    // 🚚 6. Create Shiprocket order (only for shipping)
+    if (order.delivery_type === "shipping" && order.shipping_address) {
+      try {
+        const finalCustomerName =
+          customerName || order.customer_name || "Customer";
+        const finalCustomerPhone =
+          customerPhone || order.customer_phone || "9999999999";
 
-    if (itemsError || !dbOrderItems || dbOrderItems.length === 0) {
-      throw new Error("No order items found for Shiprocket");
+        const shiprocketResponse = await createShiprocketOrder({
+          orderId,
+          customerName: finalCustomerName,
+          customerPhone: finalCustomerPhone,
+          shippingAddress: order.shipping_address,
+          cartItems: orderItems,
+        });
+
+        await supabase
+          .from("orders")
+          .update({
+            shiprocket_order_id: shiprocketResponse.order_id,
+            awb_code: shiprocketResponse.awb_code,
+            courier_name: shiprocketResponse.courier_name,
+            shipment_status: "created",
+          })
+          .eq("id", orderId);
+        console.log(
+          `🚚 Shiprocket order created: ${shiprocketResponse.order_id}`
+        );
+      } catch (err) {
+        console.error(
+          "🚨 Shiprocket failed:",
+          err.response?.data || err.message
+        );
+      }
     }
 
-    const finalCustomerName = customerName || "Customer";
-
-const finalCustomerPhone = customerPhone || "9999999999";
-
-
-    // 2️⃣ Create Shiprocket order
-    const shiprocketResponse = await createShiprocketOrder({
-      orderId,
-      customerName: finalCustomerName,
-      customerPhone: finalCustomerPhone,
-      shippingAddress: order.shipping_address,
-      cartItems: dbOrderItems,
-    });
-
-    // 3️⃣ Save Shiprocket details
-    await supabase
-      .from("orders")
-      .update({
-        shiprocket_order_id: shiprocketResponse.order_id,
-        awb_code: shiprocketResponse.awb_code,
-        courier_name: shiprocketResponse.courier_name,
-        shipment_status: "created",
-      })
-      .eq("id", orderId);
-
+    // ✅ Final success response
+    return res.json({ success: true });
   } catch (err) {
-    console.error(
-      "🚨 Shiprocket failed:",
-      err.response?.data || err.message
-    );
+    console.error("❌ Verify payment error:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Verification failed" });
   }
-}
-
-// ✅ Final success response
-return res.json({ success: true });
-
-} catch (err) {
-  console.error("❌ Verify error:", err);
-  return res
-    .status(500)
-    .json({ success: false, message: "Verification failed" });
-}
 });
 
 export default router;
