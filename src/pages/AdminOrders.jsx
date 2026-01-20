@@ -34,21 +34,20 @@ function AdminOrders() {
   }, []);
 
   const fetchOrders = async (u) => {
-  if (!u) return;
+    if (!u) return;
 
-  const token = await u.getIdToken();
+    const token = await u.getIdToken();
 
-  const res = await fetch(`${API_BASE}/api/admin/orders`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+    const res = await fetch(`${API_BASE}/api/admin/orders`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-  const data = await res.json();
-  setOrders(data || []);
-  setLoading(false);
-};
-
+    const data = await res.json();
+    setOrders(data || []);
+    setLoading(false);
+  };
 
   const updateOrder = async (orderId, updates) => {
     const token = await user.getIdToken();
@@ -84,6 +83,15 @@ function AdminOrders() {
           </p>
           <p>
             <b>User ID:</b> {o.user_id}
+          </p>
+          <p>
+            <b>Customer Name:</b> {o.customer_name || "—"}
+          </p>
+          <p>
+            <b>Email:</b> {o.customer_email || "—"}
+          </p>
+          <p>
+            <b>Phone:</b> {o.customer_phone || "—"}
           </p>
           <p>
             <b>Total:</b> ₹{o.total}
