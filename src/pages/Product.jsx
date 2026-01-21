@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Camera } from "lucide-react";
 import CartToast from "../components/CartToast";
 
 function Product() {
@@ -19,9 +19,30 @@ function Product() {
   const [hoverRating, setHoverRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
   const [reviews, setReviews] = useState([]);
-  const [reviewImage, setReviewImage] = useState(null);
+  const [reviewImages, setReviewImages] = useState([]);
   const [user, setUser] = useState(null);
   const [showToast, setShowToast] = useState(false);
+  const [galleryImages, setGalleryImages] = useState([]);
+
+  const formatDate = (dateStr) => {
+    return new Date(dateStr).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const openGallery = (images, index = 0) => {
+    setGalleryImages(images);
+    setActiveIndex(index);
+    setFullscreenOpen(true);
+  };
+
+  const handleImagePick = (e) => {
+    const files = Array.from(e.target.files);
+    const limited = files.slice(0, 3 - reviewImages.length);
+    setReviewImages((prev) => [...prev, ...limited]);
+  };
 
   useEffect(() => {
     const auth = getAuth();
@@ -74,9 +95,9 @@ function Product() {
     formData.append("rating", rating);
     formData.append("comment", reviewText);
 
-    if (reviewImage) {
-      formData.append("image", reviewImage);
-    }
+    reviewImages.forEach((img) => {
+      formData.append("images", img);
+    });
 
     const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reviews`, {
       method: "POST",
@@ -93,7 +114,7 @@ function Product() {
 
     setRating(0);
     setReviewText("");
-    setReviewImage(null);
+    setReviewImages([]);
     fetchReviews();
   };
 
@@ -176,7 +197,7 @@ function Product() {
 
     const diff = touchStartX - e.changedTouches[0].clientX;
 
-    if (diff > 50 && activeIndex < product.images.length - 1) {
+    if (diff > 50 && activeIndex < galleryImages.length - 1) {
       setActiveIndex(activeIndex + 1);
     }
 
@@ -213,10 +234,7 @@ function Product() {
                     src={img}
                     alt=""
                     style={slideImage}
-                    onClick={() => {
-                      setActiveIndex(i);
-                      setFullscreenOpen(true);
-                    }}
+                    onClick={() => openGallery(product.images, i)}
                   />
                 ))}
               </div>
@@ -390,27 +408,34 @@ function Product() {
                 resize: "vertical",
               }}
             />
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setReviewImage(e.target.files[0])}
-              style={{ marginTop: "10px" }}
-            />
+            <div style={reviewActions}>
+              <label style={photoBtn}>
+                <Camera size={22} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImagePick}
+                  hidden
+                />
+              </label>
 
-            <button
-              onClick={submitReview}
-              style={{
-                marginTop: "12px",
-                padding: "10px 16px",
-                borderRadius: "20px",
-                border: "none",
-                background: "#c48a9a",
-                color: "#fff",
-                cursor: "pointer",
-              }}
-            >
-              Submit Review
-            </button>
+              <button onClick={submitReview} style={submitBtn}>
+                Submit Review
+              </button>
+            </div>
+
+            {/* PREVIEW */}
+            <div style={previewRow}>
+              {reviewImages.map((img, i) => (
+                <img
+                  key={i}
+                  src={URL.createObjectURL(img)}
+                  alt=""
+                  style={previewThumb}
+                />
+              ))}
+            </div>
           </div>
           {reviews.length === 0 && (
             <div
@@ -456,24 +481,64 @@ function Product() {
 
               <strong>{r.username}</strong>
 
-              <div style={{ color: "#f5a623", marginTop: "4px" }}>
-                {"★".repeat(r.rating)}
-                {"☆".repeat(5 - r.rating)}
+              <div style={reviewHeader}>
+                <div style={reviewUserRow}>
+                  <span style={avatarCircle}>
+                    {r.username?.charAt(0).toUpperCase()}
+                  </span>
+
+                  <strong>{r.username}</strong>
+                </div>
+
+                <div style={reviewMeta}>
+                  <div style={{ color: "#f5a623" }}>
+                    {"★".repeat(r.rating)}
+                    {"☆".repeat(5 - r.rating)}
+                  </div>
+
+                  <span style={reviewDate}>
+                    Reviewed on {formatDate(r.created_at)}
+                  </span>
+                </div>
               </div>
 
               <p style={{ marginTop: "6px" }}>{r.comment}</p>
-              {r.image_url && (
-                <img
-                  src={r.image_url}
-                  alt="Review"
+              {r.image_urls && r.image_urls.length > 0 && (
+                <div
                   style={{
+                    position: "relative",
+                    display: "inline-block",
                     marginTop: "8px",
-                    width: "120px",
-                    borderRadius: "8px",
-                    cursor: "pointer",
                   }}
-                  onClick={() => setFullscreenOpen(true)}
-                />
+                  onClick={() => openGallery(r.image_urls, 0)}
+                >
+                  <img
+                    src={r.image_urls[0]}
+                    alt="Review"
+                    style={{
+                      width: "120px",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                    }}
+                  />
+
+                  {r.image_urls.length > 1 && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        bottom: "6px",
+                        right: "6px",
+                        background: "rgba(0,0,0,0.7)",
+                        color: "#fff",
+                        fontSize: "12px",
+                        padding: "2px 6px",
+                        borderRadius: "10px",
+                      }}
+                    >
+                      +{r.image_urls.length - 1}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           ))}
@@ -493,29 +558,29 @@ function Product() {
       <CartToast show={showToast} onClose={() => setShowToast(false)} />
 
       {fullscreenOpen && (
-        <div style={fullscreenOverlay}>
+        <div style={blurOverlay} onClick={() => setFullscreenOpen(false)}>
           <button style={closeBtn} onClick={() => setFullscreenOpen(false)}>
             ✕
           </button>
 
-          <button
-            style={navBtnLeft}
-            onClick={() => activeIndex > 0 && setActiveIndex(activeIndex - 1)}
+          <div
+            style={galleryTrack}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
           >
-            ‹
-          </button>
-
-          <img src={product.images[activeIndex]} alt="" style={fullscreenImg} />
-
-          <button
-            style={navBtnRight}
-            onClick={() =>
-              activeIndex < product.images.length - 1 &&
-              setActiveIndex(activeIndex + 1)
-            }
-          >
-            ›
-          </button>
+            <div
+              style={{
+                display: "flex",
+                transform: `translateX(-${activeIndex * 100}%)`,
+                transition: "transform 0.4s ease, opacity 0.3s ease",
+              }}
+            >
+              {galleryImages.map((img, i) => (
+                <img key={i} src={img} style={fullscreenImg} />
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </>
@@ -719,6 +784,100 @@ const navBtnRight = {
   border: "none",
   color: "#fff",
   cursor: "pointer",
+};
+
+const reviewHeader = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "6px",
+};
+
+const reviewUserRow = {
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+};
+
+const avatarCircle = {
+  width: "32px",
+  height: "32px",
+  borderRadius: "50%",
+  background: "#c48a9a",
+  color: "#fff",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontWeight: "bold",
+};
+
+const reviewMeta = {
+  display: "flex",
+  gap: "12px",
+  alignItems: "center",
+};
+
+const reviewDate = {
+  fontSize: "13px",
+  opacity: 0.6,
+};
+
+const reviewActions = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  marginTop: "12px",
+};
+
+const photoBtn = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: "40px",
+  height: "40px",
+  borderRadius: "50%",
+  border: "1px solid #ddd",
+  cursor: "pointer",
+  background: "#fff",
+};
+
+
+const submitBtn = {
+  padding: "10px 18px",
+  borderRadius: "20px",
+  border: "none",
+  background: "#c48a9a",
+  color: "#fff",
+  cursor: "pointer",
+};
+
+const previewRow = {
+  display: "flex",
+  gap: "10px",
+  marginTop: "10px",
+};
+
+const previewThumb = {
+  width: "60px",
+  height: "60px",
+  objectFit: "cover",
+  borderRadius: "8px",
+};
+
+const blurOverlay = {
+  position: "fixed",
+  inset: 0,
+  backdropFilter: "blur(12px)",
+  background: "rgba(255,255,255,0.15)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 9999,
+};
+
+const galleryTrack = {
+  width: "100%",
+  maxWidth: "90vw",
+  overflow: "hidden",
 };
 
 export default Product;
