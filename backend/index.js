@@ -1,4 +1,6 @@
 import express from "express";
+import multer from "multer";
+import { v4 as uuidv4 } from "uuid";
 import cors from "cors";
 import dotenv from "dotenv";
 import paymentRoutes from "./routes/payment.js";
@@ -13,22 +15,21 @@ import cartRoutes from "./routes/cart.js";
 import ordersRoutes from "./routes/orders.js";
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
-
 
 dotenv.config();
 console.log("RZP KEY:", process.env.RAZORPAY_KEY_ID);
 
 const app = express();
-app.use(cors({
-  origin: [
-    "https://pebbleco.shop",
-    "https://www.pebbleco.shop"
-  ],
-  credentials: true,
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
+const upload = multer({ storage: multer.memoryStorage() });
+app.use(
+  cors({
+    origin: ["https://pebbleco.shop", "https://www.pebbleco.shop"],
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
 app.use(express.json());
 
 app.get("/", (req, res) => {
@@ -41,7 +42,7 @@ app.get("/test-order-email", async (req, res) => {
       to: "pebbleco.team@gmail.com",
       customerName: "Test Customer",
       orderId: "PC-TEST-001",
-      total: 999
+      total: 999,
     });
 
     res.send("Test order email sent");
@@ -64,24 +65,66 @@ app.use("/api", billingInvoiceRoutes);
 app.use("/api/admin", adminOrdersRoutes);
 app.use("/api", trackingRoutes);
 
-app.post("/api/reviews", verifyFirebaseUser, async (req, res) => {
-  const { product_id, rating, comment } = req.body;
-  const user = req.user;
+app.post(
+  "/api/reviews",
+  verifyFirebaseUser,
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      const { product_id, rating, comment } = req.body;
+      const user = req.user;
 
-  const { error } = await supabaseAdmin.from("reviews").insert({
-    product_id,
-    rating,
-    comment,
-    username: user.name || user.email,
-    user_email: user.email,
-  });
+      if (!product_id || !rating || !comment) {
+        return res.status(400).json({ error: "Missing fields" });
+      }
 
-  if (error) {
-    return res.status(500).json({ error: "Failed to submit review" });
-  }
+      let imageUrl = null;
 
-  res.json({ success: true });
-});
+      // 📤 Upload to Supabase Storage
+      if (req.file) {
+        const ext = req.file.originalname.split(".").pop();
+        const fileName = `reviews/${uuidv4()}.${ext}`;
+
+        const { error: uploadError } = await supabaseAdmin.storage
+          .from("review-images")
+          .upload(fileName, req.file.buffer, {
+            contentType: req.file.mimetype,
+          });
+
+        if (uploadError) {
+          console.error("UPLOAD ERROR:", uploadError);
+          return res.status(500).json({ error: "Image upload failed" });
+        }
+
+        const { data } = supabaseAdmin.storage
+          .from("review-images")
+          .getPublicUrl(fileName);
+
+        imageUrl = data.publicUrl;
+      }
+
+      // 📝 Save review in DB
+      const { error } = await supabaseAdmin.from("reviews").insert({
+        product_id,
+        rating,
+        comment,
+        username: user.name || user.email,
+        user_email: user.email,
+        image_url: imageUrl,
+      });
+
+      if (error) {
+        console.error("DB ERROR:", error);
+        return res.status(500).json({ error: "Failed to save review" });
+      }
+
+      res.json({ success: true });
+    } catch (err) {
+      console.error("REVIEWS CRASH:", err);
+      res.status(500).json({ error: "Server crash" });
+    }
+  },
+);
 
 app.delete("/api/reviews/:id", verifyFirebaseUser, async (req, res) => {
   const reviewId = req.params.id;
