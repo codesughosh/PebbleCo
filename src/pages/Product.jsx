@@ -495,7 +495,14 @@ function Product() {
                 </div>
 
                 <div style={reviewMeta}>
-                  <div style={{ color: "#f5a623" }}>
+                  <div
+                    style={{
+                      color: "#000",
+                      fontSize: "20px",
+                      letterSpacing: "2px",
+                      marginTop: "4px",
+                    }}
+                  >
                     {"★".repeat(r.rating)}
                     {"☆".repeat(5 - r.rating)}
                   </div>
@@ -800,7 +807,6 @@ const closeBtn = {
   justifyContent: "center",
   zIndex: 10000,
   transition: "transform 0.15s ease",
-
 };
 
 const navBtnLeft = {
@@ -816,10 +822,9 @@ const navBtnLeft = {
   border: "none",
   color: "#fff",
   cursor: "pointer",
-  zIndex: 10000,transition: "transform 0.15s ease",
-
+  zIndex: 10000,
+  transition: "transform 0.15s ease",
 };
-
 
 const navBtnRight = {
   position: "fixed",
@@ -836,9 +841,7 @@ const navBtnRight = {
   cursor: "pointer",
   zIndex: 10000,
   transition: "transform 0.15s ease",
-
 };
-
 
 const reviewHeader = {
   display: "flex",
