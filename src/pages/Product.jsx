@@ -484,9 +484,7 @@ function Product() {
                   Delete
                 </button>
               )}
-
-              <strong>{r.username}</strong>
-
+              
               <div style={reviewHeader}>
                 <div style={reviewUserRow}>
                   <span style={avatarCircle}>
@@ -790,35 +788,61 @@ const fullscreenImg = {
 };
 
 const closeBtn = {
-  position: "absolute",
+  position: "fixed",
   top: "20px",
   right: "20px",
-  fontSize: "28px",
-  background: "none",
+  fontSize: "26px",
+  width: "42px",
+  height: "42px",
+  borderRadius: "50%",
+  background: "rgba(0,0,0,0.6)",
   border: "none",
   color: "#fff",
   cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 10000,
+  transition: "transform 0.15s ease",
+
 };
 
 const navBtnLeft = {
-  position: "absolute",
+  position: "fixed",
   left: "20px",
-  fontSize: "40px",
-  background: "none",
+  top: "50%",
+  transform: "translateY(-50%)",
+  fontSize: "34px",
+  width: "44px",
+  height: "44px",
+  borderRadius: "50%",
+  background: "rgba(0,0,0,0.6)",
   border: "none",
   color: "#fff",
   cursor: "pointer",
+  zIndex: 10000,transition: "transform 0.15s ease",
+
 };
 
+
 const navBtnRight = {
-  position: "absolute",
+  position: "fixed",
   right: "20px",
-  fontSize: "40px",
-  background: "none",
+  top: "50%",
+  transform: "translateY(-50%)",
+  fontSize: "34px",
+  width: "44px",
+  height: "44px",
+  borderRadius: "50%",
+  background: "rgba(0,0,0,0.6)",
   border: "none",
   color: "#fff",
   cursor: "pointer",
+  zIndex: 10000,
+  transition: "transform 0.15s ease",
+
 };
+
 
 const reviewHeader = {
   display: "flex",
