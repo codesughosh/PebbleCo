@@ -375,7 +375,10 @@ function Product() {
 
         {/* REVIEWS */}
         <section style={section}>
-          <h2>Customer Reviews</h2>
+          <h2>
+  Customer Reviews ({reviews.length})
+</h2>
+
 
           {/* REVIEW FORM */}
           <div style={{ marginTop: "24px" }}>
@@ -510,42 +513,19 @@ function Product() {
               </div>
 
               {r.image_urls && r.image_urls.length > 0 && (
-                <div
-                  style={{
-                    position: "relative",
-                    display: "inline-block",
-                    marginTop: "8px",
-                  }}
-                  onClick={() => openGallery(r.image_urls, 0)}
-                >
-                  <img
-                    src={r.image_urls[0]}
-                    alt="Review"
-                    style={{
-                      width: "120px",
-                      borderRadius: "8px",
-                      cursor: "pointer",
-                    }}
-                  />
+  <div style={reviewImageGrid}>
+    {r.image_urls.map((img, i) => (
+      <img
+        key={i}
+        src={img}
+        alt="Review"
+        style={reviewThumb}
+        onClick={() => openGallery(r.image_urls, i)}
+      />
+    ))}
+  </div>
+)}
 
-                  {r.image_urls.length > 1 && (
-                    <span
-                      style={{
-                        position: "absolute",
-                        bottom: "6px",
-                        right: "6px",
-                        background: "rgba(0,0,0,0.7)",
-                        color: "#fff",
-                        fontSize: "12px",
-                        padding: "2px 6px",
-                        borderRadius: "10px",
-                      }}
-                    >
-                      +{r.image_urls.length - 1}
-                    </span>
-                  )}
-                </div>
-              )}
             </div>
           ))}
         </section>
@@ -955,5 +935,20 @@ const reviewContent = {
   display: "flex",
   flexDirection: "column",
 };
+
+const reviewImageGrid = {
+  display: "flex",
+  gap: "8px",
+  marginTop: "8px",
+};
+
+const reviewThumb = {
+  width: "60px",
+  height: "60px",
+  objectFit: "cover",
+  borderRadius: "6px",
+  cursor: "pointer",
+};
+
 
 export default Product;
