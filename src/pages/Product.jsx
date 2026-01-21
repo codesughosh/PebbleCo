@@ -235,6 +235,12 @@ function Product() {
                     alt=""
                     style={slideImage}
                     onClick={() => openGallery(product.images, i)}
+                    onMouseEnter={(e) =>
+                      (e.target.style.transform = "scale(1.05)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.target.style.transform = "scale(1)")
+                    }
                   />
                 ))}
               </div>
@@ -559,27 +565,52 @@ function Product() {
 
       {fullscreenOpen && (
         <div style={blurOverlay} onClick={() => setFullscreenOpen(false)}>
-          <button style={closeBtn} onClick={() => setFullscreenOpen(false)}>
-            ✕
-          </button>
+          <button style={closeBtn}>✕</button>
 
           <div
-            style={galleryTrack}
+            style={singleViewer}
             onClick={(e) => e.stopPropagation()}
             onTouchStart={onTouchStart}
             onTouchEnd={onTouchEnd}
           >
-            <div
+            <img
+              src={galleryImages[activeIndex]}
+              alt=""
+              style={fullscreenImg}
+            />
+            <span
               style={{
-                display: "flex",
-                transform: `translateX(-${activeIndex * 100}%)`,
-                transition: "transform 0.4s ease, opacity 0.3s ease",
+                position: "absolute",
+                bottom: "20px",
+                background: "rgba(0,0,0,0.6)",
+                color: "#fff",
+                padding: "4px 10px",
+                borderRadius: "14px",
+                fontSize: "13px",
               }}
             >
-              {galleryImages.map((img, i) => (
-                <img key={i} src={img} style={fullscreenImg} />
-              ))}
-            </div>
+              {activeIndex + 1} / {galleryImages.length}
+            </span>
+
+            {/* LEFT */}
+            {activeIndex > 0 && (
+              <button
+                style={navBtnLeft}
+                onClick={() => setActiveIndex(activeIndex - 1)}
+              >
+                ‹
+              </button>
+            )}
+
+            {/* RIGHT */}
+            {activeIndex < galleryImages.length - 1 && (
+              <button
+                style={navBtnRight}
+                onClick={() => setActiveIndex(activeIndex + 1)}
+              >
+                ›
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -733,6 +764,8 @@ const slideImage = {
   width: "100%",
   flexShrink: 0,
   objectFit: "cover",
+  transition: "transform 0.3s ease",
+  cursor: "zoom-in",
 };
 
 const fullscreenOverlay = {
@@ -753,6 +786,7 @@ const fullscreenImg = {
   maxHeight: "90%",
   objectFit: "contain",
   borderRadius: "12px",
+  transition: "opacity 0.25s ease, transform 0.25s ease",
 };
 
 const closeBtn = {
@@ -840,7 +874,6 @@ const photoBtn = {
   background: "#fff",
 };
 
-
 const submitBtn = {
   padding: "10px 18px",
   borderRadius: "20px",
@@ -878,6 +911,16 @@ const galleryTrack = {
   width: "100%",
   maxWidth: "90vw",
   overflow: "hidden",
+};
+
+const singleViewer = {
+  position: "relative",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: "100%",
+  maxWidth: "90vw",
+  height: "100%",
 };
 
 export default Product;
