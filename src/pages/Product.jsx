@@ -375,10 +375,7 @@ function Product() {
 
         {/* REVIEWS */}
         <section style={section}>
-          <h2>
-  Customer Reviews ({reviews.length})
-</h2>
-
+          <h2>Customer Reviews ({reviews.length})</h2>
 
           {/* REVIEW FORM */}
           <div style={{ marginTop: "24px" }}>
@@ -498,7 +495,7 @@ function Product() {
 
                   <div
                     style={{
-                      color: "#000",
+                      color: "#3b2b2f",
                       fontSize: "20px",
                       letterSpacing: "2px",
                       marginTop: "4px",
@@ -509,23 +506,22 @@ function Product() {
                   </div>
 
                   <p style={{ marginTop: "6px" }}>{r.comment}</p>
+
+                  {r.image_urls && r.image_urls.length > 0 && (
+                    <div style={reviewImageGrid}>
+                      {r.image_urls.map((img, i) => (
+                        <img
+                          key={i}
+                          src={img}
+                          alt="Review"
+                          style={reviewThumb}
+                          onClick={() => openGallery(r.image_urls, i)}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {r.image_urls && r.image_urls.length > 0 && (
-  <div style={reviewImageGrid}>
-    {r.image_urls.map((img, i) => (
-      <img
-        key={i}
-        src={img}
-        alt="Review"
-        style={reviewThumb}
-        onClick={() => openGallery(r.image_urls, i)}
-      />
-    ))}
-  </div>
-)}
-
             </div>
           ))}
         </section>
@@ -949,6 +945,5 @@ const reviewThumb = {
   borderRadius: "6px",
   cursor: "pointer",
 };
-
 
 export default Product;
