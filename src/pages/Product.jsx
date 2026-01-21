@@ -484,7 +484,7 @@ function Product() {
                   Delete
                 </button>
               )}
-              
+
               <div style={reviewHeader}>
                 <div style={reviewUserRow}>
                   <span style={avatarCircle}>
@@ -499,10 +499,6 @@ function Product() {
                     {"★".repeat(r.rating)}
                     {"☆".repeat(5 - r.rating)}
                   </div>
-
-                  <span style={reviewDate}>
-                    Reviewed on {formatDate(r.created_at)}
-                  </span>
                 </div>
               </div>
 
