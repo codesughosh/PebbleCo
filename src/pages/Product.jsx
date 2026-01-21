@@ -485,31 +485,30 @@ function Product() {
                 </button>
               )}
 
-              <div style={reviewHeader}>
-                <div style={reviewUserRow}>
-                  <span style={avatarCircle}>
-                    {r.username?.charAt(0).toUpperCase()}
-                  </span>
+              <div style={reviewRow}>
+                <span style={avatarCircle}>
+                  {r.username?.charAt(0).toUpperCase()}
+                </span>
 
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <strong>{r.username}</strong>
+                <div style={reviewContent}>
+                  <strong>{r.username}</strong>
 
-                    <div
-                      style={{
-                        color: "#3b2b2f",
-                        fontSize: "20px",
-                        letterSpacing: "2px",
-                        marginTop: "4px",
-                      }}
-                    >
-                      {"★".repeat(r.rating)}
-                      {"☆".repeat(5 - r.rating)}
-                    </div>
+                  <div
+                    style={{
+                      color: "#000",
+                      fontSize: "20px",
+                      letterSpacing: "2px",
+                      marginTop: "4px",
+                    }}
+                  >
+                    {"★".repeat(r.rating)}
+                    {"☆".repeat(5 - r.rating)}
                   </div>
+
+                  <p style={{ marginTop: "6px" }}>{r.comment}</p>
                 </div>
               </div>
 
-              <p style={{ marginTop: "6px" }}>{r.comment}</p>
               {r.image_urls && r.image_urls.length > 0 && (
                 <div
                   style={{
@@ -944,6 +943,17 @@ const singleViewer = {
   width: "100%",
   maxWidth: "90vw",
   height: "100%",
+};
+
+const reviewRow = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: "12px",
+};
+
+const reviewContent = {
+  display: "flex",
+  flexDirection: "column",
 };
 
 export default Product;
