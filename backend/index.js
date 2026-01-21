@@ -68,7 +68,7 @@ app.use("/api", trackingRoutes);
 app.post(
   "/api/reviews",
   verifyFirebaseUser,
-  upload.single("image"),
+  upload.array("images", 3),
   async (req, res) => {
     try {
       const { product_id, rating, comment } = req.body;
@@ -78,29 +78,31 @@ app.post(
         return res.status(400).json({ error: "Missing fields" });
       }
 
-      let imageUrl = null;
+      let imageUrls = [];
 
-      // 📤 Upload to Supabase Storage
-      if (req.file) {
-        const ext = req.file.originalname.split(".").pop();
-        const fileName = `reviews/${uuidv4()}.${ext}`;
+      // 📤 Upload each image
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          const ext = file.originalname.split(".").pop();
+          const fileName = `reviews/${uuidv4()}.${ext}`;
 
-        const { error: uploadError } = await supabaseAdmin.storage
-          .from("review-images")
-          .upload(fileName, req.file.buffer, {
-            contentType: req.file.mimetype,
-          });
+          const { error: uploadError } = await supabaseAdmin.storage
+            .from("review-images")
+            .upload(fileName, file.buffer, {
+              contentType: file.mimetype,
+            });
 
-        if (uploadError) {
-          console.error("UPLOAD ERROR:", uploadError);
-          return res.status(500).json({ error: "Image upload failed" });
+          if (uploadError) {
+            console.error("UPLOAD ERROR:", uploadError);
+            return res.status(500).json({ error: "Image upload failed" });
+          }
+
+          const { data } = supabaseAdmin.storage
+            .from("review-images")
+            .getPublicUrl(fileName);
+
+          imageUrls.push(data.publicUrl);
         }
-
-        const { data } = supabaseAdmin.storage
-          .from("review-images")
-          .getPublicUrl(fileName);
-
-        imageUrl = data.publicUrl;
       }
 
       // 📝 Save review in DB
@@ -110,7 +112,7 @@ app.post(
         comment,
         username: user.name || user.email,
         user_email: user.email,
-        image_url: imageUrl,
+        image_urls: imageUrls,
       });
 
       if (error) {

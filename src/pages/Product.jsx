@@ -389,7 +389,7 @@ function Product() {
                   style={{
                     fontSize: "22px",
                     cursor: "pointer",
-                    color: (hoverRating || rating) >= star ? "#f5a623" : "#ccc",
+                    color: (hoverRating || rating) >= star ? "#3b2b2f" : "#ccc",
                   }}
                   onClick={() => setRating(star)}
                   onMouseEnter={() => setHoverRating(star)}
