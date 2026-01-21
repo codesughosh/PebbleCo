@@ -491,20 +491,20 @@ function Product() {
                     {r.username?.charAt(0).toUpperCase()}
                   </span>
 
-                  <strong>{r.username}</strong>
-                </div>
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    <strong>{r.username}</strong>
 
-                <div style={reviewMeta}>
-                  <div
-                    style={{
-                      color: "#000",
-                      fontSize: "20px",
-                      letterSpacing: "2px",
-                      marginTop: "4px",
-                    }}
-                  >
-                    {"★".repeat(r.rating)}
-                    {"☆".repeat(5 - r.rating)}
+                    <div
+                      style={{
+                        color: "#3b2b2f",
+                        fontSize: "20px",
+                        letterSpacing: "2px",
+                        marginTop: "4px",
+                      }}
+                    >
+                      {"★".repeat(r.rating)}
+                      {"☆".repeat(5 - r.rating)}
+                    </div>
                   </div>
                 </div>
               </div>
