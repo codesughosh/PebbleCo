@@ -6,6 +6,7 @@ import { ChevronDown } from "lucide-react";
 import CartToast from "../components/CartToast";
 
 function Product() {
+  const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const { id } = useParams();
   const [openDesc, setOpenDesc] = useState(false);
   const [product, setProduct] = useState(null);
@@ -18,6 +19,7 @@ function Product() {
   const [hoverRating, setHoverRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
   const [reviews, setReviews] = useState([]);
+  const [reviewImage, setReviewImage] = useState(null);
   const [user, setUser] = useState(null);
   const [showToast, setShowToast] = useState(false);
 
@@ -67,17 +69,21 @@ function Product() {
 
     const token = await user.getIdToken(); // 🔑 FIREBASE TOKEN
 
+    const formData = new FormData();
+    formData.append("product_id", product.id);
+    formData.append("rating", rating);
+    formData.append("comment", reviewText);
+
+    if (reviewImage) {
+      formData.append("image", reviewImage);
+    }
+
     const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reviews`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, // 🔑 REQUIRED
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        product_id: product.id,
-        rating,
-        comment: reviewText,
-      }),
+      body: formData,
     });
 
     if (!res.ok) {
@@ -87,6 +93,7 @@ function Product() {
 
     setRating(0);
     setReviewText("");
+    setReviewImage(null);
     fetchReviews();
   };
 
@@ -103,7 +110,7 @@ function Product() {
         headers: {
           Authorization: `Bearer ${token}`, // 🔑 REQUIRED
         },
-      }
+      },
     );
 
     if (!res.ok) {
@@ -201,7 +208,16 @@ function Product() {
                 }}
               >
                 {product.images.map((img, i) => (
-                  <img key={i} src={img} alt="" style={slideImage} />
+                  <img
+                    key={i}
+                    src={img}
+                    alt=""
+                    style={slideImage}
+                    onClick={() => {
+                      setActiveIndex(i);
+                      setFullscreenOpen(true);
+                    }}
+                  />
                 ))}
               </div>
             </div>
@@ -275,7 +291,7 @@ function Product() {
                   {Math.round(
                     ((product.original_price - product.price) /
                       product.original_price) *
-                      100
+                      100,
                   )}
                   % OFF)
                 </span>
@@ -374,6 +390,13 @@ function Product() {
                 resize: "vertical",
               }}
             />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setReviewImage(e.target.files[0])}
+              style={{ marginTop: "10px" }}
+            />
+
             <button
               onClick={submitReview}
               style={{
@@ -439,6 +462,19 @@ function Product() {
               </div>
 
               <p style={{ marginTop: "6px" }}>{r.comment}</p>
+              {r.image_url && (
+                <img
+                  src={r.image_url}
+                  alt="Review"
+                  style={{
+                    marginTop: "8px",
+                    width: "120px",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => setFullscreenOpen(true)}
+                />
+              )}
             </div>
           ))}
         </section>
@@ -455,6 +491,33 @@ function Product() {
       )}
 
       <CartToast show={showToast} onClose={() => setShowToast(false)} />
+
+      {fullscreenOpen && (
+        <div style={fullscreenOverlay}>
+          <button style={closeBtn} onClick={() => setFullscreenOpen(false)}>
+            ✕
+          </button>
+
+          <button
+            style={navBtnLeft}
+            onClick={() => activeIndex > 0 && setActiveIndex(activeIndex - 1)}
+          >
+            ‹
+          </button>
+
+          <img src={product.images[activeIndex]} alt="" style={fullscreenImg} />
+
+          <button
+            style={navBtnRight}
+            onClick={() =>
+              activeIndex < product.images.length - 1 &&
+              setActiveIndex(activeIndex + 1)
+            }
+          >
+            ›
+          </button>
+        </div>
+      )}
     </>
   );
 }
@@ -605,6 +668,57 @@ const slideImage = {
   width: "100%",
   flexShrink: 0,
   objectFit: "cover",
+};
+
+const fullscreenOverlay = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  width: "100vw",
+  height: "100vh",
+  background: "rgba(0,0,0,0.95)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 9999,
+};
+
+const fullscreenImg = {
+  maxWidth: "90%",
+  maxHeight: "90%",
+  objectFit: "contain",
+  borderRadius: "12px",
+};
+
+const closeBtn = {
+  position: "absolute",
+  top: "20px",
+  right: "20px",
+  fontSize: "28px",
+  background: "none",
+  border: "none",
+  color: "#fff",
+  cursor: "pointer",
+};
+
+const navBtnLeft = {
+  position: "absolute",
+  left: "20px",
+  fontSize: "40px",
+  background: "none",
+  border: "none",
+  color: "#fff",
+  cursor: "pointer",
+};
+
+const navBtnRight = {
+  position: "absolute",
+  right: "20px",
+  fontSize: "40px",
+  background: "none",
+  border: "none",
+  color: "#fff",
+  cursor: "pointer",
 };
 
 export default Product;
