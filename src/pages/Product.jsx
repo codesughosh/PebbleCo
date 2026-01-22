@@ -831,8 +831,9 @@ const reviewUserRow = {
 };
 
 const avatarCircle = {
-  width: "32px",
-  height: "32px",
+  width: "36px",
+  height: "36px",
+  minWidth: "36px",      // 🔒 prevents flex squashing
   borderRadius: "50%",
   background: "#c48a9a",
   color: "#fff",
@@ -840,7 +841,11 @@ const avatarCircle = {
   alignItems: "center",
   justifyContent: "center",
   fontWeight: "bold",
+  lineHeight: "36px",   // 🔒 keeps letter vertically centered
+  textAlign: "center",
+  fontSize: "16px",
 };
+
 
 const reviewMeta = {
   display: "flex",
