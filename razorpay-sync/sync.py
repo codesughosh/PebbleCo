@@ -21,9 +21,7 @@ gc = gspread.authorize(creds)
 sheet = gc.open_by_key(os.environ["GOOGLE_SHEET_ID"])
 ws = sheet.worksheet("Payments")
 
-headers = ws.row_values(1)
 rows = ws.get_all_records()
-
 existing = {row["payment_id"]: idx + 2 for idx, row in enumerate(rows)}
 
 now = datetime.utcnow().isoformat()
@@ -38,12 +36,20 @@ payments = client.payment.all({
 
 for p in payments:
     pid = p["id"]
+
+    # ---------- SAFE notes handling ----------
+    notes = p.get("notes")
+    if isinstance(notes, dict):
+        name = notes.get("name", "")
+    else:
+        name = ""
+
     data = [
         pid,
         p.get("order_id", ""),
         datetime.fromtimestamp(p["created_at"]).isoformat(),
         p["status"],
-        p.get("notes", {}).get("name", ""),
+        name,
         p.get("contact", ""),
         p["amount"] / 100,
         p["currency"],
@@ -57,16 +63,17 @@ for p in payments:
         ws.append_row(data)
 
 # ---------- TOTALS (always last row) ----------
-last_data_row = len(ws.get_all_values())
+values = ws.get_all_values()
+last_row = len(values)
 
 # Remove old TOTAL row if exists
-if ws.cell(last_data_row, 1).value == "TOTAL":
-    ws.delete_rows(last_data_row)
+if last_row > 1 and values[-1][0] == "TOTAL":
+    ws.delete_rows(last_row)
+    last_row -= 1
 
-total_row = last_data_row + 1
+total_row = last_row + 1
 
 ws.update(f"A{total_row}", "TOTAL")
-
 ws.update(f"G{total_row}", f"=SUM(G2:G{total_row-1})")
 ws.update(f"J{total_row}", f"=SUM(J2:J{total_row-1})")
 ws.update(f"K{total_row}", f"=SUM(K2:K{total_row-1})")
