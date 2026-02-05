@@ -73,8 +73,11 @@ if last_row > 1 and values[-1][0] == "TOTAL":
 
 total_row = last_row + 1
 
-ws.update(f"A{total_row}", "TOTAL")
-ws.update(f"G{total_row}", f"=SUM(G2:G{total_row-1})")
-ws.update(f"J{total_row}", f"=SUM(J2:J{total_row-1})")
-ws.update(f"K{total_row}", f"=SUM(K2:K{total_row-1})")
-ws.update(f"L{total_row}", f"=SUM(L2:L{total_row-1})")
+# Write TOTAL label
+ws.update(f"A{total_row}", [["TOTAL"]])
+
+# Write formulas
+ws.update(f"G{total_row}", [[f"=SUM(G2:G{total_row-1})"]])
+ws.update(f"J{total_row}", [[f"=SUM(J2:J{total_row-1})"]])
+ws.update(f"K{total_row}", [[f"=SUM(K2:K{total_row-1})"]])
+ws.update(f"L{total_row}", [[f"=SUM(L2:L{total_row-1})"]])
