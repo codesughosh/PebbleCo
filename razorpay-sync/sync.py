@@ -1,4 +1,6 @@
-import os, json, time
+import os
+import json
+import time
 import razorpay
 import gspread
 from google.oauth2.service_account import Credentials
@@ -24,11 +26,11 @@ ws = sheet.worksheet("Payments")
 # ---------------------------------------------------
 # Sheet structure:
 # Row 1 -> headers
-# Row 2 -> totals (formulas, handled in Sheets)
-# Row 3+ -> data
+# Row 2 -> totals (formulas in Sheets)
+# Row 3+ -> data (Python writes here)
 # ---------------------------------------------------
 
-rows = ws.get_all_records()  # reads starting from row 3
+rows = ws.get_all_records()  # starts reading from row 3
 existing = {row["payment_id"]: idx + 3 for idx, row in enumerate(rows)}
 
 now = datetime.utcnow().isoformat()
@@ -42,6 +44,10 @@ payments = client.payment.all({
 })["items"]
 
 for p in payments:
+    # ❌ Skip non-captured (failed, authorized, etc.)
+    if p.get("status") != "captured":
+        continue
+
     pid = p["id"]
 
     # ---------- SAFE notes handling ----------
@@ -58,7 +64,7 @@ for p in payments:
         p["status"],
         name,
         p.get("contact", ""),
-        p["amount"] / 100,
+        p["amount"] / 100,   # paise → INR
         p["currency"],
         now
     ]
