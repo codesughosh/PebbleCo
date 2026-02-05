@@ -30,8 +30,14 @@ ws = sheet.worksheet("Payments")
 # Row 3+ -> data (Python writes here)
 # ---------------------------------------------------
 
-rows = ws.get_all_records()  # starts reading from row 3
-existing = {row["payment_id"]: idx + 3 for idx, row in enumerate(rows)}
+# Read payment_id column directly (A3:A)
+payment_ids = ws.col_values(1)[2:]  # skip header + totals
+existing = {
+    pid: idx + 3
+    for idx, pid in enumerate(payment_ids)
+    if pid
+}
+
 
 now = datetime.utcnow().isoformat()
 
