@@ -26,8 +26,8 @@ existing = {row["payment_id"]: idx + 2 for idx, row in enumerate(rows)}
 
 now = datetime.utcnow().isoformat()
 
-# ---------- Fetch payments (last 7 days) ----------
-from_ts = int(time.time()) - 7 * 24 * 3600
+# ---------- Fetch payments ----------
+from_ts = int(time.time()) - 30 * 24 * 3600
 
 payments = client.payment.all({
     "from": from_ts,
