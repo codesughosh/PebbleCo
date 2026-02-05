@@ -21,12 +21,19 @@ gc = gspread.authorize(creds)
 sheet = gc.open_by_key(os.environ["GOOGLE_SHEET_ID"])
 ws = sheet.worksheet("Payments")
 
-rows = ws.get_all_records()
-existing = {row["payment_id"]: idx + 2 for idx, row in enumerate(rows)}
+# ---------------------------------------------------
+# Sheet structure:
+# Row 1 -> headers
+# Row 2 -> totals (formulas, handled in Sheets)
+# Row 3+ -> data
+# ---------------------------------------------------
+
+rows = ws.get_all_records()  # reads starting from row 3
+existing = {row["payment_id"]: idx + 3 for idx, row in enumerate(rows)}
 
 now = datetime.utcnow().isoformat()
 
-# ---------- Fetch payments ----------
+# ---------- Fetch payments (last 30 days) ----------
 from_ts = int(time.time()) - 30 * 24 * 3600
 
 payments = client.payment.all({
@@ -60,24 +67,4 @@ for p in payments:
         row = existing[pid]
         ws.update(f"A{row}:I{row}", [data])
     else:
-        ws.append_row(data)
-
-# ---------- TOTALS (always last row) ----------
-values = ws.get_all_values()
-last_row = len(values)
-
-# Remove old TOTAL row if exists
-if last_row > 1 and values[-1][0] == "TOTAL":
-    ws.delete_rows(last_row)
-    last_row -= 1
-
-total_row = last_row + 1
-
-# Write TOTAL label
-ws.update(f"A{total_row}", [["TOTAL"]])
-
-# Write formulas
-ws.update(f"G{total_row}", [[f"=SUM(G2:G{total_row-1})"]])
-ws.update(f"J{total_row}", [[f"=SUM(J2:J{total_row-1})"]])
-ws.update(f"K{total_row}", [[f"=SUM(K2:K{total_row-1})"]])
-ws.update(f"L{total_row}", [[f"=SUM(L2:L{total_row-1})"]])
+        ws.append_row(data, table_range="A3")
