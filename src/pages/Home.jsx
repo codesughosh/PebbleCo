@@ -142,8 +142,7 @@ const collectionsRef = useRef(null);
               Necklaces
             </div>
 
-            <div className="collection-grid">
-            <div
+            <div className="collection-grid"
               className="collection-card"
               onClick={() => navigate("/category/crochet")}
             >
