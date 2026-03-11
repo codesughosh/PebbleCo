@@ -118,6 +118,10 @@ function Header() {
               <li>
                 <Link to="/category/necklace">Necklace</Link>
               </li>
+
+              <li>
+                <Link to="/category/crochet">Crochets</Link>
+              </li>
             </ul>
           </li>
 
