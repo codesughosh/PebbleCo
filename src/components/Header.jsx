@@ -104,11 +104,11 @@ function Header() {
 
             <ul className="dropdown-menu">
               <li>
-                <Link to="/category/flower-bracelet">Flower Bracelet</Link>
+                <Link to="/category/flower-bracelet">Flower Bracelets</Link>
               </li>
 
               <li>
-                <Link to="/category/bead-bracelet">Bead Bracelet</Link>
+                <Link to="/category/bead-bracelet">Bead Bracelets</Link>
               </li>
 
               <li>
@@ -116,7 +116,7 @@ function Header() {
               </li>
 
               <li>
-                <Link to="/category/necklace">Necklace</Link>
+                <Link to="/category/necklace">Necklaces</Link>
               </li>
 
               <li>
