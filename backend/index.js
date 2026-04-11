@@ -62,6 +62,10 @@ app.get("/test-order-email", async (req, res) => {
   }
 });
 
+app.head("/health", (req, res) => {
+  res.sendStatus(200);
+});
+
 app.get("/health", (req, res) => {
   res.status(200).send("ok");
 });

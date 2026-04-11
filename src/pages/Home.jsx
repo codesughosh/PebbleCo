@@ -141,6 +141,13 @@ const collectionsRef = useRef(null);
             >
               Necklaces
             </div>
+
+            <div className="collection-grid"
+              className="collection-card"
+              onClick={() => navigate("/category/crochet")}
+            >
+              Crochets
+            </div>
           </div>
         </section>
 

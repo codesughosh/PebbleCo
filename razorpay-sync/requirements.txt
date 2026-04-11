@@ -1,0 +1,4 @@
+razorpay
+gspread
+google-auth
+python-dateutil
