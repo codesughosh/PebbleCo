@@ -8,6 +8,7 @@ const router = express.Router();
 
 router.post("/razorpay-webhook", async (req, res) => {
   try {
+    console.log("Webhook hit:", req.headers["x-razorpay-event"]);
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
     const signature = req.headers["x-razorpay-signature"];
 
@@ -17,7 +18,7 @@ router.post("/razorpay-webhook", async (req, res) => {
 
     const expected = crypto
       .createHmac("sha256", secret)
-      .update(req.rawBody)
+      .update(req.body.toString())
       .digest("hex");
 
     if (expected !== signature) {

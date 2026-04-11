@@ -13,6 +13,8 @@ import { createClient } from "@supabase/supabase-js";
 import { verifyFirebaseUser } from "./middleware/auth.js";
 import cartRoutes from "./routes/cart.js";
 import ordersRoutes from "./routes/orders.js";
+import razorpayWebhook from "./routes/razorpayWebhook.js";
+
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -30,6 +32,14 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
+
+app.use(
+  "/api/razorpay-webhook",
+  express.raw({ type: "*/*" })
+);
+
+app.use("/api", razorpayWebhook);
+
 app.use(express.json());
 
 app.get("/", (req, res) => {
@@ -64,7 +74,6 @@ app.use("/api", verifyRoutes);
 app.use("/api", billingInvoiceRoutes);
 app.use("/api/admin", adminOrdersRoutes);
 app.use("/api", trackingRoutes);
-
 app.post(
   "/api/reviews",
   verifyFirebaseUser,
