@@ -8,7 +8,9 @@ const router = express.Router();
 
 router.post("/razorpay-webhook", async (req, res) => {
   try {
-    console.log("Webhook hit:", req.headers["x-razorpay-event"]);
+    const body = JSON.parse(req.body.toString());
+
+    console.log("Webhook hit:", body.event);
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
     const signature = req.headers["x-razorpay-signature"];
 
@@ -25,8 +27,8 @@ router.post("/razorpay-webhook", async (req, res) => {
       return res.status(401).send("Invalid signature");
     }
 
-    const event = req.body.event;
-    const payment = req.body.payload?.payment?.entity;
+    const event = body.event;
+const payment = body.payload?.payment?.entity;
 
     if (event === "payment.captured" && payment) {
       const razorpayOrderId = payment.order_id;
