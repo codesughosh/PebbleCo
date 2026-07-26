@@ -8,7 +8,7 @@ import slide1 from "../assets/slider/1.jpg";
 import slide2 from "../assets/slider/2.jpg";
 import slide3 from "../assets/slider/3.jpg";
 import promoFlowerBraceletAlt from "../assets/products/fb2.jpg";
-import promoCharmAlt from "../assets/products/c2.jpg";
+import promoStargirlNecklace from "../assets/products/stargirl3.jpg";
 import PebbleBackground from "../components/PebbleBackground";
 
 const slides = [slide1, slide2, slide3];
@@ -23,8 +23,8 @@ const instagramTiles = [
     variant: "logo",
   },
   {
-    src: promoCharmAlt,
-    label: "Star charm necklace",
+    src: promoStargirlNecklace,
+    label: "Stargirl necklace",
   },
 ];
 const collections = [
