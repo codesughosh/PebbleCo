@@ -3,12 +3,21 @@ import WhyPebbleCo from "../components/WhyPebbleCo";
 import TopSellers from "../components/TopSellers";
 import "../styles/home.css";
 import { useNavigate } from "react-router-dom";
+import { Instagram, MessageCircle } from "lucide-react";
 import slide1 from "../assets/slider/1.jpg";
 import slide2 from "../assets/slider/2.jpg";
 import slide3 from "../assets/slider/3.jpg";
+import promoFlowerBracelet from "../assets/products/fb1.jpg";
+import promoBeadBracelet from "../assets/products/bb1.jpg";
+import promoCharm from "../assets/products/c1.jpg";
 import PebbleBackground from "../components/PebbleBackground";
 
 const slides = [slide1, slide2, slide3];
+const instagramTiles = [
+  { src: promoFlowerBracelet, label: "Flower bracelet" },
+  { src: promoBeadBracelet, label: "Bead bracelet" },
+  { src: promoCharm, label: "Charm preview" },
+];
 const collections = [
   { label: "Flower Bracelets", path: "/category/flower-bracelet" },
   { label: "Charms", path: "/category/charms" },
@@ -134,6 +143,49 @@ function Home() {
         <section className="top-sellers">
           <h2 className="section-title">Top Sellers</h2>
           <TopSellers />
+        </section>
+
+        <section className="instagram-promo" aria-labelledby="instagram-promo-title">
+          <div className="instagram-promo-copy">
+            <span className="instagram-kicker">
+              <Instagram size={15} strokeWidth={1.9} />
+              Instagram
+            </span>
+            <h2 id="instagram-promo-title">@pebbleco.store</h2>
+            <p>
+              Follow for new drops, restocks, college pop-ups, and handmade previews.
+            </p>
+
+            <div className="instagram-actions">
+              <a
+                className="instagram-primary"
+                href="https://www.instagram.com/pebbleco.store"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Instagram size={16} strokeWidth={2} />
+                Follow on Instagram
+              </a>
+
+              <a
+                className="instagram-secondary"
+                href="https://ig.me/m/pebbleco.store"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <MessageCircle size={16} strokeWidth={2} />
+                DM us
+              </a>
+            </div>
+          </div>
+
+          <div className="instagram-preview" aria-label="PebbleCo Instagram previews">
+            {instagramTiles.map((tile) => (
+              <div className="instagram-tile" key={tile.label}>
+                <img src={tile.src} alt={tile.label} />
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="collections" ref={collectionsRef}>
