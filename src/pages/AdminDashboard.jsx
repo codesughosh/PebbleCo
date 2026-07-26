@@ -6,6 +6,7 @@ import {
   CalendarDays,
   Check,
   ClipboardList,
+  CreditCard,
   IndianRupee,
   Loader2,
   PackageCheck,
@@ -27,6 +28,10 @@ const emptyFinance = {
     allBookings: 0,
     paidIncome: 0,
     pendingBookings: 0,
+    manualIncome: 0,
+    grossOrderIncome: 0,
+    netOrderIncome: 0,
+    razorpayFees: 0,
     expenses: 0,
     netProfit: 0,
     orderCount: 0,
@@ -36,11 +41,15 @@ const emptyFinance = {
   },
   monthlyTrend: [],
   expenseCategories: [],
+  incomeSources: [],
   bookings: [],
   recentBookings: [],
+  recentIncome: [],
   recentExpenses: [],
   categories: [],
+  incomeSourceOptions: [],
   expenseTableReady: true,
+  incomeTableReady: true,
 };
 
 function getTodayInputValue() {
@@ -54,8 +63,17 @@ function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [finance, setFinance] = useState(emptyFinance);
   const [error, setError] = useState("");
+  const [incomeState, setIncomeState] = useState("idle");
   const [expenseState, setExpenseState] = useState("idle");
+  const [deletingIncomeId, setDeletingIncomeId] = useState(null);
   const [deletingExpenseId, setDeletingExpenseId] = useState(null);
+  const [incomeForm, setIncomeForm] = useState({
+    title: "",
+    source: "Stall",
+    amount: "",
+    received_at: getTodayInputValue(),
+    note: "",
+  });
   const [expenseForm, setExpenseForm] = useState({
     title: "",
     category: "Raw Materials",
@@ -145,8 +163,15 @@ function AdminDashboard() {
     [finance.expenseCategories],
   );
 
-  const formatMoney = (value) =>
-    `${"\u20B9"}${Math.round(Number(value || 0)).toLocaleString("en-IN")}`;
+  const formatMoney = (value) => {
+    const number = Number(value || 0);
+    const hasPaisa = Math.round(number * 100) % 100 !== 0;
+
+    return `${"\u20B9"}${number.toLocaleString("en-IN", {
+      minimumFractionDigits: hasPaisa ? 2 : 0,
+      maximumFractionDigits: 2,
+    })}`;
+  };
 
   const formatDate = (value) =>
     value
@@ -165,6 +190,72 @@ function AdminDashboard() {
           }`,
       )
       .join(", ");
+
+  const submitIncome = async (event) => {
+    event.preventDefault();
+
+    if (incomeState !== "idle" || !finance.incomeTableReady || !user) return;
+
+    try {
+      setIncomeState("loading");
+      const token = await user.getIdToken();
+      const res = await fetch(`${API_BASE}/api/admin/finance/income`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(incomeForm),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Could not save income");
+      }
+
+      setIncomeForm({
+        title: "",
+        source: finance.incomeSourceOptions[0] || "Stall",
+        amount: "",
+        received_at: getTodayInputValue(),
+        note: "",
+      });
+      setIncomeState("success");
+      await fetchFinance(user);
+      window.setTimeout(() => setIncomeState("idle"), 900);
+    } catch (err) {
+      console.error("Income save failed:", err);
+      alert(err.message || "Could not save income");
+      setIncomeState("idle");
+    }
+  };
+
+  const deleteIncome = async (incomeId) => {
+    if (!user || deletingIncomeId) return;
+
+    try {
+      setDeletingIncomeId(incomeId);
+      const token = await user.getIdToken();
+      const res = await fetch(`${API_BASE}/api/admin/finance/income/${incomeId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Could not delete income");
+      }
+
+      await fetchFinance(user);
+    } catch (err) {
+      console.error("Income delete failed:", err);
+      alert(err.message || "Could not delete income");
+    } finally {
+      setDeletingIncomeId(null);
+    }
+  };
 
   const submitExpense = async (event) => {
     event.preventDefault();
@@ -267,6 +358,7 @@ function AdminDashboard() {
         {[
           ["overview", "Overview"],
           ["bookings", "Bookings"],
+          ["income", "Income"],
           ["expenses", "Expenses"],
         ].map(([key, label]) => (
           <button
@@ -300,7 +392,9 @@ function AdminDashboard() {
               </span>
               <p>Received income</p>
               <strong>{formatMoney(finance.totals.paidIncome)}</strong>
-              <small>{finance.totals.paidOrderCount} paid orders</small>
+              <small>
+                After {formatMoney(finance.totals.razorpayFees)} Razorpay fee
+              </small>
             </article>
 
             <article className="admin-erp-card metric">
@@ -371,7 +465,7 @@ function AdminDashboard() {
 
               <div className="chart-legend">
                 <span className="bookings">Bookings</span>
-                <span className="income">Income</span>
+                <span className="income">Net income</span>
                 <span className="expenses">Expenses</span>
               </div>
             </article>
@@ -457,6 +551,225 @@ function AdminDashboard() {
             </table>
           </div>
         </section>
+      )}
+
+      {activeTab === "income" && (
+        <>
+          <section className="admin-erp-metrics income-breakdown">
+            <article className="admin-erp-card metric">
+              <span className="metric-icon">
+                <IndianRupee size={20} strokeWidth={1.9} />
+              </span>
+              <p>Total received</p>
+              <strong>{formatMoney(finance.totals.paidIncome)}</strong>
+              <small>Website net plus manual payments</small>
+            </article>
+
+            <article className="admin-erp-card metric">
+              <span className="metric-icon">
+                <CreditCard size={20} strokeWidth={1.9} />
+              </span>
+              <p>Website net</p>
+              <strong>{formatMoney(finance.totals.netOrderIncome)}</strong>
+              <small>{formatMoney(finance.totals.grossOrderIncome)} gross</small>
+            </article>
+
+            <article className="admin-erp-card metric">
+              <span className="metric-icon">
+                <ReceiptText size={20} strokeWidth={1.9} />
+              </span>
+              <p>Razorpay fees</p>
+              <strong>{formatMoney(finance.totals.razorpayFees)}</strong>
+              <small>2% cut from Razorpay orders</small>
+            </article>
+
+            <article className="admin-erp-card metric">
+              <span className="metric-icon">
+                <Wallet size={20} strokeWidth={1.9} />
+              </span>
+              <p>Manual income</p>
+              <strong>{formatMoney(finance.totals.manualIncome)}</strong>
+              <small>Stall, Meesho, Instagram, cash</small>
+            </article>
+          </section>
+
+          <section className="admin-erp-grid income-grid">
+            <article className="admin-erp-card income-form-card">
+              <div className="admin-card-title">
+                <Plus size={19} strokeWidth={1.9} />
+                <h2>Add Payment Received</h2>
+              </div>
+
+              {!finance.incomeTableReady && (
+                <p className="admin-erp-warning">Income storage needs setup.</p>
+              )}
+
+              <form className="money-form" onSubmit={submitIncome}>
+                <label>
+                  <span>Payment</span>
+                  <input
+                    value={incomeForm.title}
+                    onChange={(event) =>
+                      setIncomeForm((current) => ({
+                        ...current,
+                        title: event.target.value,
+                      }))
+                    }
+                    placeholder="College stall, Meesho payout, etc."
+                    disabled={!finance.incomeTableReady}
+                    required
+                  />
+                </label>
+
+                <label>
+                  <span>Source</span>
+                  <select
+                    value={incomeForm.source}
+                    onChange={(event) =>
+                      setIncomeForm((current) => ({
+                        ...current,
+                        source: event.target.value,
+                      }))
+                    }
+                    disabled={!finance.incomeTableReady}
+                  >
+                    {(finance.incomeSourceOptions.length
+                      ? finance.incomeSourceOptions
+                      : ["Stall", "Meesho", "Other"]
+                    ).map((source) => (
+                      <option key={source} value={source}>
+                        {source}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label>
+                  <span>Amount</span>
+                  <input
+                    type="number"
+                    min="1"
+                    step="0.01"
+                    value={incomeForm.amount}
+                    onChange={(event) =>
+                      setIncomeForm((current) => ({
+                        ...current,
+                        amount: event.target.value,
+                      }))
+                    }
+                    placeholder="Amount"
+                    disabled={!finance.incomeTableReady}
+                    required
+                  />
+                </label>
+
+                <label>
+                  <span>Date</span>
+                  <input
+                    type="date"
+                    value={incomeForm.received_at}
+                    onChange={(event) =>
+                      setIncomeForm((current) => ({
+                        ...current,
+                        received_at: event.target.value,
+                      }))
+                    }
+                    disabled={!finance.incomeTableReady}
+                    required
+                  />
+                </label>
+
+                <label className="money-note">
+                  <span>Note</span>
+                  <textarea
+                    value={incomeForm.note}
+                    onChange={(event) =>
+                      setIncomeForm((current) => ({
+                        ...current,
+                        note: event.target.value,
+                      }))
+                    }
+                    placeholder="Optional"
+                    disabled={!finance.incomeTableReady}
+                  />
+                </label>
+
+                <button
+                  type="submit"
+                  className={`money-submit feedback-action is-${
+                    incomeState === "success" ? "success" : incomeState
+                  }`}
+                  disabled={
+                    !finance.incomeTableReady ||
+                    incomeState !== "idle" ||
+                    !incomeForm.title ||
+                    !incomeForm.amount
+                  }
+                >
+                  {incomeState === "loading" ? (
+                    <>
+                      <Loader2 size={16} className="admin-erp-spin" />
+                      Saving
+                    </>
+                  ) : incomeState === "success" ? (
+                    <>
+                      <Check size={16} strokeWidth={2.2} />
+                      Saved
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={16} strokeWidth={2} />
+                      Add Payment
+                    </>
+                  )}
+                </button>
+              </form>
+            </article>
+
+            <article className="admin-erp-card income-list-card">
+              <div className="admin-card-title spaced">
+                <div>
+                  <h2>Manual Payments</h2>
+                  <p>{formatMoney(finance.totals.manualIncome)} added manually</p>
+                </div>
+                <CalendarDays size={18} strokeWidth={1.9} />
+              </div>
+
+              {finance.recentIncome.length === 0 ? (
+                <p className="admin-muted">No manual payments recorded yet.</p>
+              ) : (
+                <div className="money-list">
+                  {finance.recentIncome.map((income) => (
+                    <div className="money-row" key={income.id}>
+                      <div>
+                        <strong>{income.title}</strong>
+                        <span>
+                          {income.source} - {formatDate(income.received_at)}
+                        </span>
+                        {income.note && <small>{income.note}</small>}
+                      </div>
+                      <div>
+                        <b>{formatMoney(income.amount)}</b>
+                        <button
+                          type="button"
+                          onClick={() => deleteIncome(income.id)}
+                          disabled={deletingIncomeId === income.id}
+                          aria-label={`Delete ${income.title}`}
+                        >
+                          {deletingIncomeId === income.id ? (
+                            <Loader2 size={15} className="admin-erp-spin" />
+                          ) : (
+                            <Trash2 size={15} strokeWidth={2} />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </article>
+          </section>
+        </>
       )}
 
       {activeTab === "expenses" && (

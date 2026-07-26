@@ -14,6 +14,17 @@ const EXPENSE_CATEGORIES = new Set([
   "Other",
 ]);
 
+const INCOME_SOURCES = new Set([
+  "Stall",
+  "Meesho",
+  "Instagram",
+  "UPI",
+  "Cash",
+  "Other",
+]);
+
+const RAZORPAY_FEE_RATE = 0.02;
+
 function normalizeText(value, maxLength = 160) {
   return String(value || "").trim().slice(0, maxLength);
 }
@@ -27,14 +38,22 @@ function sumMoney(rows, selector) {
   return rows.reduce((sum, row) => sum + toNumber(selector(row)), 0);
 }
 
-function isExpenseTableMissing(error) {
+function isTableMissing(error, tableName) {
   if (!error) return false;
 
   return (
     error.code === "42P01" ||
     error.code === "PGRST205" ||
-    String(error.message || "").includes("business_expenses")
+    String(error.message || "").includes(tableName)
   );
+}
+
+function isExpenseTableMissing(error) {
+  return isTableMissing(error, "business_expenses");
+}
+
+function isIncomeTableMissing(error) {
+  return isTableMissing(error, "business_income");
 }
 
 function monthKey(value) {
@@ -70,7 +89,30 @@ function createMonthBuckets() {
   return buckets;
 }
 
-function buildReport(orders, expenses) {
+function isRazorpayOrder(order) {
+  const paymentId = String(order.payment_id || "");
+  const paymentSource = String(order.payment_source || "").toLowerCase();
+
+  return Boolean(
+    order.razorpay_order_id ||
+      paymentSource.includes("razorpay") ||
+      paymentId.startsWith("pay_"),
+  );
+}
+
+function getOrderGatewayFee(order) {
+  if (order.payment_status !== "success" || !isRazorpayOrder(order)) return 0;
+
+  return toNumber(order.total) * RAZORPAY_FEE_RATE;
+}
+
+function getOrderNetIncome(order) {
+  if (order.payment_status !== "success") return 0;
+
+  return Math.max(0, toNumber(order.total) - getOrderGatewayFee(order));
+}
+
+function buildReport(orders, expenses, incomeEntries) {
   const activeOrders = orders.filter((order) => order.payment_status !== "rejected");
   const paidOrders = orders.filter((order) => order.payment_status === "success");
   const pendingOrders = orders.filter(
@@ -79,12 +121,18 @@ function buildReport(orders, expenses) {
       order.payment_status === "pending_verification",
   );
   const expenseRows = expenses || [];
+  const incomeRows = incomeEntries || [];
   const expenseTotal = sumMoney(expenseRows, (expense) => expense.amount);
-  const paidIncome = sumMoney(paidOrders, (order) => order.total);
+  const manualIncome = sumMoney(incomeRows, (income) => income.amount);
+  const grossOrderIncome = sumMoney(paidOrders, (order) => order.total);
+  const razorpayFees = sumMoney(paidOrders, getOrderGatewayFee);
+  const netOrderIncome = grossOrderIncome - razorpayFees;
+  const paidIncome = netOrderIncome + manualIncome;
   const allBookings = sumMoney(activeOrders, (order) => order.total);
   const pendingBookings = sumMoney(pendingOrders, (order) => order.total);
   const buckets = createMonthBuckets();
   const expenseCategories = {};
+  const incomeSources = {};
 
   activeOrders.forEach((order) => {
     const key = monthKey(order.created_at);
@@ -105,8 +153,29 @@ function buildReport(orders, expenses) {
     bucket.bookings += total;
 
     if (order.payment_status === "success") {
-      bucket.income += total;
+      bucket.income += getOrderNetIncome(order);
     }
+  });
+
+  incomeRows.forEach((income) => {
+    const key = monthKey(income.received_at || income.created_at);
+
+    if (!buckets.has(key)) {
+      buckets.set(key, {
+        key,
+        label: monthLabel(key),
+        bookings: 0,
+        income: 0,
+        expenses: 0,
+        net: 0,
+      });
+    }
+
+    const amount = toNumber(income.amount);
+    const bucket = buckets.get(key);
+    bucket.income += amount;
+    incomeSources[income.source || "Other"] =
+      (incomeSources[income.source || "Other"] || 0) + amount;
   });
 
   expenseRows.forEach((expense) => {
@@ -142,6 +211,10 @@ function buildReport(orders, expenses) {
       allBookings,
       paidIncome,
       pendingBookings,
+      manualIncome,
+      grossOrderIncome,
+      netOrderIncome,
+      razorpayFees,
       expenses: expenseTotal,
       netProfit: paidIncome - expenseTotal,
       orderCount: activeOrders.length,
@@ -161,8 +234,12 @@ function buildReport(orders, expenses) {
     expenseCategories: Object.entries(expenseCategories)
       .map(([category, amount]) => ({ category, amount }))
       .sort((a, b) => b.amount - a.amount),
+    incomeSources: Object.entries(incomeSources)
+      .map(([source, amount]) => ({ source, amount }))
+      .sort((a, b) => b.amount - a.amount),
     bookings: activeOrders,
     recentBookings: activeOrders.slice(0, 10),
+    recentIncome: incomeRows.slice(0, 10),
     recentExpenses: expenseRows.slice(0, 10),
   };
 }
@@ -182,6 +259,21 @@ async function fetchExpenses() {
   return { expenses: data || [], tableReady: true };
 }
 
+async function fetchIncome() {
+  const { data, error } = await supabase
+    .from("business_income")
+    .select("id, title, source, amount, received_at, note, created_at")
+    .order("received_at", { ascending: false });
+
+  if (isIncomeTableMissing(error)) {
+    return { incomeEntries: [], tableReady: false };
+  }
+
+  if (error) throw error;
+
+  return { incomeEntries: data || [], tableReady: true };
+}
+
 router.get("/finance", verifyAdmin, async (req, res) => {
   try {
     const { data: orders, error: ordersError } = await supabase
@@ -193,6 +285,8 @@ router.get("/finance", verifyAdmin, async (req, res) => {
           payment_status,
           status,
           payment_id,
+          payment_source,
+          razorpay_order_id,
           delivery_type,
           customer_name,
           customer_phone,
@@ -213,18 +307,97 @@ router.get("/finance", verifyAdmin, async (req, res) => {
       return res.status(500).json({ error: "Could not load orders" });
     }
 
-    const { expenses, tableReady } = await fetchExpenses();
-    const report = buildReport(orders || [], expenses);
+    const [{ expenses, tableReady }, { incomeEntries, tableReady: incomeReady }] =
+      await Promise.all([fetchExpenses(), fetchIncome()]);
+    const report = buildReport(orders || [], expenses, incomeEntries);
 
     res.json({
       success: true,
       expenseTableReady: tableReady,
+      incomeTableReady: incomeReady,
       categories: Array.from(EXPENSE_CATEGORIES),
+      incomeSourceOptions: Array.from(INCOME_SOURCES),
+      razorpayFeeRate: RAZORPAY_FEE_RATE,
       ...report,
     });
   } catch (err) {
     console.error("Admin finance report failed:", err);
     res.status(500).json({ error: "Could not load finance report" });
+  }
+});
+
+router.post("/finance/income", verifyAdmin, async (req, res) => {
+  try {
+    const title = normalizeText(req.body.title, 90);
+    const source = INCOME_SOURCES.has(req.body.source) ? req.body.source : "Other";
+    const note = normalizeText(req.body.note, 260);
+    const amount = Number(req.body.amount);
+    const receivedAt = req.body.received_at
+      ? new Date(req.body.received_at)
+      : new Date();
+
+    if (!title) {
+      return res.status(400).json({ error: "Income title is required" });
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 1000000) {
+      return res.status(400).json({ error: "Invalid income amount" });
+    }
+
+    if (Number.isNaN(receivedAt.getTime())) {
+      return res.status(400).json({ error: "Invalid income date" });
+    }
+
+    const { data, error } = await supabase
+      .from("business_income")
+      .insert({
+        title,
+        source,
+        amount,
+        received_at: receivedAt.toISOString(),
+        note: note || null,
+        created_by_uid: req.user.uid,
+        created_by_email: req.user.email || null,
+      })
+      .select()
+      .single();
+
+    if (isIncomeTableMissing(error)) {
+      return res.status(424).json({ error: "Income table is not set up" });
+    }
+
+    if (error) {
+      console.error("Income insert failed:", error);
+      return res.status(500).json({ error: "Could not save income" });
+    }
+
+    res.json({ success: true, income: data });
+  } catch (err) {
+    console.error("Admin income save failed:", err);
+    res.status(500).json({ error: "Could not save income" });
+  }
+});
+
+router.delete("/finance/income/:id", verifyAdmin, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from("business_income")
+      .delete()
+      .eq("id", req.params.id);
+
+    if (isIncomeTableMissing(error)) {
+      return res.status(424).json({ error: "Income table is not set up" });
+    }
+
+    if (error) {
+      console.error("Income delete failed:", error);
+      return res.status(500).json({ error: "Could not delete income" });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Admin income delete failed:", err);
+    res.status(500).json({ error: "Could not delete income" });
   }
 });
 

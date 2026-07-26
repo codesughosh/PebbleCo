@@ -41,6 +41,8 @@
 
 .admin-erp-link,
 .admin-erp-tabs button,
+.money-submit,
+.money-row button,
 .expense-submit,
 .expense-row button {
   border: 1px solid rgba(255, 255, 255, 0.52);
@@ -157,6 +159,8 @@
 .chart-card,
 .category-card,
 .admin-table-card,
+.income-form-card,
+.income-list-card,
 .expense-form-card,
 .expenses-list-card {
   padding: 20px;
@@ -347,15 +351,18 @@
   background: rgba(248, 184, 202, 0.44);
 }
 
+.income-grid,
 .expenses-grid {
   grid-template-columns: minmax(320px, 0.78fr) minmax(0, 1fr);
 }
 
+.money-form,
 .expense-form {
   display: grid;
   gap: 12px;
 }
 
+.money-form label,
 .expense-form label {
   display: grid;
   gap: 6px;
@@ -364,6 +371,9 @@
   font-weight: 800;
 }
 
+.money-form input,
+.money-form select,
+.money-form textarea,
 .expense-form input,
 .expense-form select,
 .expense-form textarea {
@@ -377,15 +387,18 @@
   font: inherit;
 }
 
+.money-form textarea,
 .expense-form textarea {
   min-height: 86px;
   resize: vertical;
 }
 
+.money-note,
 .expense-note {
   grid-column: 1 / -1;
 }
 
+.money-submit,
 .expense-submit {
   min-height: 46px;
   justify-content: center;
@@ -393,16 +406,19 @@
   background: #f8b8ca;
 }
 
+.money-submit:disabled,
 .expense-submit:disabled {
   cursor: not-allowed;
   opacity: 0.72;
 }
 
+.money-list,
 .expense-list {
   display: grid;
   gap: 10px;
 }
 
+.money-row,
 .expense-row {
   display: flex;
   justify-content: space-between;
@@ -412,6 +428,10 @@
   background: rgba(255, 243, 246, 0.58);
 }
 
+.money-row strong,
+.money-row span,
+.money-row small,
+.money-row b,
 .expense-row strong,
 .expense-row span,
 .expense-row small,
@@ -419,22 +439,26 @@
   display: block;
 }
 
+.money-row strong,
 .expense-row strong {
   color: #3b2b2f;
   font-size: 15px;
 }
 
+.money-row small,
 .expense-row small {
   margin-top: 4px;
   color: #8a6a73;
 }
 
+.money-row > div:last-child,
 .expense-row > div:last-child {
   display: grid;
   justify-items: end;
   gap: 8px;
 }
 
+.money-row button,
 .expense-row button {
   width: 34px;
   height: 34px;
@@ -477,6 +501,7 @@
 
   .admin-erp-metrics,
   .admin-erp-grid,
+  .income-grid,
   .expenses-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -502,6 +527,7 @@
 
   .admin-erp-metrics,
   .admin-erp-grid,
+  .income-grid,
   .expenses-grid {
     grid-template-columns: 1fr;
   }
@@ -516,10 +542,12 @@
     height: 170px;
   }
 
+  .money-row,
   .expense-row {
     flex-direction: column;
   }
 
+  .money-row > div:last-child,
   .expense-row > div:last-child {
     align-items: center;
     justify-items: start;
