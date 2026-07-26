@@ -23,6 +23,7 @@ router.get("/", verifyUser, async (req, res) => {
       delivery_type,
       created_at,
       order_items (
+        id,
         quantity,
         price_at_purchase,
         products ( name )

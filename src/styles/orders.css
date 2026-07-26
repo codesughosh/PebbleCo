@@ -119,6 +119,24 @@
   font-weight: 700;
 }
 
+.payment-state {
+  color: #5a2a36;
+  font-weight: 700;
+}
+
+.payment-state.success {
+  color: green;
+}
+
+.payment-state.pending_verification,
+.payment-state.pending {
+  color: #8a6d3b;
+}
+
+.payment-state.rejected {
+  color: #c0392b;
+}
+
 .status,
 .delivery {
   color: #5a2a36;

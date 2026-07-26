@@ -40,6 +40,16 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.78);
 }
 
+.order-success-badge.pending {
+  background: rgba(255, 255, 255, 0.62);
+  color: #7a3b4a;
+}
+
+.order-success-badge.rejected {
+  background: rgba(255, 255, 255, 0.62);
+  color: #c0392b;
+}
+
 .order-success-kicker {
   display: inline-flex;
   min-height: 28px;

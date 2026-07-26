@@ -1,11 +1,22 @@
-import { useEffect, useState } from "react";
-import { ArrowLeft, CreditCard, Loader2, PackageCheck } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ArrowLeft,
+  Check,
+  Copy,
+  ExternalLink,
+  Loader2,
+  PackageCheck,
+  QrCode,
+  ShieldCheck,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { supabase } from "../supabaseClient";
 import "../styles/checkout.css";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const UPI_ID = (import.meta.env.VITE_UPI_ID || "").trim();
+const UPI_PAYEE_NAME = (import.meta.env.VITE_UPI_PAYEE_NAME || "PebbleCo").trim();
 
 function CheckoutSummary() {
   const navigate = useNavigate();
@@ -13,7 +24,9 @@ function CheckoutSummary() {
 
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isPaying, setIsPaying] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [upiTransactionId, setUpiTransactionId] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const deliveryType = localStorage.getItem("deliveryType");
   const address = JSON.parse(localStorage.getItem("shippingAddress"));
@@ -84,29 +97,70 @@ function CheckoutSummary() {
   const total = subtotal + shippingFee;
   const formatPrice = (value) => `\u20B9${value}`;
 
-  const handlePayment = async () => {
-    if (isPaying) return;
+  const upiUri = useMemo(() => {
+    if (!UPI_ID) return "";
 
-    if (!window.Razorpay) {
-      alert("Razorpay not loaded");
+    const params = new URLSearchParams({
+      pa: UPI_ID,
+      pn: UPI_PAYEE_NAME,
+      am: Number(total || 0).toFixed(2),
+      cu: "INR",
+      tn: "PebbleCo order payment",
+    });
+
+    return `upi://pay?${params.toString()}`;
+  }, [total]);
+
+  const qrCodeUrl = upiUri
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=14&data=${encodeURIComponent(
+        upiUri,
+      )}`
+    : "";
+
+  const copyUpiId = async () => {
+    if (!UPI_ID) return;
+
+    try {
+      await navigator.clipboard.writeText(UPI_ID);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch (err) {
+      alert(`UPI ID: ${UPI_ID}`);
+    }
+  };
+
+  const handleManualUpiSubmit = async () => {
+    if (isSubmitting) return;
+
+    const transactionId = upiTransactionId.trim();
+
+    if (!UPI_ID) {
+      alert("UPI ID is not configured yet");
+      return;
+    }
+
+    if (transactionId.length < 6) {
+      alert("Please paste a valid UPI Transaction ID / UTR");
       return;
     }
 
     try {
-      setIsPaying(true);
+      setIsSubmitting(true);
+      const token = await user.getIdToken();
 
-      const res = await fetch(`${BACKEND_URL}/api/create-order`, {
+      const res = await fetch(`${BACKEND_URL}/api/manual-upi-order`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           amount: total,
-          userId: user.uid,
           customerEmail: user.email,
           deliveryType,
           shippingAddress: deliveryType === "shipping" ? address : null,
           inhandDetails: deliveryType === "inhand" ? inhandDetails : null,
+          upiTransactionId: transactionId,
           cartItems: cartItems.map((item) => ({
             product_id: item.product.id,
             name: item.product.name,
@@ -116,75 +170,17 @@ function CheckoutSummary() {
         }),
       });
 
-      if (!res.ok) {
-        throw new Error("Could not create order");
+      const data = await res.json();
+
+      if (!res.ok || !data.success || !data.dbOrderId) {
+        throw new Error(data.error || "Could not create order");
       }
 
-      const { orderId, dbOrderId, amount } = await res.json();
-
-      if (!orderId || !dbOrderId) {
-        throw new Error("Invalid order response");
-      }
-
-      const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        order_id: orderId,
-        amount: amount,
-        currency: "INR",
-        name: "PebbleCo",
-
-        handler: async function (response) {
-          try {
-            const verifyRes = await fetch(`${BACKEND_URL}/api/verify-payment`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                orderId: dbOrderId,
-                userId: user.uid,
-                deliveryType,
-                customerName:
-                  deliveryType === "inhand" ? inhandDetails?.name : address?.name,
-                customerPhone:
-                  deliveryType === "inhand" ? inhandDetails?.phone : address?.phone,
-                cartItems: cartItems.map((item) => ({
-                  product_id: item.product.id,
-                  name: item.product.name,
-                  quantity: item.quantity,
-                  price: item.product.price,
-                })),
-              }),
-            });
-
-            const verifyData = await verifyRes.json();
-
-            if (!verifyData.success) {
-              throw new Error("Payment verification failed");
-            }
-
-            navigate(`/payment/success/${dbOrderId}`);
-          } catch (err) {
-            console.error(err);
-            alert("Payment verification failed");
-            setIsPaying(false);
-          }
-        },
-
-        modal: {
-          ondismiss: function () {
-            setIsPaying(false);
-          },
-        },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+      navigate(`/order-success/${data.dbOrderId}`);
     } catch (err) {
       console.error(err);
-      alert("Payment failed");
-      setIsPaying(false);
+      alert(err.message || "Could not submit payment details");
+      setIsSubmitting(false);
     }
   };
 
@@ -205,7 +201,7 @@ function CheckoutSummary() {
         <div className="checkout-head">
           <span className="checkout-step">Step 3 of 3</span>
           <h1>Order Summary</h1>
-          <p>Review your items and complete your payment.</p>
+          <p>Pay with UPI, then paste your transaction ID for verification.</p>
         </div>
 
         <div className="summary-box">
@@ -244,6 +240,56 @@ function CheckoutSummary() {
           </div>
         </div>
 
+        <div className="upi-payment-box">
+          <div className="upi-payment-head">
+            <QrCode size={22} strokeWidth={1.8} />
+            <div>
+              <h2>Pay with UPI</h2>
+              <p>Scan the QR or open your UPI app, then submit the transaction ID.</p>
+            </div>
+          </div>
+
+          {UPI_ID ? (
+            <>
+              <div className="upi-qr-wrap">
+                <img src={qrCodeUrl} alt={`UPI QR code for ${UPI_PAYEE_NAME}`} />
+              </div>
+
+              <div className="upi-id-row">
+                <span>{UPI_ID}</span>
+                <button type="button" onClick={copyUpiId}>
+                  {copied ? <Check size={15} /> : <Copy size={15} />}
+                  {copied ? "Copied" : "Copy"}
+                </button>
+              </div>
+
+              <a className="upi-open-link" href={upiUri}>
+                <ExternalLink size={16} strokeWidth={2} />
+                Open UPI App
+              </a>
+            </>
+          ) : (
+            <div className="upi-config-warning">
+              Add <strong>VITE_UPI_ID</strong> to show your QR code here.
+            </div>
+          )}
+
+          <label className="upi-transaction-field">
+            <span>UPI Transaction ID / UTR</span>
+            <input
+              type="text"
+              value={upiTransactionId}
+              onChange={(e) => setUpiTransactionId(e.target.value)}
+              placeholder="Paste transaction ID after payment"
+            />
+          </label>
+
+          <p className="upi-note">
+            <ShieldCheck size={15} strokeWidth={1.8} />
+            Your order will be marked pending until PebbleCo verifies the payment.
+          </p>
+        </div>
+
         <div className="checkout-actions split">
           <button
             type="button"
@@ -257,18 +303,18 @@ function CheckoutSummary() {
           <button
             type="button"
             className="checkout-continue"
-            onClick={handlePayment}
-            disabled={isPaying}
+            onClick={handleManualUpiSubmit}
+            disabled={isSubmitting}
           >
-            {isPaying ? (
+            {isSubmitting ? (
               <>
                 <Loader2 size={16} className="spin" />
-                Processing Payment
+                Submitting
               </>
             ) : (
               <>
-                <CreditCard size={16} strokeWidth={2} />
-                Pay {formatPrice(total)}
+                <ShieldCheck size={16} strokeWidth={2} />
+                Submit for Verification
               </>
             )}
           </button>

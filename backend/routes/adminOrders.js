@@ -19,7 +19,8 @@ router.get("/orders", verifyAdmin, async (req, res) => {
 });
 
 router.patch("/orders/:id", verifyAdmin, async (req, res) => {
-  const { status, shipment_status, awb_code, courier_name } = req.body;
+  const { status, payment_status, shipment_status, awb_code, courier_name } =
+    req.body;
 
   // 1️⃣ Get existing order (needed for email)
   const { data: order, error: fetchError } = await supabase
@@ -33,14 +34,21 @@ router.patch("/orders/:id", verifyAdmin, async (req, res) => {
   }
 
   // 2️⃣ Update order
+  const updates = {};
+
+  if (status !== undefined) updates.status = status;
+  if (payment_status !== undefined) updates.payment_status = payment_status;
+  if (shipment_status !== undefined) updates.shipment_status = shipment_status;
+  if (awb_code !== undefined) updates.awb_code = awb_code;
+  if (courier_name !== undefined) updates.courier_name = courier_name;
+
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: "No updates provided" });
+  }
+
   const { error: updateError } = await supabase
     .from("orders")
-    .update({
-      status,
-      shipment_status,
-      awb_code,
-      courier_name,
-    })
+    .update(updates)
     .eq("id", req.params.id);
 
   if (updateError) {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../firebase";
 import "../styles/adminOrders.css";
 
 function AdminOrders() {
@@ -10,6 +10,7 @@ function AdminOrders() {
   const [unauthorized, setUnauthorized] = useState(false);
 
   const API_BASE = import.meta.env.VITE_BACKEND_URL;
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u) {
@@ -64,15 +65,16 @@ function AdminOrders() {
     fetchOrders(user);
   };
 
-  /* ---------------- UI STATES ---------------- */
+  const formatEmpty = (value) => value || "--";
+  const formatPrice = (value) => `\u20B9${value}`;
 
-  if (loading) return <p style={{ padding: 40 }}>Loading admin panel…</p>;
+  if (loading) return <p style={{ padding: 40 }}>Loading admin panel...</p>;
 
-  if (unauthorized) return <p style={{ padding: 40 }}>❌ Access denied</p>;
+  if (unauthorized) return <p style={{ padding: 40 }}>Access denied</p>;
 
   return (
     <div className="admin-orders">
-      <h1>Admin – Orders</h1>
+      <h1>Admin - Orders</h1>
 
       {orders.length === 0 && <p>No orders found.</p>}
 
@@ -85,20 +87,25 @@ function AdminOrders() {
             <b>User ID:</b> {o.user_id}
           </p>
           <p>
-            <b>Customer Name:</b> {o.customer_name || "—"}
+            <b>Customer Name:</b> {formatEmpty(o.customer_name)}
           </p>
           <p>
-            <b>Email:</b> {o.customer_email || "—"}
+            <b>Email:</b> {formatEmpty(o.customer_email)}
           </p>
           <p>
-            <b>Phone:</b> {o.customer_phone || "—"}
+            <b>Phone:</b> {formatEmpty(o.customer_phone)}
           </p>
           <p>
-            <b>Total:</b> ₹{o.total}
+            <b>Total:</b> {formatPrice(o.total)}
           </p>
           <p>
-            <b>Payment:</b> {o.payment_status}
+            <b>Payment:</b> {formatEmpty(o.payment_status)}
           </p>
+          {o.payment_status === "pending_verification" && (
+            <p className="admin-upi-id">
+              <b>UPI Transaction ID:</b> {formatEmpty(o.payment_id)}
+            </p>
+          )}
           <p>
             <b>Delivery:</b> {o.delivery_type}
           </p>
@@ -118,26 +125,43 @@ function AdminOrders() {
           {o.delivery_type === "shipping" && (
             <>
               <p>
-                <b>Shiprocket Order:</b> {o.shiprocket_order_id || "—"}
+                <b>Shiprocket Order:</b> {formatEmpty(o.shiprocket_order_id)}
               </p>
               <p>
-                <b>Courier:</b> {o.courier_name || "—"}
+                <b>Courier:</b> {formatEmpty(o.courier_name)}
               </p>
               <p>
-                <b>AWB:</b> {o.awb_code || "—"}
+                <b>AWB:</b> {formatEmpty(o.awb_code)}
               </p>
               <p>
-                <b>Shipment Status:</b> {o.shipment_status || "—"}
+                <b>Shipment Status:</b> {formatEmpty(o.shipment_status)}
               </p>
             </>
           )}
 
           <div className="admin-actions">
             <select
-              value={o.status}
+              value={o.payment_status || "pending"}
+              onChange={(e) => {
+                const paymentStatus = e.target.value;
+                updateOrder(o.id, {
+                  payment_status: paymentStatus,
+                  ...(paymentStatus === "success" ? { status: "paid" } : {}),
+                });
+              }}
+            >
+              <option value="pending">Payment pending</option>
+              <option value="pending_verification">Pending verification</option>
+              <option value="success">Paid</option>
+              <option value="rejected">Rejected</option>
+            </select>
+
+            <select
+              value={o.status || "pending"}
               onChange={(e) => updateOrder(o.id, { status: e.target.value })}
             >
               <option value="pending">Pending</option>
+              <option value="paid">Paid</option>
               <option value="packed">Packed</option>
               <option value="shipped">Shipped</option>
               <option value="delivered">Delivered</option>

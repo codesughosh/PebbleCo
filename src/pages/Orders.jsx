@@ -40,6 +40,13 @@ function Orders() {
   };
 
   const formatPrice = (value) => `\u20B9${value}`;
+  const formatPaymentStatus = (status) => {
+    if (status === "success") return "Paid";
+    if (status === "pending_verification") return "Pending verification";
+    if (status === "rejected") return "Rejected";
+    if (status === "pending") return "Payment pending";
+    return status || "Paid";
+  };
 
   if (loading) {
     return (
@@ -108,7 +115,9 @@ function Orders() {
 
                   <div className="order-row">
                     <span className="label">Payment</span>
-                    <span className="paid">{order.payment_status || "Paid"}</span>
+                    <span className={`payment-state ${order.payment_status || "success"}`}>
+                      {formatPaymentStatus(order.payment_status)}
+                    </span>
                   </div>
 
                   <div className="order-row">
