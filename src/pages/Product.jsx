@@ -1,16 +1,24 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { supabase } from "../supabaseClient";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { ChevronDown, Camera } from "lucide-react";
+import {
+  Camera,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  X,
+} from "lucide-react";
 import CartToast from "../components/CartToast";
+import { supabase } from "../supabaseClient";
+import "../styles/product.css";
 
 function Product() {
-  const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const { id } = useParams();
+  const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [openDesc, setOpenDesc] = useState(false);
   const [product, setProduct] = useState(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [fullscreenIndex, setFullscreenIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -24,29 +32,39 @@ function Product() {
   const [showToast, setShowToast] = useState(false);
   const [galleryImages, setGalleryImages] = useState([]);
 
-  const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString("en-IN", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-  };
+  async function fetchReviews() {
+    const { data, error } = await supabase
+      .from("reviews")
+      .select("*")
+      .eq("product_id", id)
+      .order("created_at", { ascending: false });
 
-  const openGallery = (images, index = 0) => {
-    setGalleryImages(images);
-    setActiveIndex(index);
-    setFullscreenOpen(true);
-  };
+    if (!error) {
+      setReviews(data);
+    }
+  }
 
-  const handleImagePick = (e) => {
-    const files = Array.from(e.target.files);
-    const limited = files.slice(0, 3 - reviewImages.length);
-    setReviewImages((prev) => [...prev, ...limited]);
-  };
+  async function fetchProduct() {
+    setLoading(true);
+    setProduct(null);
+
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (!error && data) {
+      setProduct(data);
+      setActiveIndex(0);
+      await fetchReviews();
+    }
+
+    setLoading(false);
+  }
 
   useEffect(() => {
     const auth = getAuth();
-
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
     });
@@ -65,16 +83,39 @@ function Product() {
     fetchProduct();
   }, [id]);
 
-  const fetchReviews = async () => {
-    const { data, error } = await supabase
-      .from("reviews")
-      .select("*")
-      .eq("product_id", id)
-      .order("created_at", { ascending: false });
+  const productImages = product?.images?.length
+    ? product.images
+    : product?.image_urls?.length
+      ? product.image_urls
+      : product?.image_url
+        ? [product.image_url]
+        : ["/placeholder.png"];
 
-    if (!error) {
-      setReviews(data);
-    }
+  const discount =
+    product?.original_price && product.original_price > product.price
+      ? Math.round(
+          ((product.original_price - product.price) / product.original_price) *
+            100,
+        )
+      : null;
+
+  const formatDate = (dateStr) =>
+    new Date(dateStr).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+
+  const openGallery = (images, index = 0) => {
+    setGalleryImages(images);
+    setFullscreenIndex(index);
+    setFullscreenOpen(true);
+  };
+
+  const handleImagePick = (event) => {
+    const files = Array.from(event.target.files);
+    const limited = files.slice(0, 3 - reviewImages.length);
+    setReviewImages((prev) => [...prev, ...limited]);
   };
 
   const submitReview = async () => {
@@ -88,8 +129,7 @@ function Product() {
       return;
     }
 
-    const token = await user.getIdToken(); // 🔑 FIREBASE TOKEN
-
+    const token = await user.getIdToken();
     const formData = new FormData();
     formData.append("product_id", product.id);
     formData.append("rating", rating);
@@ -122,14 +162,13 @@ function Product() {
     const confirmDelete = window.confirm("Delete this review?");
     if (!confirmDelete) return;
 
-    const token = await user.getIdToken(); // 🔑 FIREBASE TOKEN
-
+    const token = await user.getIdToken();
     const res = await fetch(
       `${import.meta.env.VITE_BACKEND_URL}/api/reviews/${reviewId}`,
       {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${token}`, // 🔑 REQUIRED
+          Authorization: `Bearer ${token}`,
         },
       },
     );
@@ -142,22 +181,6 @@ function Product() {
     fetchReviews();
   };
 
-  const fetchProduct = async () => {
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (!error && data) {
-      setProduct(data);
-      setActiveIndex(0);
-      fetchReviews();
-    }
-
-    setLoading(false);
-  };
-
   const addToCart = async () => {
     if (!user) {
       alert("Please login to add items to cart");
@@ -165,7 +188,6 @@ function Product() {
     }
 
     const token = await user.getIdToken();
-
     const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/cart`, {
       method: "POST",
       headers: {
@@ -186,236 +208,213 @@ function Product() {
     setShowToast(true);
   };
 
-  /* ----------- SLIDER HANDLERS (MOBILE) ----------- */
-
-  const onTouchStart = (e) => {
-    setTouchStartX(e.touches[0].clientX);
+  const handleTouchStart = (event) => {
+    setTouchStartX(event.touches[0].clientX);
   };
 
-  const onTouchEnd = (e) => {
-    if (!touchStartX) return;
+  const handleSwipeEnd = (event, currentIndex, itemCount, setIndex) => {
+    if (touchStartX === null) return;
 
-    const diff = touchStartX - e.changedTouches[0].clientX;
+    const diff = touchStartX - event.changedTouches[0].clientX;
 
-    if (diff > 50 && activeIndex < galleryImages.length - 1) {
-      setActiveIndex(activeIndex + 1);
+    if (diff > 50 && currentIndex < itemCount - 1) {
+      setIndex(currentIndex + 1);
     }
 
-    if (diff < -50 && activeIndex > 0) {
-      setActiveIndex(activeIndex - 1);
+    if (diff < -50 && currentIndex > 0) {
+      setIndex(currentIndex - 1);
     }
 
     setTouchStartX(null);
   };
 
-  if (loading) return <p style={{ padding: 40 }}>Loading...</p>;
-  if (!product) return <p style={{ padding: 40 }}>Product not found</p>;
+  if (loading) {
+    return <p className="product-state">Loading product...</p>;
+  }
+
+  if (!product) {
+    return <p className="product-state">Product not found.</p>;
+  }
 
   return (
     <>
-      <div style={page}>
-        <div style={topSection}>
-          {/* IMAGE SECTION */}
-          <div>
+      <div className="product-page">
+        <section className="product-hero">
+          <div className="product-gallery-panel">
             <div
-              style={sliderContainer}
-              onTouchStart={isMobile ? onTouchStart : null}
-              onTouchEnd={isMobile ? onTouchEnd : null}
+              className="product-slider"
+              onTouchStart={isMobile ? handleTouchStart : undefined}
+              onTouchEnd={
+                isMobile
+                  ? (event) =>
+                      handleSwipeEnd(
+                        event,
+                        activeIndex,
+                        productImages.length,
+                        setActiveIndex,
+                      )
+                  : undefined
+              }
             >
               <div
+                className="product-slider-track"
                 style={{
-                  ...sliderTrack,
                   transform: `translateX(-${activeIndex * 100}%)`,
                 }}
               >
-                {product.images.map((img, i) => (
-                  <img
-                    key={i}
-                    src={img}
-                    alt=""
-                    style={slideImage}
-                    onClick={() => openGallery(product.images, i)}
-                    onMouseEnter={(e) =>
-                      (e.target.style.transform = "scale(1.05)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.target.style.transform = "scale(1)")
-                    }
-                  />
+                {productImages.map((img, i) => (
+                  <button
+                    type="button"
+                    className="product-slide"
+                    key={`${img}-${i}`}
+                    onClick={() => openGallery(productImages, i)}
+                    aria-label={`Open product image ${i + 1}`}
+                  >
+                    <img src={img} alt={`${product.name} view ${i + 1}`} />
+                  </button>
                 ))}
               </div>
             </div>
 
-            {/* DOTS (MOBILE ONLY) */}
-            {isMobile && (
-              <div style={dots}>
-                {product.images.map((_, i) => (
-                  <span
+            {isMobile ? (
+              <div className="product-mobile-dots">
+                {productImages.map((_, i) => (
+                  <button
+                    type="button"
                     key={i}
-                    style={{
-                      ...dot,
-                      opacity: i === activeIndex ? 1 : 0.3,
-                    }}
+                    className={
+                      i === activeIndex
+                        ? "product-mobile-dot active"
+                        : "product-mobile-dot"
+                    }
+                    onClick={() => setActiveIndex(i)}
+                    aria-label={`Show product image ${i + 1}`}
                   />
                 ))}
               </div>
-            )}
-
-            {/* THUMBNAILS (DESKTOP) */}
-            {!isMobile && (
-              <div style={thumbRow}>
-                {product.images.map((img, i) => (
-                  <img
-                    key={i}
-                    src={img}
-                    alt=""
+            ) : (
+              <div className="product-thumbs">
+                {productImages.map((img, i) => (
+                  <button
+                    type="button"
+                    key={`${img}-thumb-${i}`}
+                    className={
+                      i === activeIndex ? "product-thumb active" : "product-thumb"
+                    }
                     onClick={() => setActiveIndex(i)}
-                    style={{
-                      ...thumb,
-                      border:
-                        i === activeIndex
-                          ? "2px solid #c48a9a"
-                          : "1px solid #ddd",
-                    }}
-                  />
+                    aria-label={`Select product image ${i + 1}`}
+                  >
+                    <img src={img} alt="" />
+                  </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* INFO */}
-          <div style={info}>
+          <div className="product-info-panel">
             <h1>{product.name}</h1>
-            <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+
+            <div className="product-price-row">
               {product.original_price && (
-                <span
-                  style={{
-                    textDecoration: "line-through",
-                    color: "#9a6b75",
-                    fontSize: "20px",
-                  }}
-                >
-                  ₹{product.original_price}
+                <span className="product-original-price">
+                  {"\u20B9"}
+                  {product.original_price}
                 </span>
               )}
 
-              <span style={{ fontSize: "25px", fontWeight: 600 }}>
-                ₹{product.price}
+              <span className="product-current-price">
+                {"\u20B9"}
+                {product.price}
               </span>
 
-              {product.original_price && (
-                <span
-                  style={{
-                    color: "#d32f2f",
-                    fontSize: "16px",
-                    fontWeight: 600,
-                  }}
-                >
-                  (
-                  {Math.round(
-                    ((product.original_price - product.price) /
-                      product.original_price) *
-                      100,
-                  )}
-                  % OFF)
-                </span>
+              {discount && (
+                <span className="product-discount">{discount}% OFF</span>
               )}
             </div>
 
-            <div style={qtyWrap}>
+            <div className="product-quantity">
               <button
-                onClick={() => quantity > 1 && setQuantity(quantity - 1)}
-                style={qtyBtn}
+                type="button"
+                onClick={() =>
+                  quantity > 1 && setQuantity((current) => current - 1)
+                }
+                aria-label="Decrease quantity"
               >
-                −
+                -
               </button>
               <span>{quantity}</span>
-              <button onClick={() => setQuantity(quantity + 1)} style={qtyBtn}>
+              <button
+                type="button"
+                onClick={() => setQuantity((current) => current + 1)}
+                aria-label="Increase quantity"
+              >
                 +
               </button>
             </div>
 
-            <button onClick={addToCart} style={addBtn}>
+            <button
+              type="button"
+              className="product-primary-btn"
+              onClick={addToCart}
+            >
               Add to Cart
             </button>
 
-            <p style={shortDesc}>{product.description}</p>
-          </div>
-        </div>
-
-        {/* DESCRIPTION */}
-        <section style={section}>
-          <div
-            onClick={() => setOpenDesc(!openDesc)}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              cursor: "pointer",
-              borderBottom: "1px solid #ddd",
-              paddingBottom: "12px",
-            }}
-          >
-            <h3 style={{ margin: 0 }}>Product Description</h3>
-
-            <ChevronDown
-              size={22}
-              style={{
-                transform: openDesc ? "rotate(180deg)" : "rotate(0deg)",
-                transition: "transform 0.3s ease",
-              }}
-            />
-          </div>
-
-          {/* 👇 ALWAYS RENDERED */}
-          <div className={`desc-wrapper ${openDesc ? "open" : ""}`}>
-            <p className="desc-text">{product.long_description}</p>
+            <p className="product-short-desc">{product.description}</p>
           </div>
         </section>
 
-        {/* REVIEWS */}
-        <section style={section}>
+        <section className="product-section">
+          <button
+            type="button"
+            className="product-section-toggle"
+            onClick={() => setOpenDesc((open) => !open)}
+            aria-expanded={openDesc}
+          >
+            <span>Product Description</span>
+            <ChevronDown
+              size={22}
+              className={openDesc ? "product-chevron open" : "product-chevron"}
+            />
+          </button>
+
+          <div className={`product-desc-wrapper ${openDesc ? "open" : ""}`}>
+            <p className="product-desc-text">{product.long_description}</p>
+          </div>
+        </section>
+
+        <section className="product-section">
           <h2>Customer Reviews ({reviews.length})</h2>
 
-          {/* REVIEW FORM */}
-          <div style={{ marginTop: "24px" }}>
+          <div className="review-form">
             <h3>Add a Review</h3>
 
-            {/* STARS */}
-            <div style={{ display: "flex", gap: "6px", marginBottom: "12px" }}>
+            <div className="review-stars" aria-label="Choose a rating">
               {[1, 2, 3, 4, 5].map((star) => (
-                <span
+                <button
+                  type="button"
                   key={star}
-                  style={{
-                    fontSize: "22px",
-                    cursor: "pointer",
-                    color: (hoverRating || rating) >= star ? "#3b2b2f" : "#ccc",
-                  }}
+                  className={
+                    (hoverRating || rating) >= star ? "star active" : "star"
+                  }
                   onClick={() => setRating(star)}
                   onMouseEnter={() => setHoverRating(star)}
                   onMouseLeave={() => setHoverRating(0)}
+                  aria-label={`${star} star rating`}
                 >
-                  ★
-                </span>
+                  {"\u2605"}
+                </button>
               ))}
             </div>
 
-            {/* TEXT BOX */}
             <textarea
               placeholder="Write your review..."
               value={reviewText}
-              onChange={(e) => setReviewText(e.target.value)}
-              style={{
-                width: "100%",
-                minHeight: "80px",
-                padding: "10px",
-                borderRadius: "8px",
-                border: "1px solid #ddd",
-                resize: "vertical",
-              }}
+              onChange={(event) => setReviewText(event.target.value)}
             />
-            <div style={reviewActions}>
-              <label style={photoBtn}>
+
+            <div className="review-actions">
+              <label className="review-photo-btn">
                 <Camera size={22} />
                 <input
                   type="file"
@@ -426,112 +425,94 @@ function Product() {
                 />
               </label>
 
-              <button onClick={submitReview} style={submitBtn}>
+              <button
+                type="button"
+                className="review-submit-btn"
+                onClick={submitReview}
+              >
                 Submit Review
               </button>
             </div>
 
-            {/* PREVIEW */}
-            <div style={previewRow}>
-              {reviewImages.map((img, i) => (
-                <img
-                  key={i}
-                  src={URL.createObjectURL(img)}
-                  alt=""
-                  style={previewThumb}
-                />
-              ))}
-            </div>
+            {reviewImages.length > 0 && (
+              <div className="review-preview-row">
+                {reviewImages.map((img, i) => (
+                  <img
+                    key={`${img.name}-${i}`}
+                    src={URL.createObjectURL(img)}
+                    alt={`Review upload preview ${i + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
+
           {reviews.length === 0 && (
-            <div
-              style={{
-                width: "100%",
-                display: "flex",
-                justifyContent: "center",
-                marginTop: "18px",
-              }}
-            >
-              <p>--- No reviews yet. Be the first! ---</p>
-            </div>
+            <p className="empty-reviews">No reviews yet. Be the first!</p>
           )}
 
-          {reviews.map((r) => (
-            <div
-              key={r.id}
-              style={{
-                marginTop: "16px",
-                paddingBottom: "12px",
-                borderBottom: "1px solid #eee",
-                position: "relative",
-              }}
-            >
-              {/* DELETE BUTTON (only for owner) */}
-              {user && r.user_email === user.email && (
-                <button
-                  onClick={() => deleteReview(r.id)}
-                  style={{
-                    position: "absolute",
-                    right: 0,
-                    top: 0,
-                    background: "none",
-                    border: "none",
-                    color: "#c44",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                  }}
-                >
-                  Delete
-                </button>
-              )}
-
-              <div style={reviewRow}>
-                <span style={avatarCircle}>
-                  {r.username?.charAt(0).toUpperCase()}
-                </span>
-
-                <div style={reviewContent}>
-                  <strong>{r.username}</strong>
-
-                  <div
-                    style={{
-                      color: "#3b2b2f",
-                      fontSize: "20px",
-                      letterSpacing: "2px",
-                      marginTop: "4px",
-                    }}
+          <div className="review-list">
+            {reviews.map((review) => (
+              <article className="review-card" key={review.id}>
+                {user && review.user_email === user.email && (
+                  <button
+                    type="button"
+                    className="review-delete"
+                    onClick={() => deleteReview(review.id)}
                   >
-                    {"★".repeat(r.rating)}
-                    {"☆".repeat(5 - r.rating)}
-                  </div>
+                    Delete
+                  </button>
+                )}
 
-                  <p style={{ marginTop: "6px" }}>{r.comment}</p>
+                <div className="review-row">
+                  <span className="review-avatar">
+                    {review.username?.charAt(0).toUpperCase()}
+                  </span>
 
-                  {r.image_urls && r.image_urls.length > 0 && (
-                    <div style={reviewImageGrid}>
-                      {r.image_urls.map((img, i) => (
-                        <img
-                          key={i}
-                          src={img}
-                          alt="Review"
-                          style={reviewThumb}
-                          onClick={() => openGallery(r.image_urls, i)}
-                        />
-                      ))}
+                  <div className="review-content">
+                    <div className="review-heading">
+                      <strong>{review.username}</strong>
+                      {review.created_at && (
+                        <span>{formatDate(review.created_at)}</span>
+                      )}
                     </div>
-                  )}
+
+                    <div className="review-rating">
+                      {"\u2605".repeat(review.rating)}
+                      {"\u2606".repeat(5 - review.rating)}
+                    </div>
+
+                    <p>{review.comment}</p>
+
+                    {review.image_urls && review.image_urls.length > 0 && (
+                      <div className="review-image-grid">
+                        {review.image_urls.map((img, i) => (
+                          <button
+                            type="button"
+                            key={`${img}-review-${i}`}
+                            onClick={() => openGallery(review.image_urls, i)}
+                            aria-label={`Open review image ${i + 1}`}
+                          >
+                            <img src={img} alt="Review" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              </article>
+            ))}
+          </div>
         </section>
       </div>
 
-      {/* STICKY ADD TO CART (MOBILE) */}
       {isMobile && (
-        <div style={stickyBar}>
-          <strong>₹{product.price * quantity}</strong>
-          <button onClick={addToCart} style={stickyBtn}>
+        <div className="product-sticky-cart">
+          <strong>
+            {"\u20B9"}
+            {product.price * quantity}
+          </strong>
+          <button type="button" onClick={addToCart}>
             Add to Cart
           </button>
         </div>
@@ -540,51 +521,61 @@ function Product() {
       <CartToast show={showToast} onClose={() => setShowToast(false)} />
 
       {fullscreenOpen && (
-        <div style={blurOverlay} onClick={() => setFullscreenOpen(false)}>
-          <button style={closeBtn}>✕</button>
+        <div
+          className="product-lightbox"
+          onClick={() => setFullscreenOpen(false)}
+        >
+          <button
+            type="button"
+            className="product-lightbox-close"
+            onClick={() => setFullscreenOpen(false)}
+            aria-label="Close image viewer"
+          >
+            <X size={24} />
+          </button>
 
           <div
-            style={singleViewer}
-            onClick={(e) => e.stopPropagation()}
-            onTouchStart={onTouchStart}
-            onTouchEnd={onTouchEnd}
+            className="product-lightbox-viewer"
+            onClick={(event) => event.stopPropagation()}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={(event) =>
+              handleSwipeEnd(
+                event,
+                fullscreenIndex,
+                galleryImages.length,
+                setFullscreenIndex,
+              )
+            }
           >
             <img
-              src={galleryImages[activeIndex]}
+              src={galleryImages[fullscreenIndex]}
               alt=""
-              style={fullscreenImg}
+              className="product-lightbox-image"
             />
-            <span
-              style={{
-                position: "absolute",
-                bottom: "20px",
-                background: "rgba(0,0,0,0.6)",
-                color: "#fff",
-                padding: "4px 10px",
-                borderRadius: "14px",
-                fontSize: "13px",
-              }}
-            >
-              {activeIndex + 1} / {galleryImages.length}
+
+            <span className="product-lightbox-count">
+              {fullscreenIndex + 1} / {galleryImages.length}
             </span>
 
-            {/* LEFT */}
-            {activeIndex > 0 && (
+            {fullscreenIndex > 0 && (
               <button
-                style={navBtnLeft}
-                onClick={() => setActiveIndex(activeIndex - 1)}
+                type="button"
+                className="product-lightbox-nav left"
+                onClick={() => setFullscreenIndex((current) => current - 1)}
+                aria-label="Previous image"
               >
-                ‹
+                <ChevronLeft size={28} />
               </button>
             )}
 
-            {/* RIGHT */}
-            {activeIndex < galleryImages.length - 1 && (
+            {fullscreenIndex < galleryImages.length - 1 && (
               <button
-                style={navBtnRight}
-                onClick={() => setActiveIndex(activeIndex + 1)}
+                type="button"
+                className="product-lightbox-nav right"
+                onClick={() => setFullscreenIndex((current) => current + 1)}
+                aria-label="Next image"
               >
-                ›
+                <ChevronRight size={28} />
               </button>
             )}
           </div>
@@ -593,362 +584,5 @@ function Product() {
     </>
   );
 }
-
-/* ---------------- STYLES ---------------- */
-
-const page = {
-  padding: "24px",
-  paddingBottom: "90px",
-  maxWidth: "1100px",
-  margin: "0 auto",
-};
-
-const topSection = {
-  display: "flex",
-  gap: "48px",
-  flexWrap: "wrap",
-};
-
-const mainImage = {
-  width: "100%",
-  maxWidth: "380px",
-  borderRadius: "16px",
-};
-
-const thumbRow = {
-  display: "flex",
-  gap: "10px",
-  marginTop: "12px",
-};
-
-const thumb = {
-  width: "60px",
-  height: "60px",
-  objectFit: "cover",
-  borderRadius: "8px",
-  cursor: "pointer",
-};
-
-const dots = {
-  display: "flex",
-  justifyContent: "center",
-  marginTop: "10px",
-};
-
-const dot = {
-  width: "8px",
-  height: "8px",
-  borderRadius: "50%",
-  background: "#c48a9a",
-  margin: "0 4px",
-};
-
-const info = {
-  maxWidth: "420px",
-};
-
-const price = {
-  fontSize: "20px",
-  fontWeight: "600",
-};
-
-const qtyWrap = {
-  display: "flex",
-  alignItems: "center",
-  gap: "12px",
-  margin: "16px 0",
-};
-
-const qtyBtn = {
-  width: "36px",
-  height: "36px",
-  borderRadius: "50%",
-  border: "1px solid #ddd",
-  background: "#fff",
-  fontSize: "18px",
-};
-
-const addBtn = {
-  width: "100%",
-  padding: "14px",
-  background: "#c48a9a",
-  color: "#fff",
-  border: "none",
-  borderRadius: "30px",
-  fontSize: "16px",
-};
-
-const shortDesc = {
-  marginTop: "16px",
-  lineHeight: "1.6",
-};
-
-const section = {
-  marginTop: "48px",
-};
-
-const sectionText = {
-  lineHeight: "1.7",
-};
-
-const reviewCard = {
-  background: "#fff",
-  padding: "16px",
-  borderRadius: "12px",
-};
-
-const reviewUser = {
-  fontSize: "14px",
-  opacity: 0.6,
-};
-
-const stickyBar = {
-  position: "fixed",
-  bottom: 0,
-  left: 0,
-  width: "100%",
-  background: "#fff",
-  borderTop: "1px solid #eee",
-  padding: "12px 16px",
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  zIndex: 1000,
-};
-
-const stickyBtn = {
-  background: "#c48a9a",
-  color: "#fff",
-  border: "none",
-  borderRadius: "24px",
-  padding: "12px 20px",
-};
-
-const sliderContainer = {
-  width: "100%",
-  maxWidth: "380px",
-  overflow: "hidden",
-  borderRadius: "16px",
-};
-
-const sliderTrack = {
-  display: "flex",
-  transition: "transform 0.35s ease",
-};
-
-const slideImage = {
-  width: "100%",
-  flexShrink: 0,
-  objectFit: "cover",
-  transition: "transform 0.3s ease",
-  cursor: "zoom-in",
-};
-
-const fullscreenOverlay = {
-  position: "fixed",
-  top: 0,
-  left: 0,
-  width: "100vw",
-  height: "100vh",
-  background: "rgba(0,0,0,0.95)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 9999,
-};
-
-const fullscreenImg = {
-  maxWidth: "90%",
-  maxHeight: "90%",
-  objectFit: "contain",
-  borderRadius: "12px",
-  transition: "opacity 0.25s ease, transform 0.25s ease",
-};
-
-const closeBtn = {
-  position: "fixed",
-  top: "20px",
-  right: "20px",
-  fontSize: "26px",
-  width: "42px",
-  height: "42px",
-  borderRadius: "50%",
-  background: "rgba(0,0,0,0.6)",
-  border: "none",
-  color: "#fff",
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 10000,
-  transition: "transform 0.15s ease",
-};
-
-const navBtnLeft = {
-  position: "fixed",
-  left: "20px",
-  top: "50%",
-  transform: "translateY(-50%)",
-  fontSize: "34px",
-  width: "44px",
-  height: "44px",
-  borderRadius: "50%",
-  background: "rgba(0,0,0,0.6)",
-  border: "none",
-  color: "#fff",
-  cursor: "pointer",
-  zIndex: 10000,
-  transition: "transform 0.15s ease",
-};
-
-const navBtnRight = {
-  position: "fixed",
-  right: "20px",
-  top: "50%",
-  transform: "translateY(-50%)",
-  fontSize: "34px",
-  width: "44px",
-  height: "44px",
-  borderRadius: "50%",
-  background: "rgba(0,0,0,0.6)",
-  border: "none",
-  color: "#fff",
-  cursor: "pointer",
-  zIndex: 10000,
-  transition: "transform 0.15s ease",
-};
-
-const reviewHeader = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "6px",
-};
-
-const reviewUserRow = {
-  display: "flex",
-  alignItems: "center",
-  gap: "10px",
-};
-
-const avatarCircle = {
-  width: "36px",
-  height: "36px",
-  minWidth: "36px",      // 🔒 prevents flex squashing
-  borderRadius: "50%",
-  background: "#c48a9a",
-  color: "#fff",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontWeight: "bold",
-  lineHeight: "36px",   // 🔒 keeps letter vertically centered
-  textAlign: "center",
-  fontSize: "16px",
-};
-
-
-const reviewMeta = {
-  display: "flex",
-  gap: "12px",
-  alignItems: "center",
-};
-
-const reviewDate = {
-  fontSize: "13px",
-  opacity: 0.6,
-};
-
-const reviewActions = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  marginTop: "12px",
-};
-
-const photoBtn = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: "40px",
-  height: "40px",
-  borderRadius: "50%",
-  border: "1px solid #ddd",
-  cursor: "pointer",
-  background: "#fff",
-};
-
-const submitBtn = {
-  padding: "10px 18px",
-  borderRadius: "20px",
-  border: "none",
-  background: "#c48a9a",
-  color: "#fff",
-  cursor: "pointer",
-};
-
-const previewRow = {
-  display: "flex",
-  gap: "10px",
-  marginTop: "10px",
-};
-
-const previewThumb = {
-  width: "60px",
-  height: "60px",
-  objectFit: "cover",
-  borderRadius: "8px",
-};
-
-const blurOverlay = {
-  position: "fixed",
-  inset: 0,
-  backdropFilter: "blur(12px)",
-  background: "rgba(255,255,255,0.15)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 9999,
-};
-
-const galleryTrack = {
-  width: "100%",
-  maxWidth: "90vw",
-  overflow: "hidden",
-};
-
-const singleViewer = {
-  position: "relative",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: "100%",
-  maxWidth: "90vw",
-  height: "100%",
-};
-
-const reviewRow = {
-  display: "flex",
-  alignItems: "flex-start",
-  gap: "12px",
-};
-
-const reviewContent = {
-  display: "flex",
-  flexDirection: "column",
-};
-
-const reviewImageGrid = {
-  display: "flex",
-  gap: "8px",
-  marginTop: "8px",
-};
-
-const reviewThumb = {
-  width: "60px",
-  height: "60px",
-  objectFit: "cover",
-  borderRadius: "6px",
-  cursor: "pointer",
-};
 
 export default Product;
