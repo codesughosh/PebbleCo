@@ -56,19 +56,22 @@ function getTodayInputValue() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function buildLinePath(points) {
+function buildCurvePath(points) {
   if (!points.length) return "";
   if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
 
-  return points
-    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
-    .join(" ");
+  return points.slice(1).reduce((path, point, index) => {
+    const previous = points[index];
+    const midX = (previous.x + point.x) / 2;
+
+    return `${path} C ${midX} ${previous.y}, ${midX} ${point.y}, ${point.x} ${point.y}`;
+  }, `M ${points[0].x} ${points[0].y}`);
 }
 
 function buildAreaPath(points, baseline) {
   if (!points.length) return "";
 
-  return `${buildLinePath(points)} L ${points[points.length - 1].x} ${baseline} L ${
+  return `${buildCurvePath(points)} L ${points[points.length - 1].x} ${baseline} L ${
     points[0].x
   } ${baseline} Z`;
 }
@@ -197,11 +200,6 @@ function AdminDashboard() {
     const expensePoints = rows.map((month, index) =>
       toPoint(month, index, "expenses"),
     );
-    const peakPoint = incomePoints.reduce(
-      (peak, point) => (point.value > peak.value ? point : peak),
-      incomePoints[0],
-    );
-
     return {
       width,
       height,
@@ -209,11 +207,10 @@ function AdminDashboard() {
       baseline,
       incomePoints,
       expensePoints,
-      incomePath: buildLinePath(incomePoints),
-      expensePath: buildLinePath(expensePoints),
+      incomePath: buildCurvePath(incomePoints),
+      expensePath: buildCurvePath(expensePoints),
       incomeAreaPath: buildAreaPath(incomePoints, baseline),
-      peakPoint,
-      peakBubbleX: Math.min(Math.max(peakPoint.x - 62, 8), width - 136),
+      expenseAreaPath: buildAreaPath(expensePoints, baseline),
     };
   }, [finance.monthlyTrend]);
 
@@ -501,6 +498,19 @@ function AdminDashboard() {
                 <h2>Income Trend</h2>
               </div>
 
+              <div className="finance-chart-stats">
+                <span className="income">
+                  <i />
+                  Net income
+                  <strong>{formatMoney(finance.totals.paidIncome)}</strong>
+                </span>
+                <span className="expense">
+                  <i />
+                  Expenses
+                  <strong>{formatMoney(finance.totals.expenses)}</strong>
+                </span>
+              </div>
+
               <div className="finance-line-chart">
                 <svg
                   viewBox={`0 0 ${lineChart.width} ${lineChart.height}`}
@@ -515,23 +525,20 @@ function AdminDashboard() {
                       y1="0"
                       y2="1"
                     >
-                      <stop offset="0%" stopColor="#43a047" stopOpacity="0.24" />
+                      <stop offset="0%" stopColor="#5c9d65" stopOpacity="0.2" />
                       <stop offset="72%" stopColor="#f8b8ca" stopOpacity="0.1" />
                       <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
                     </linearGradient>
-                    <filter
-                      id="incomeGlow"
-                      x="-10%"
-                      y="-20%"
-                      width="120%"
-                      height="140%"
+                    <linearGradient
+                      id="expenseLineFill"
+                      x1="0"
+                      x2="0"
+                      y1="0"
+                      y2="1"
                     >
-                      <feGaussianBlur stdDeviation="4" result="blur" />
-                      <feMerge>
-                        <feMergeNode in="blur" />
-                        <feMergeNode in="SourceGraphic" />
-                      </feMerge>
-                    </filter>
+                      <stop offset="0%" stopColor="#d66b7c" stopOpacity="0.16" />
+                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+                    </linearGradient>
                   </defs>
 
                   {[0.25, 0.5, 0.75].map((line) => (
@@ -552,7 +559,11 @@ function AdminDashboard() {
                   ))}
 
                   <path
-                    className="finance-area-path"
+                    className="finance-area-path expense"
+                    d={lineChart.expenseAreaPath}
+                  />
+                  <path
+                    className="finance-area-path income"
                     d={lineChart.incomeAreaPath}
                   />
                   <path
@@ -562,8 +573,27 @@ function AdminDashboard() {
                   <path
                     className="finance-line-path income"
                     d={lineChart.incomePath}
-                    filter="url(#incomeGlow)"
                   />
+
+                  {lineChart.expensePoints.map((point) => (
+                    <circle
+                      className="finance-point expense"
+                      key={`expense-${point.label}`}
+                      cx={point.x}
+                      cy={point.y}
+                      r="4"
+                    />
+                  ))}
+
+                  {lineChart.incomePoints.map((point) => (
+                    <circle
+                      className="finance-point income"
+                      key={`income-${point.label}`}
+                      cx={point.x}
+                      cy={point.y}
+                      r="5"
+                    />
+                  ))}
 
                   {lineChart.incomePoints.map((point) => (
                     <g className="finance-axis-point" key={point.label}>
@@ -571,40 +601,13 @@ function AdminDashboard() {
                         x1={point.x}
                         x2={point.x}
                         y1={lineChart.baseline}
-                        y2={lineChart.baseline + 7}
+                        y2={lineChart.baseline + 6}
                       />
                       <text x={point.x} y={lineChart.baseline + 25}>
                         {point.label}
                       </text>
                     </g>
                   ))}
-
-                  {lineChart.peakPoint.value > 0 && (
-                    <g className="finance-peak">
-                      <line
-                        x1={lineChart.peakPoint.x}
-                        x2={lineChart.peakPoint.x}
-                        y1={lineChart.paddingTop + 4}
-                        y2={lineChart.baseline}
-                      />
-                      <circle
-                        cx={lineChart.peakPoint.x}
-                        cy={lineChart.peakPoint.y}
-                        r="9"
-                      />
-                      <circle
-                        cx={lineChart.peakPoint.x}
-                        cy={lineChart.peakPoint.y}
-                        r="4"
-                      />
-                      <g transform={`translate(${lineChart.peakBubbleX} 14)`}>
-                        <rect width="128" height="42" rx="13" />
-                        <text x="64" y="27">
-                          {formatMoney(lineChart.peakPoint.value)}
-                        </text>
-                      </g>
-                    </g>
-                  )}
                 </svg>
               </div>
 
