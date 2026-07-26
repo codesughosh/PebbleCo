@@ -8,9 +8,12 @@ const EXPENSE_CATEGORIES = new Set([
   "Raw Materials",
   "Packaging",
   "Shipping",
+  "Delivery Charges",
   "Marketing",
+  "Rent Expense",
   "Tools",
   "Fees",
+  "Misc",
   "Other",
 ]);
 
