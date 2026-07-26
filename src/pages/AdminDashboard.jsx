@@ -22,6 +22,14 @@ import { PageLoader } from "../components/Skeleton";
 import "../styles/adminDashboard.css";
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL;
+const EXPENSE_SLICE_COLORS = [
+  "#d66b7c",
+  "#f08fa0",
+  "#c48a9a",
+  "#9b6573",
+  "#f8b8ca",
+  "#7a3b4a",
+];
 
 const emptyFinance = {
   totals: {
@@ -214,29 +222,36 @@ function AdminDashboard() {
     };
   }, [finance.monthlyTrend]);
 
-  const financePie = useMemo(() => {
-    const income = Math.max(0, Number(finance.totals.paidIncome || 0));
-    const expenses = Math.max(0, Number(finance.totals.expenses || 0));
-    const total = income + expenses;
-    const incomePercent = total ? (income / total) * 100 : 0;
+  const expensePie = useMemo(() => {
+    const rows = finance.expenseCategories
+      .map((category, index) => ({
+        ...category,
+        amount: Number(category.amount || 0),
+        color: EXPENSE_SLICE_COLORS[index % EXPENSE_SLICE_COLORS.length],
+      }))
+      .filter((category) => category.amount > 0);
+    const total = rows.reduce((sum, row) => sum + row.amount, 0);
+    let cursor = 0;
+    const slices = rows.map((row) => {
+      const percent = total ? (row.amount / total) * 100 : 0;
+      const start = cursor;
+      cursor += percent;
+      const gap = Math.min(1.7, percent * 0.28);
+      const visiblePercent = Math.max(0, percent - gap);
+
+      return {
+        ...row,
+        percent,
+        dash: `${visiblePercent} ${100 - visiblePercent}`,
+        offset: -start,
+      };
+    });
 
     return {
-      income,
-      expenses,
+      rows: slices,
       total,
-      incomePercent,
-      expensePercent: total ? 100 - incomePercent : 0,
     };
-  }, [finance.totals.expenses, finance.totals.paidIncome]);
-
-  const maxCategoryValue = useMemo(
-    () =>
-      Math.max(
-        1,
-        ...finance.expenseCategories.map((category) => category.amount),
-      ),
-    [finance.expenseCategories],
-  );
+  }, [finance.expenseCategories]);
 
   const formatMoney = (value) => {
     const number = Number(value || 0);
@@ -495,7 +510,7 @@ function AdminDashboard() {
             <article className="admin-erp-card chart-card">
               <div className="admin-card-title">
                 <BarChart3 size={19} strokeWidth={1.9} />
-                <h2>Income Trend</h2>
+                <h2>Income & Expense Waves</h2>
               </div>
 
               <div className="finance-chart-stats">
@@ -619,71 +634,53 @@ function AdminDashboard() {
 
             <article className="admin-erp-card finance-pie-card">
               <div className="admin-card-title">
-                <TrendingUp size={19} strokeWidth={1.9} />
-                <h2>Income vs Expenses</h2>
+                <PackageCheck size={19} strokeWidth={1.9} />
+                <h2>Expense Types</h2>
               </div>
 
-              <div
-                className="finance-donut"
-                style={{ "--income-share": `${financePie.incomePercent}%` }}
-                aria-label={`Income ${Math.round(
-                  financePie.incomePercent,
-                )} percent, expenses ${Math.round(
-                  financePie.expensePercent,
-                )} percent`}
-              >
+              <div className="finance-donut" aria-label="Expense category split">
+                <svg className="expense-donut-svg" viewBox="0 0 200 200">
+                  <circle className="expense-donut-base" cx="100" cy="100" r="72" />
+                  {expensePie.rows.map((category) => (
+                    <circle
+                      className="expense-donut-segment"
+                      key={category.category}
+                      cx="100"
+                      cy="100"
+                      r="72"
+                      pathLength="100"
+                      stroke={category.color}
+                      strokeDasharray={category.dash}
+                      strokeDashoffset={category.offset}
+                    />
+                  ))}
+                </svg>
                 <div className="finance-donut-center">
-                  <span>Net</span>
-                  <strong>{formatMoney(finance.totals.netProfit)}</strong>
+                  <span>Spent</span>
+                  <strong>{formatMoney(expensePie.total)}</strong>
                 </div>
               </div>
 
               <div className="finance-pie-breakdown">
-                <div className="finance-pie-row income">
-                  <span>
-                    <i />
-                    Income
-                  </span>
-                  <strong>{formatMoney(financePie.income)}</strong>
-                </div>
-                <div className="finance-pie-row expense">
-                  <span>
-                    <i />
-                    Expenses
-                  </span>
-                  <strong>{formatMoney(financePie.expenses)}</strong>
-                </div>
-              </div>
-
-              <div className="compact-split">
-                <div className="admin-card-title compact">
-                  <PackageCheck size={16} strokeWidth={1.9} />
-                  <h3>Expense Split</h3>
-                </div>
-
-                {finance.expenseCategories.length === 0 ? (
+                {expensePie.rows.length === 0 ? (
                   <p className="admin-muted">No expenses added yet.</p>
                 ) : (
-                  <div className="category-bars compact">
-                    {finance.expenseCategories.slice(0, 4).map((category) => (
-                      <div className="category-row" key={category.category}>
-                        <div>
-                          <span>{category.category}</span>
-                          <strong>{formatMoney(category.amount)}</strong>
-                        </div>
-                        <span className="category-track">
-                          <span
-                            style={{
-                              width: `${Math.max(
-                                6,
-                                (category.amount / maxCategoryValue) * 100,
-                              )}%`,
-                            }}
-                          />
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                  expensePie.rows.map((category) => (
+                    <div
+                      className="finance-pie-row expense-type"
+                      key={category.category}
+                      style={{ "--slice-color": category.color }}
+                    >
+                      <span>
+                        <i />
+                        {category.category}
+                      </span>
+                      <strong>
+                        {formatMoney(category.amount)}
+                        <small>{Math.round(category.percent)}%</small>
+                      </strong>
+                    </div>
+                  ))
                 )}
               </div>
             </article>
