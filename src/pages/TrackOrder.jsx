@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
-import "../styles/trackOrder.css";
+import { useEffect, useState } from "react";
+import { AlertCircle, Loader2, PackageSearch, Search, Truck } from "lucide-react";
 import OrderTimeline from "../components/OrderTimeline";
+import "../styles/trackOrder.css";
 import "../styles/orderTimeline.css";
 
 function mapStatus(status) {
@@ -23,7 +24,6 @@ export default function TrackOrder() {
   const [loading, setLoading] = useState(false);
   const [tracking, setTracking] = useState(null);
   const [error, setError] = useState("");
-  console.log("API BASE =", API_BASE);
 
   const fetchTracking = async (id = orderId) => {
     if (!id) {
@@ -63,65 +63,100 @@ export default function TrackOrder() {
 
   return (
     <div className="track-container">
-      <h1>Track Your Order</h1>
-      <p className="subtitle">
-        Enter your Order ID to check the latest delivery status.
-      </p>
+      <section className="track-shell">
+        <div className="track-head">
+          <span className="track-kicker">Delivery</span>
+          <h1>Track Your Order</h1>
+          <p className="subtitle">
+            Enter your Order ID to check the latest delivery status.
+          </p>
+        </div>
 
-      <div className="track-box">
-        <input
-          type="text"
-          placeholder="Order ID (example: 7c2f...)"
-          value={orderId}
-          onChange={(e) => setOrderId(e.target.value)}
-        />
-        <button onClick={() => fetchTracking()} disabled={loading}>
-          {loading ? "Checking…" : "Track Order"}
-        </button>
-      </div>
-
-      {error && <p className="error">{error}</p>}
-
-      {tracking && (
-        <div className="tracking-card">
-          <h3>Shipment Status</h3>
-
-          <div className="tracking-info">
-            {tracking.type === "inhand" ? (
-              <p>
-                <strong>Status:</strong> {tracking.tracking.status}
-              </p>
+        <form
+          className="track-box"
+          onSubmit={(e) => {
+            e.preventDefault();
+            fetchTracking();
+          }}
+        >
+          <div className="track-input-wrap">
+            <PackageSearch size={18} strokeWidth={1.8} />
+            <input
+              type="text"
+              placeholder="Order ID (example: 7c2f...)"
+              value={orderId}
+              onChange={(e) => setOrderId(e.target.value)}
+            />
+          </div>
+          <button type="submit" disabled={loading}>
+            {loading ? (
+              <>
+                <Loader2 size={16} className="track-spin" />
+                Checking...
+              </>
             ) : (
               <>
-                <p>
-                  <strong>Status:</strong>{" "}
-                  {tracking.tracking?.tracking_data?.shipment_status || "—"}
-                </p>
-                <p>
-                  <strong>Courier:</strong>{" "}
-                  {tracking.tracking?.tracking_data?.courier_name || "—"}
-                </p>
-                <p>
-                  <strong>AWB:</strong>{" "}
-                  {tracking.tracking?.tracking_data?.awb_code || "—"}
-                </p>
+                <Search size={16} strokeWidth={2} />
+                Track Order
               </>
             )}
-          </div>
+          </button>
+        </form>
 
-          <OrderTimeline
-            currentStatus={
-              tracking.type === "inhand"
-                ? tracking.tracking.status
-                : mapStatus(tracking.tracking?.tracking_data?.shipment_status)
-            }
-          />
+        {error && (
+          <p className="error">
+            <AlertCircle size={16} strokeWidth={1.9} />
+            {error}
+          </p>
+        )}
 
-          <div className="timeline">
-            {tracking.type === "shipping" &&
-              (tracking.tracking?.tracking_data?.shipment_track?.length ? (
-                tracking.tracking.tracking_data.shipment_track.map(
-                  (event, i) => (
+        {tracking && (
+          <div className="tracking-card">
+            <div className="tracking-card-head">
+              <span className="tracking-icon">
+                <Truck size={21} strokeWidth={1.8} />
+              </span>
+              <div>
+                <h3>Shipment Status</h3>
+                <p>Latest update from your order.</p>
+              </div>
+            </div>
+
+            <div className="tracking-info">
+              {tracking.type === "inhand" ? (
+                <p>
+                  <strong>Status:</strong> {tracking.tracking.status}
+                </p>
+              ) : (
+                <>
+                  <p>
+                    <strong>Status:</strong>{" "}
+                    {tracking.tracking?.tracking_data?.shipment_status || "--"}
+                  </p>
+                  <p>
+                    <strong>Courier:</strong>{" "}
+                    {tracking.tracking?.tracking_data?.courier_name || "--"}
+                  </p>
+                  <p>
+                    <strong>AWB:</strong>{" "}
+                    {tracking.tracking?.tracking_data?.awb_code || "--"}
+                  </p>
+                </>
+              )}
+            </div>
+
+            <OrderTimeline
+              currentStatus={
+                tracking.type === "inhand"
+                  ? tracking.tracking.status
+                  : mapStatus(tracking.tracking?.tracking_data?.shipment_status)
+              }
+            />
+
+            <div className="timeline">
+              {tracking.type === "shipping" &&
+                (tracking.tracking?.tracking_data?.shipment_track?.length ? (
+                  tracking.tracking.tracking_data.shipment_track.map((event, i) => (
                     <div key={i} className="timeline-item">
                       <span className="dot" />
                       <div>
@@ -129,16 +164,14 @@ export default function TrackOrder() {
                         <p className="date">{event.date}</p>
                       </div>
                     </div>
-                  )
-                )
-              ) : (
-                <p className="muted">
-                  Tracking updates will appear once shipped.
-                </p>
-              ))}
+                  ))
+                ) : (
+                  <p className="muted">Tracking updates will appear once shipped.</p>
+                ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </section>
     </div>
   );
 }
