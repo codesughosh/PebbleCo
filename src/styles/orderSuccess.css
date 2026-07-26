@@ -125,7 +125,10 @@
   gap: 8px;
   min-height: 46px;
   padding: 0 18px;
+  border: 0;
   border-radius: var(--ios-pill);
+  cursor: pointer;
+  font-family: inherit;
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
@@ -144,6 +147,11 @@
 .order-success-btn.primary:hover {
   background: #b17687;
   text-decoration: none;
+}
+
+.order-success-btn:disabled {
+  cursor: wait;
+  opacity: 0.72;
 }
 
 .order-success-btn.secondary {

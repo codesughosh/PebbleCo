@@ -3,8 +3,19 @@ import crypto from "crypto";
 import { supabase } from "../supabase.js";
 import { sendOrderEmail } from "../utils/sendOrderEmail.js";
 import { createShiprocketOrder } from "../services/createShiprocketOrder.js";
+import { calculateOrderItemsTotal } from "../utils/checkout.js";
 
 const router = express.Router();
+
+function signaturesMatch(expectedSignature, receivedSignature) {
+  const expected = Buffer.from(expectedSignature, "hex");
+  const received = Buffer.from(String(receivedSignature || ""), "hex");
+
+  return (
+    expected.length === received.length &&
+    crypto.timingSafeEqual(expected, received)
+  );
+}
 
 router.post("/razorpay-webhook", async (req, res) => {
   try {
@@ -23,7 +34,7 @@ router.post("/razorpay-webhook", async (req, res) => {
       .update(req.body.toString())
       .digest("hex");
 
-    if (expected !== signature) {
+    if (!signaturesMatch(expected, signature)) {
       return res.status(401).send("Invalid signature");
     }
 
@@ -50,6 +61,36 @@ const payment = body.payload?.payment?.entity;
         return res.send("Already processed");
       }
 
+      const { data: pendingItems, error: pendingError } = await supabase
+        .from("pending_order_items")
+        .select("quantity, price_at_purchase, product:products(price)")
+        .eq("order_id", order.id);
+
+      if (pendingError) {
+        console.error("Webhook pending item fetch failed:", pendingError);
+        return res.status(500).send("Unable to verify order items");
+      }
+
+      const verifiedTotal =
+        pendingItems && pendingItems.length > 0
+          ? calculateOrderItemsTotal(pendingItems, order.delivery_type)
+          : Number(order.total);
+      const expectedAmount = Math.round(verifiedTotal * 100);
+
+      if (
+        payment.currency !== "INR" ||
+        !Number.isFinite(expectedAmount) ||
+        Number(payment.amount) !== expectedAmount
+      ) {
+        console.error("Webhook payment amount mismatch:", {
+          orderId: order.id,
+          expectedAmount,
+          receivedAmount: payment.amount,
+          currency: payment.currency,
+        });
+        return res.status(400).send("Payment amount mismatch");
+      }
+
       // Update order
       await supabase
         .from("orders")
@@ -57,6 +98,7 @@ const payment = body.payload?.payment?.entity;
           status: "paid",
           payment_status: "success",
           payment_id: payment.id,
+          total: verifiedTotal,
         })
         .eq("id", order.id);
 
@@ -71,7 +113,7 @@ const payment = body.payload?.payment?.entity;
           to: order.customer_email,
           customerName: order.customer_name || "Customer",
           orderId: order.id,
-          total: order.total,
+          total: verifiedTotal,
         });
       }
 

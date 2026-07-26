@@ -51,13 +51,20 @@ router.get("/", verifyUser, async (req, res) => {
  * → Order Success page
  * ==================================
  */
-router.get("/:orderId", async (req, res) => {
+router.get("/:orderId", verifyUser, async (req, res) => {
   const { orderId } = req.params;
+  const userId = req.user.uid;
 
   const { data, error } = await supabase
     .from("orders")
     .select(`
-      *,
+      id,
+      total,
+      status,
+      payment_status,
+      payment_id,
+      delivery_type,
+      created_at,
       order_items (
         quantity,
         price_at_purchase,
@@ -65,6 +72,7 @@ router.get("/:orderId", async (req, res) => {
       )
     `)
     .eq("id", orderId)
+    .eq("user_id", userId)
     .single();
 
   if (error || !data) {

@@ -2,51 +2,51 @@ import express from "express";
 import razorpay from "../razorpay.js";
 import { supabase } from "../supabase.js";
 import { verifyFirebaseUser } from "../middleware/auth.js";
+import {
+  CheckoutError,
+  assertUniquePaymentId,
+  buildOrderItems,
+  calculateCheckoutTotal,
+  fetchCheckoutCart,
+  normalizeDeliveryDetails,
+  normalizeUpiTransactionId,
+} from "../utils/checkout.js";
 
 const router = express.Router();
 
-function buildOrderItems(orderId, cartItems) {
-  return cartItems.map((item) => ({
-    order_id: orderId,
-    product_id: item.product_id,
-    product_name: item.name,
-    quantity: item.quantity,
-    price_at_purchase: item.price,
-  }));
+function handleCheckoutError(res, err, fallbackMessage) {
+  if (err instanceof CheckoutError) {
+    return res.status(err.status).json({ error: err.message });
+  }
+
+  console.error(fallbackMessage, err);
+  return res.status(500).json({ error: fallbackMessage });
 }
 
-function hasValidCart(cartItems) {
-  return Array.isArray(cartItems) && cartItems.length > 0;
-}
-
-router.post("/create-order", async (req, res) => {
+router.post("/create-order", verifyFirebaseUser, async (req, res) => {
   try {
-    const {
-      amount,
-      userId,
-      customerEmail,
+    const { deliveryType, shippingAddress, inhandDetails } = req.body;
+    const userId = req.user.uid;
+    const email = req.user.email;
+    const deliveryDetails = normalizeDeliveryDetails({
       deliveryType,
       shippingAddress,
-      cartItems,
-    } = req.body;
-
-    if (!amount || !userId) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    if (!hasValidCart(cartItems)) {
-      return res.status(400).json({ error: "Cart is empty" });
-    }
+      inhandDetails,
+    });
+    const cartItems = await fetchCheckoutCart(supabase, userId);
+    const total = calculateCheckoutTotal(cartItems, deliveryType);
 
     const { data: dbOrder, error } = await supabase
       .from("orders")
       .insert([
         {
           user_id: userId,
-          total: amount,
-          customer_email: customerEmail,
-          delivery_type: deliveryType,
-          shipping_address: shippingAddress ?? null,
+          total,
+          customer_email: email,
+          customer_name: deliveryDetails.customerName,
+          customer_phone: deliveryDetails.customerPhone,
+          delivery_type: deliveryDetails.deliveryType,
+          shipping_address: deliveryDetails.shippingAddress,
           payment_status: "pending",
           status: "pending",
         },
@@ -67,11 +67,12 @@ router.post("/create-order", async (req, res) => {
 
     if (itemsError) {
       console.error("Order items insert failed:", itemsError);
+      await supabase.from("orders").delete().eq("id", dbOrder.id);
       return res.status(500).json({ error: "Failed to insert order items" });
     }
 
     const razorpayOrder = await razorpay.orders.create({
-      amount: amount * 100,
+      amount: Math.round(total * 100),
       currency: "INR",
       receipt: dbOrder.id.slice(0, 40),
     });
@@ -87,55 +88,44 @@ router.post("/create-order", async (req, res) => {
       amount: razorpayOrder.amount,
     });
   } catch (err) {
-    console.error("Create order error:", err);
-    res.status(500).json({ error: "Failed to create order" });
+    return handleCheckoutError(res, err, "Failed to create order");
   }
 });
 
 router.post("/manual-upi-order", verifyFirebaseUser, async (req, res) => {
   try {
     const {
-      amount,
-      customerEmail,
       deliveryType,
       shippingAddress,
       inhandDetails,
-      cartItems,
       upiTransactionId,
     } = req.body;
 
     const userId = req.user.uid;
-    const email = req.user.email || customerEmail;
-    const transactionId = String(upiTransactionId || "").trim();
+    const email = req.user.email;
+    const transactionId = normalizeUpiTransactionId(upiTransactionId);
 
-    if (!amount || !userId || !deliveryType) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
+    await assertUniquePaymentId(supabase, transactionId);
 
-    if (!hasValidCart(cartItems)) {
-      return res.status(400).json({ error: "Cart is empty" });
-    }
-
-    if (transactionId.length < 6 || transactionId.length > 80) {
-      return res.status(400).json({ error: "Invalid UPI transaction ID" });
-    }
-
-    const customerName =
-      deliveryType === "inhand" ? inhandDetails?.name : shippingAddress?.name;
-    const customerPhone =
-      deliveryType === "inhand" ? inhandDetails?.phone : shippingAddress?.phone;
+    const deliveryDetails = normalizeDeliveryDetails({
+      deliveryType,
+      shippingAddress,
+      inhandDetails,
+    });
+    const cartItems = await fetchCheckoutCart(supabase, userId);
+    const total = calculateCheckoutTotal(cartItems, deliveryType);
 
     const { data: dbOrder, error } = await supabase
       .from("orders")
       .insert([
         {
           user_id: userId,
-          total: amount,
+          total,
           customer_email: email,
-          customer_name: customerName || null,
-          customer_phone: customerPhone || null,
-          delivery_type: deliveryType,
-          shipping_address: deliveryType === "shipping" ? shippingAddress : null,
+          customer_name: deliveryDetails.customerName,
+          customer_phone: deliveryDetails.customerPhone,
+          delivery_type: deliveryDetails.deliveryType,
+          shipping_address: deliveryDetails.shippingAddress,
           payment_status: "pending_verification",
           status: "pending",
           payment_id: transactionId,
@@ -174,8 +164,7 @@ router.post("/manual-upi-order", verifyFirebaseUser, async (req, res) => {
       paymentStatus: "pending_verification",
     });
   } catch (err) {
-    console.error("Manual UPI order error:", err);
-    res.status(500).json({ error: "Failed to create manual UPI order" });
+    return handleCheckoutError(res, err, "Failed to create manual UPI order");
   }
 });
 

@@ -159,18 +159,10 @@ function CheckoutSummary() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          amount: total,
-          customerEmail: user.email,
           deliveryType,
           shippingAddress: deliveryType === "shipping" ? address : null,
           inhandDetails: deliveryType === "inhand" ? inhandDetails : null,
           upiTransactionId: transactionId,
-          cartItems: cartItems.map((item) => ({
-            product_id: item.product.id,
-            name: item.product.name,
-            quantity: item.quantity,
-            price: item.product.price,
-          })),
         }),
       });
 
