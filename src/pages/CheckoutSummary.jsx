@@ -13,11 +13,15 @@ import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { supabase } from "../supabaseClient";
 import { CheckoutSummarySkeleton } from "../components/Skeleton";
+import upiQrImage from "../assets/qr.jpeg";
 import "../styles/checkout.css";
 
+const DEFAULT_UPI_ID = "kmpratheeksha2-1@oksbi";
+const DEFAULT_UPI_PAYEE_NAME = "PebbleCo";
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-const UPI_ID = (import.meta.env.VITE_UPI_ID || "").trim();
-const UPI_PAYEE_NAME = (import.meta.env.VITE_UPI_PAYEE_NAME || "PebbleCo").trim();
+const UPI_ID = import.meta.env.VITE_UPI_ID?.trim() || DEFAULT_UPI_ID;
+const UPI_PAYEE_NAME =
+  import.meta.env.VITE_UPI_PAYEE_NAME?.trim() || DEFAULT_UPI_PAYEE_NAME;
 
 function CheckoutSummary() {
   const navigate = useNavigate();
@@ -112,12 +116,6 @@ function CheckoutSummary() {
     return `upi://pay?${params.toString()}`;
   }, [total]);
 
-  const qrCodeUrl = upiUri
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=14&data=${encodeURIComponent(
-        upiUri,
-      )}`
-    : "";
-
   const copyUpiId = async () => {
     if (!UPI_ID) return;
 
@@ -125,7 +123,7 @@ function CheckoutSummary() {
       await navigator.clipboard.writeText(UPI_ID);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
-    } catch (err) {
+    } catch {
       alert(`UPI ID: ${UPI_ID}`);
     }
   };
@@ -246,7 +244,7 @@ function CheckoutSummary() {
           {UPI_ID ? (
             <>
               <div className="upi-qr-wrap">
-                <img src={qrCodeUrl} alt={`UPI QR code for ${UPI_PAYEE_NAME}`} />
+                <img src={upiQrImage} alt={`UPI QR code for ${UPI_PAYEE_NAME}`} />
               </div>
 
               <div className="upi-id-row">
