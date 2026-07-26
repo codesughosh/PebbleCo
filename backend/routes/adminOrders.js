@@ -25,7 +25,7 @@ router.patch("/orders/:id", verifyAdmin, async (req, res) => {
   // 1️⃣ Get existing order (needed for email)
   const { data: order, error: fetchError } = await supabase
     .from("orders")
-    .select("customer_email, customer_name, delivery_type, total")
+    .select("customer_email, customer_name, delivery_type, total, payment_status")
     .eq("id", req.params.id)
     .single();
 
@@ -55,7 +55,35 @@ router.patch("/orders/:id", verifyAdmin, async (req, res) => {
     return res.status(500).json(updateError);
   }
 
-  // 3️⃣ SEND EMAIL ONLY WHEN DELIVERED
+  // Send confirmation email when manual payment is verified.
+  let confirmationEmailSent = false;
+  let confirmationEmailError = null;
+
+  const shouldSendPaymentConfirmation =
+    payment_status === "success" && order.payment_status !== "success";
+
+  if (shouldSendPaymentConfirmation && !order.customer_email) {
+    confirmationEmailError = "Order updated, but customer email is missing";
+  }
+
+  if (shouldSendPaymentConfirmation && order.customer_email) {
+    try {
+      await sendOrderEmail({
+        to: order.customer_email,
+        customerName: order.customer_name || "Customer",
+        orderId: req.params.id,
+        total: order.total,
+        deliveryType: order.delivery_type,
+        type: "confirmed",
+      });
+      confirmationEmailSent = true;
+    } catch (err) {
+      confirmationEmailError = "Order updated, but confirmation email failed";
+      console.error("Manual payment confirmation email failed:", err);
+    }
+  }
+
+  // Send a delivery email when the admin marks the order delivered.
   if (status === "delivered") {
     await sendOrderEmail({
       to: order.customer_email,
@@ -67,7 +95,11 @@ router.patch("/orders/:id", verifyAdmin, async (req, res) => {
     });
   }
 
-  res.json({ success: true });
+  res.json({
+    success: true,
+    confirmationEmailSent,
+    confirmationEmailError,
+  });
 });
 
 

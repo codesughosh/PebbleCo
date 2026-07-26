@@ -54,7 +54,7 @@ function AdminOrders() {
   const updateOrder = async (orderId, updates) => {
     const token = await user.getIdToken();
 
-    await fetch(`${API_BASE}/api/admin/orders/${orderId}`, {
+    const res = await fetch(`${API_BASE}/api/admin/orders/${orderId}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -62,6 +62,17 @@ function AdminOrders() {
       },
       body: JSON.stringify(updates),
     });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || "Failed to update order");
+      return;
+    }
+
+    if (data.confirmationEmailError) {
+      alert(data.confirmationEmailError);
+    }
 
     fetchOrders(user);
   };
