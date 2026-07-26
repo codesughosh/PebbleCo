@@ -1,100 +1,31 @@
 .footer {
-  margin-top: 72px;
-  padding: 0 20px 28px;
+  margin-top: 60px;
+  padding: 20px;
+  text-align: center;
+  background-color: #fceae4;
   color: #777;
   font-size: 14px;
-  background: transparent;
-}
-
-.footer-shell {
-  width: min(100%, 1040px);
-  margin: 0 auto;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.56);
-  border-radius: var(--ios-radius-2xl);
-  background: rgba(252, 234, 228, 0.58);
-  box-shadow:
-    0 18px 48px rgba(90, 42, 54, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.48);
-  backdrop-filter: var(--ios-glass-blur);
-  -webkit-backdrop-filter: var(--ios-glass-blur);
-}
-
-.footer-logo {
-  color: #5a2a36;
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1;
-  text-decoration: none;
-}
-
-.footer-logo:hover {
-  text-decoration: none;
-  opacity: 0.86;
 }
 
 .footer-links {
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: 24px;
   flex-wrap: wrap;
+  margin-bottom: 12px;
 }
 
 .footer-links a {
-  min-height: 36px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 12px;
-  border-radius: var(--ios-pill);
-  color: #5a2a36;
   font-size: 13px;
-  font-weight: 500;
+  color: #5a2a36;
   text-decoration: none;
-  transition:
-    background-color var(--ios-duration) var(--ios-ease),
-    transform var(--ios-duration-fast) var(--ios-ease),
-    color var(--ios-duration) var(--ios-ease);
 }
 
 .footer-links a:hover {
-  background: rgba(255, 255, 255, 0.44);
-  color: #7a3b4a;
-  text-decoration: none;
-}
-
-.footer-links a:active {
-  transform: scale(0.98);
+  text-decoration: underline;
 }
 
 .footer-text {
   font-size: 12px;
   color: #7a3b4a;
-  text-align: center;
-}
-
-@media (max-width: 640px) {
-  .footer {
-    margin-top: 56px;
-    padding: 0 16px 22px;
-  }
-
-  .footer-shell {
-    padding: 20px 14px;
-    border-radius: var(--ios-radius-xl);
-  }
-
-  .footer-links {
-    width: 100%;
-    gap: 6px;
-  }
-
-  .footer-links a {
-    flex: 1 1 calc(50% - 6px);
-    min-width: 132px;
-  }
 }
