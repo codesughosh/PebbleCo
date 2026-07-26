@@ -3,8 +3,10 @@
 ========================= */
 
 .pebble-page {
-  width: 100%;
+  width: 100vw;
   min-height: 100vh;
+  margin: -40px 0 -60px calc(50% - 50vw);
+  padding: 40px 0 60px;
   position: relative;
   overflow-x: hidden;
   background: #fceae4;
@@ -196,9 +198,9 @@
 
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(3, 240px);
+  grid-template-columns: repeat(3, minmax(0, 252px));
   justify-content: center;
-  gap: 24px;
+  gap: 26px;
 }
 
 /* =========================
@@ -292,7 +294,7 @@
   }
 
   .product-grid {
-    grid-template-columns: 240px;
+    grid-template-columns: minmax(0, 240px);
     row-gap: 25px;
   }
 

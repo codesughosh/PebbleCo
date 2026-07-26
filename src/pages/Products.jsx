@@ -7,9 +7,8 @@ import { addToCart } from "../services/cart";
 import CartToast from "../components/CartToast";
 
 function Products() {
-  
   const [showToast, setShowToast] = useState(false);
-  
+
   const handleAddToCart = async (product) => {
     const user = auth.currentUser;
 
@@ -36,19 +35,21 @@ function Products() {
   }, []);
 
   if (loading) {
-    return <p>Loading products...</p>;
+    return <p className="products-loading">Loading products...</p>;
   }
 
   return (
     <>
-      <div className="products-grid">
-        {products.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            onAddToCart={handleAddToCart}
-          />
-        ))}
+      <div className="products-page">
+        <div className="products-grid">
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onAddToCart={handleAddToCart}
+            />
+          ))}
+        </div>
       </div>
       <CartToast show={showToast} onClose={() => setShowToast(false)} />
     </>

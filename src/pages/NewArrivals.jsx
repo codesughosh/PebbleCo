@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
+import ProductCard from "../components/ProductCard";
 import { supabase } from "../supabaseClient";
-import ProductCard from "../components/ProductCard"; // use your existing card
 import "../styles/products.css";
 
 function NewArrivals() {
@@ -16,7 +16,7 @@ function NewArrivals() {
       .from("products")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(6); // optional
+      .limit(6);
 
     if (!error) {
       setProducts(data);
@@ -28,13 +28,12 @@ function NewArrivals() {
   };
 
   if (loading) {
-    return <p style={{ padding: "20px" }}>Loading new arrivals…</p>;
+    return <p className="products-loading">Loading new arrivals...</p>;
   }
 
   return (
     <div className="products-page">
       <h1 className="page-title">New Arrivals</h1>
-
 
       <div className="products-grid">
         {products.map((product) => (
