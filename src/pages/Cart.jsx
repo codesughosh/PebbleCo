@@ -1,7 +1,15 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
-import { ArrowRight, Minus, Plus, ShieldCheck, ShoppingBag, Trash2 } from "lucide-react";
+import {
+  ArrowRight,
+  Loader2,
+  Minus,
+  Plus,
+  ShieldCheck,
+  ShoppingBag,
+  Trash2,
+} from "lucide-react";
 import { auth } from "../firebase";
 import { CartSkeleton } from "../components/Skeleton";
 import "../styles/cart.css";
@@ -9,28 +17,32 @@ import "../styles/cart.css";
 function Cart() {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [activeCartItem, setActiveCartItem] = useState(null);
   const [agreed, setAgreed] = useState(false);
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setLoading(true);
       setUser(currentUser);
+      setAuthReady(true);
     });
 
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
+  const fetchCart = useCallback(async ({ useSkeleton = false } = {}) => {
+    if (!user) return;
+
+    if (useSkeleton) {
+      setLoading(true);
+    } else {
+      setRefreshing(true);
     }
 
-    fetchCart();
-  }, [user]);
-
-  const fetchCart = async () => {
     try {
       const token = await user.getIdToken();
 
@@ -40,41 +52,86 @@ function Cart() {
         },
       });
 
+      if (!res.ok) {
+        throw new Error("Could not fetch cart");
+      }
+
       const data = await res.json();
-      setCartItems(data);
+      setCartItems(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Fetch cart error:", err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!authReady) return;
+
+    if (!user) {
+      setCartItems([]);
+      setLoading(false);
+      return;
+    }
+
+    fetchCart({ useSkeleton: true });
+  }, [authReady, fetchCart, user]);
+
+  const updateQty = async (cartId, quantity) => {
+    if (refreshing) return;
+
+    try {
+      setActiveCartItem(cartId);
+      const token = await user.getIdToken();
+
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/cart/${cartId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ quantity }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Could not update item quantity");
+      }
+
+      await fetchCart();
+    } catch (err) {
+      console.error("Update cart quantity error:", err);
+      alert("Could not update cart. Please try again.");
+    } finally {
+      setActiveCartItem(null);
     }
   };
 
-  const updateQty = async (cartId, quantity) => {
-    const token = await user.getIdToken();
-
-    await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/cart/${cartId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ quantity }),
-    });
-
-    fetchCart();
-  };
-
   const removeItem = async (cartId) => {
-    const token = await user.getIdToken();
+    if (refreshing) return;
 
-    await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/cart/${cartId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    try {
+      setActiveCartItem(cartId);
+      const token = await user.getIdToken();
 
-    fetchCart();
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/cart/${cartId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error("Could not remove item");
+      }
+
+      await fetchCart();
+    } catch (err) {
+      console.error("Remove cart item error:", err);
+      alert("Could not remove item. Please try again.");
+    } finally {
+      setActiveCartItem(null);
+    }
   };
 
   const subtotal = cartItems.reduce(
@@ -84,7 +141,7 @@ function Cart() {
 
   const formatPrice = (value) => `\u20B9${value}`;
 
-  if (loading) {
+  if (!authReady || loading) {
     return <CartSkeleton />;
   }
 
@@ -104,11 +161,17 @@ function Cart() {
 
   return (
     <div className="cart-page">
-      <section className="cart-shell">
+      <section className="cart-shell" aria-busy={refreshing}>
         <div className="cart-page-head">
           <span className="cart-kicker">Checkout</span>
           <h1 className="cart-title">Your Cart</h1>
           <p>{cartItems.length} item{cartItems.length === 1 ? "" : "s"} ready for checkout.</p>
+          {refreshing && (
+            <div className="cart-loading-chip" role="status" aria-live="polite">
+              <Loader2 size={15} className="cart-spin" />
+              Updating cart
+            </div>
+          )}
         </div>
 
         {cartItems.length === 0 ? (
@@ -124,56 +187,72 @@ function Cart() {
         ) : (
           <div className="cart-layout">
             <div className="cart-items">
-              {cartItems.map((item) => (
-                <article className="cart-item" key={item.id}>
-                  <img
-                    src={item.product.images?.[0] || "/placeholder.png"}
-                    alt={item.product.name}
-                    className="cart-item-image"
-                  />
+              {cartItems.map((item) => {
+                const isItemLoading = activeCartItem === item.id;
 
-                  <div className="cart-item-info">
-                    <div className="cart-item-name">{item.product.name}</div>
-                    <div className="cart-item-price">{formatPrice(item.product.price)}</div>
-                  </div>
-
-                  <div className="cart-item-qty" aria-label={`Quantity for ${item.product.name}`}>
-                    <button
-                      type="button"
-                      aria-label={`Decrease quantity for ${item.product.name}`}
-                      disabled={item.quantity <= 1}
-                      onClick={() => {
-                        if (item.quantity > 1) {
-                          updateQty(item.id, item.quantity - 1);
-                        }
-                      }}
-                    >
-                      <Minus size={15} strokeWidth={2.4} />
-                    </button>
-                    <span>{item.quantity}</span>
-                    <button
-                      type="button"
-                      aria-label={`Increase quantity for ${item.product.name}`}
-                      onClick={() => updateQty(item.id, item.quantity + 1)}
-                    >
-                      <Plus size={15} strokeWidth={2.4} />
-                    </button>
-                  </div>
-
-                  <div className="cart-item-total">
-                    {formatPrice(item.product.price * item.quantity)}
-                  </div>
-
-                  <button
-                    type="button"
-                    className="cart-item-remove"
-                    aria-label={`Remove ${item.product.name}`}
-                    onClick={() => removeItem(item.id)}
+                return (
+                  <article
+                    className={`cart-item ${isItemLoading ? "updating" : ""}`}
+                    key={item.id}
                   >
-                    <Trash2 size={17} strokeWidth={1.9} />
-                  </button>
-                </article>
-              ))}
+                    <img
+                      src={item.product.images?.[0] || "/placeholder.png"}
+                      alt={item.product.name}
+                      className="cart-item-image"
+                    />
+
+                    <div className="cart-item-info">
+                      <div className="cart-item-name">{item.product.name}</div>
+                      <div className="cart-item-price">{formatPrice(item.product.price)}</div>
+                    </div>
+
+                    <div className="cart-item-qty" aria-label={`Quantity for ${item.product.name}`}>
+                      <button
+                        type="button"
+                        aria-label={`Decrease quantity for ${item.product.name}`}
+                        disabled={refreshing || item.quantity <= 1}
+                        onClick={() => {
+                          if (item.quantity > 1) {
+                            updateQty(item.id, item.quantity - 1);
+                          }
+                        }}
+                      >
+                        <Minus size={15} strokeWidth={2.4} />
+                      </button>
+                      <span>{item.quantity}</span>
+                      <button
+                        type="button"
+                        aria-label={`Increase quantity for ${item.product.name}`}
+                        disabled={refreshing}
+                        onClick={() => updateQty(item.id, item.quantity + 1)}
+                      >
+                        <Plus size={15} strokeWidth={2.4} />
+                      </button>
+                    </div>
+
+                    <div className="cart-item-total">
+                      {formatPrice(item.product.price * item.quantity)}
+                    </div>
+
+                    <button
+                      type="button"
+                      className="cart-item-remove"
+                      aria-label={`Remove ${item.product.name}`}
+                      disabled={refreshing}
+                      onClick={() => removeItem(item.id)}
+                    >
+                      <Trash2 size={17} strokeWidth={1.9} />
+                    </button>
+
+                    {isItemLoading && (
+                      <div className="cart-item-loading" role="status" aria-live="polite">
+                        <Loader2 size={18} className="cart-spin" />
+                        <span>Updating</span>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
             </div>
 
             <aside className="cart-summary">
@@ -214,11 +293,20 @@ function Cart() {
               <button
                 type="button"
                 className="checkout-btn"
-                disabled={!agreed}
+                disabled={!agreed || refreshing}
                 onClick={() => navigate("/checkout/delivery")}
               >
-                Proceed to Checkout
-                <ArrowRight size={16} strokeWidth={2} />
+                {refreshing ? (
+                  <>
+                    <Loader2 size={16} className="cart-spin" />
+                    Updating Cart
+                  </>
+                ) : (
+                  <>
+                    Proceed to Checkout
+                    <ArrowRight size={16} strokeWidth={2} />
+                  </>
+                )}
               </button>
             </aside>
           </div>
