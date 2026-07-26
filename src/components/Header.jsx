@@ -141,7 +141,7 @@ function Header() {
 
         <button
           type="button"
-          className="mobile-link"
+          className={`mobile-link ${mobileShopByOpen ? "open" : ""}`}
           aria-expanded={mobileShopByOpen}
           onClick={() => setMobileShopByOpen((open) => !open)}
         >
