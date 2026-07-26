@@ -231,26 +231,13 @@
   background: var(--ios-glass-rose);
   box-shadow:
     0 18px 42px rgba(90, 42, 54, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.52);
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
   backdrop-filter: var(--ios-glass-blur);
   -webkit-backdrop-filter: var(--ios-glass-blur);
   transition:
     transform var(--ios-duration) var(--ios-ease),
     box-shadow var(--ios-duration) var(--ios-ease),
     border-color var(--ios-duration) var(--ios-ease);
-}
-
-.collection-card::before {
-  content: "";
-  position: absolute;
-  inset: 10px;
-  border-radius: calc(var(--ios-radius-xl) - 8px);
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.28),
-    rgba(255, 255, 255, 0)
-  );
-  pointer-events: none;
 }
 
 .collection-card span {
