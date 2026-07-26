@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
-
+import { ArrowLeft, CreditCard, Loader2, PackageCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { supabase } from "../supabaseClient";
 import "../styles/checkout.css";
+
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 function CheckoutSummary() {
@@ -13,33 +13,28 @@ function CheckoutSummary() {
 
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isPaying, setIsPaying] = useState(false);
 
   const deliveryType = localStorage.getItem("deliveryType");
   const address = JSON.parse(localStorage.getItem("shippingAddress"));
   const inhandDetails = JSON.parse(localStorage.getItem("inhandDetails"));
-  const [isPaying, setIsPaying] = useState(false);
 
   useEffect(() => {
-    const deliveryType = localStorage.getItem("deliveryType");
+    const savedDeliveryType = localStorage.getItem("deliveryType");
 
-    if (!deliveryType) {
+    if (!savedDeliveryType) {
       navigate("/checkout/address");
       return;
     }
 
-    if (deliveryType === "shipping") {
-      const address = JSON.parse(localStorage.getItem("shippingAddress"));
+    if (savedDeliveryType === "shipping") {
+      const savedAddress = JSON.parse(localStorage.getItem("shippingAddress"));
 
-      if (!address || address.locationResolved !== true) {
+      if (!savedAddress || savedAddress.locationResolved !== true) {
         navigate("/checkout/address");
       }
     }
-
-    if (deliveryType === "inhand") {
-      // ✅ In-hand delivery does NOT need address
-      return;
-    }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (!user || !deliveryType) {
@@ -63,7 +58,7 @@ function CheckoutSummary() {
         id,
         quantity,
         product:products (
-        id,
+          id,
           name,
           price
         )
@@ -85,22 +80,21 @@ function CheckoutSummary() {
     0,
   );
 
-  // TEMP shipping fee logic
   const shippingFee = deliveryType === "shipping" ? 60 : 0;
   const total = subtotal + shippingFee;
-
-  if (!user) {
-    alert("Please log in to continue");
-    return;
-  }
+  const formatPrice = (value) => `\u20B9${value}`;
 
   const handlePayment = async () => {
     if (isPaying) return;
 
+    if (!window.Razorpay) {
+      alert("Razorpay not loaded");
+      return;
+    }
+
     try {
       setIsPaying(true);
 
-      // 1️⃣ Create order via backend (NOT Supabase)
       const res = await fetch(`${BACKEND_URL}/api/create-order`, {
         method: "POST",
         headers: {
@@ -113,8 +107,6 @@ function CheckoutSummary() {
           deliveryType,
           shippingAddress: deliveryType === "shipping" ? address : null,
           inhandDetails: deliveryType === "inhand" ? inhandDetails : null,
-
-          // ✅ SEND CART ITEMS TO BACKEND
           cartItems: cartItems.map((item) => ({
             product_id: item.product.id,
             name: item.product.name,
@@ -134,7 +126,6 @@ function CheckoutSummary() {
         throw new Error("Invalid order response");
       }
 
-      // 2️⃣ Open Razorpay
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         order_id: orderId,
@@ -151,21 +142,13 @@ function CheckoutSummary() {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-
                 orderId: dbOrderId,
                 userId: user.uid,
                 deliveryType,
-
                 customerName:
-                  deliveryType === "inhand"
-                    ? inhandDetails?.name
-                    : address?.name,
-
+                  deliveryType === "inhand" ? inhandDetails?.name : address?.name,
                 customerPhone:
-                  deliveryType === "inhand"
-                    ? inhandDetails?.phone
-                    : address?.phone,
-
+                  deliveryType === "inhand" ? inhandDetails?.phone : address?.phone,
                 cartItems: cartItems.map((item) => ({
                   product_id: item.product.id,
                   name: item.product.name,
@@ -181,7 +164,6 @@ function CheckoutSummary() {
               throw new Error("Payment verification failed");
             }
 
-            console.log("Navigating to success with order:", dbOrderId);
             navigate(`/payment/success/${dbOrderId}`);
           } catch (err) {
             console.error(err);
@@ -198,7 +180,6 @@ function CheckoutSummary() {
       };
 
       const rzp = new window.Razorpay(options);
-
       rzp.open();
     } catch (err) {
       console.error(err);
@@ -208,64 +189,91 @@ function CheckoutSummary() {
   };
 
   if (loading) {
-    return <p style={{ padding: "40px" }}>Loading summary...</p>;
+    return (
+      <div className="checkout-state">
+        <div className="checkout-state-card">
+          <Loader2 size={20} className="spin" />
+          <p>Loading summary...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="checkout-page">
-      <h1>Order Summary</h1>
+      <section className="checkout-shell">
+        <div className="checkout-head">
+          <span className="checkout-step">Step 3 of 3</span>
+          <h1>Order Summary</h1>
+          <p>Review your items and complete your payment.</p>
+        </div>
 
-      <div className="summary-box">
-        {cartItems.map((item) => (
-          <div key={item.id} className="summary-row">
-            <span>
-              {item.product.name} × {item.quantity}
-            </span>
-            <span>₹{item.product.price * item.quantity}</span>
+        <div className="summary-box">
+          <div className="summary-box-head">
+            <PackageCheck size={22} strokeWidth={1.8} />
+            <div>
+              <h2>Items</h2>
+              <p>{cartItems.length} item{cartItems.length === 1 ? "" : "s"}</p>
+            </div>
           </div>
-        ))}
 
-        <div className="summary-row">
-          <span>Subtotal</span>
-          <span>₹{subtotal}</span>
+          {cartItems.map((item) => (
+            <div key={item.id} className="summary-row item-row">
+              <span>
+                {item.product.name} <small>x {item.quantity}</small>
+              </span>
+              <span>{formatPrice(item.product.price * item.quantity)}</span>
+            </div>
+          ))}
+
+          <div className="summary-divider" />
+
+          <div className="summary-row">
+            <span>Subtotal</span>
+            <span>{formatPrice(subtotal)}</span>
+          </div>
+
+          <div className="summary-row">
+            <span>Shipping</span>
+            <span>{shippingFee === 0 ? "Free" : formatPrice(shippingFee)}</span>
+          </div>
+
+          <div className="summary-total">
+            <span>Total</span>
+            <span>{formatPrice(total)}</span>
+          </div>
         </div>
 
-        <div className="summary-row">
-          <span>Shipping</span>
-          <span>{shippingFee === 0 ? "Free" : `₹${shippingFee}`}</span>
-        </div>
-
-        <div className="summary-total">
-          <span>Total</span>
-          <span>₹{total}</span>
-        </div>
-      </div>
-
-      <button
-        className="checkout-continue"
-        onClick={handlePayment}
-        disabled={isPaying}
-        style={{
-          opacity: isPaying ? 0.6 : 1,
-          cursor: isPaying ? "not-allowed" : "pointer",
-        }}
-      >
-        {isPaying ? (
-          <span
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              justifyContent: "center",
-            }}
+        <div className="checkout-actions split">
+          <button
+            type="button"
+            className="checkout-secondary"
+            onClick={() => navigate("/checkout/address")}
           >
-            <Loader2 size={16} className="animate-spin" />
-            Processing Payment
-          </span>
-        ) : (
-          <>Pay ₹{total}</>
-        )}
-      </button>
+            <ArrowLeft size={16} strokeWidth={2} />
+            Back
+          </button>
+
+          <button
+            type="button"
+            className="checkout-continue"
+            onClick={handlePayment}
+            disabled={isPaying}
+          >
+            {isPaying ? (
+              <>
+                <Loader2 size={16} className="spin" />
+                Processing Payment
+              </>
+            ) : (
+              <>
+                <CreditCard size={16} strokeWidth={2} />
+                Pay {formatPrice(total)}
+              </>
+            )}
+          </button>
+        </div>
+      </section>
     </div>
   );
 }

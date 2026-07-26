@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import "../styles/cart.css";
-import { Link } from "react-router-dom";
-import { auth } from "../firebase";
+import { Link, useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
+import { ArrowRight, Minus, Plus, ShieldCheck, ShoppingBag, Trash2 } from "lucide-react";
+import { auth } from "../firebase";
+import "../styles/cart.css";
 
 function Cart() {
   const [cartItems, setCartItems] = useState([]);
@@ -12,7 +12,6 @@ function Cart() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
-  // 🔹 Listen to auth state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -21,7 +20,6 @@ function Cart() {
     return () => unsubscribe();
   }, []);
 
-  // 🔹 Fetch cart when user is available
   useEffect(() => {
     if (!user) {
       setLoading(false);
@@ -66,192 +64,172 @@ function Cart() {
   };
 
   const removeItem = async (cartId) => {
-  const token = await user.getIdToken();
+    const token = await user.getIdToken();
 
-  await fetch(
-    `${import.meta.env.VITE_BACKEND_URL}/api/cart/${cartId}`,
-    {
+    await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/cart/${cartId}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    }
-  );
+    });
 
-  fetchCart();
-};
+    fetchCart();
+  };
 
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
-    0
+    0,
   );
 
-  const handleCheckout = () => {
-    if (!window.Razorpay) {
-      alert("Razorpay not loaded");
-      return;
-    }
+  const formatPrice = (value) => `\u20B9${value}`;
 
-    const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
-
-    if (!razorpayKey) {
-      alert("Razorpay key missing");
-      return;
-    }
-
-    const options = {
-      key: razorpayKey,
-      amount: subtotal * 100,
-      currency: "INR",
-      name: "PebbleCo",
-      description: "Order Payment",
-      handler: function (response) {
-        console.log("Payment success:", response);
-        alert("Payment successful");
-      },
-      theme: {
-        color: "#fdd2dc",
-      },
-    };
-
-    const rzp = new window.Razorpay(options);
-    rzp.open();
-  };
-
-  // 🔹 UI STATES
   if (loading) {
-  return (
-    <div
-      style={{
-        minHeight: "60vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        textAlign: "center",
-      }}
-    >
-      <p>Loading products...</p>
-    </div>
-  );
-}
-
+    return (
+      <div className="cart-state">
+        <div className="cart-state-card">
+          <ShoppingBag size={24} strokeWidth={1.8} />
+          <p>Loading cart...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
-  return (
-    <div
-      style={{
-        minHeight: "60vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        textAlign: "center",
-      }}
-    >
-      <p>Please login to view cart.</p>
-    </div>
-  );
-}
+    return (
+      <div className="cart-state">
+        <div className="cart-state-card">
+          <ShoppingBag size={24} strokeWidth={1.8} />
+          <p>Please login to view cart.</p>
+          <Link to="/login" className="continue-btn">
+            Login
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="cart-page">
-      <h1 className="cart-title">Your Cart</h1>
-
-      {cartItems.length === 0 ? (
-        <div className="empty-cart">
-          <h2>Your cart is empty</h2>
-          <p>Add some cute PebbleCo goodies 🌸</p>
-
-          <Link to="/" className="continue-btn">
-            Continue Shopping
-          </Link>
+      <section className="cart-shell">
+        <div className="cart-page-head">
+          <span className="cart-kicker">Checkout</span>
+          <h1 className="cart-title">Your Cart</h1>
+          <p>{cartItems.length} item{cartItems.length === 1 ? "" : "s"} ready for checkout.</p>
         </div>
-      ) : (
-        <div className="cart-layout">
-          <div className="cart-items">
-            {cartItems.map((item) => (
-              <div className="cart-item" key={item.id}>
-                <img
-                  src={item.product.images?.[0]}
-                  alt={item.product.name}
-                  className="cart-item-image"
-                />
 
-                <div className="cart-item-info">
-                  <div className="cart-item-name">{item.product.name}</div>
-                  <div className="cart-item-price">₹{item.product.price}</div>
-                </div>
+        {cartItems.length === 0 ? (
+          <div className="empty-cart">
+            <ShoppingBag size={34} strokeWidth={1.7} />
+            <h2>Your cart is empty</h2>
+            <p>Add some cute PebbleCo goodies.</p>
 
-                <div className="cart-item-qty">
+            <Link to="/" className="continue-btn">
+              Continue Shopping
+            </Link>
+          </div>
+        ) : (
+          <div className="cart-layout">
+            <div className="cart-items">
+              {cartItems.map((item) => (
+                <article className="cart-item" key={item.id}>
+                  <img
+                    src={item.product.images?.[0] || "/placeholder.png"}
+                    alt={item.product.name}
+                    className="cart-item-image"
+                  />
+
+                  <div className="cart-item-info">
+                    <div className="cart-item-name">{item.product.name}</div>
+                    <div className="cart-item-price">{formatPrice(item.product.price)}</div>
+                  </div>
+
+                  <div className="cart-item-qty" aria-label={`Quantity for ${item.product.name}`}>
+                    <button
+                      type="button"
+                      aria-label={`Decrease quantity for ${item.product.name}`}
+                      disabled={item.quantity <= 1}
+                      onClick={() => {
+                        if (item.quantity > 1) {
+                          updateQty(item.id, item.quantity - 1);
+                        }
+                      }}
+                    >
+                      <Minus size={15} strokeWidth={2.4} />
+                    </button>
+                    <span>{item.quantity}</span>
+                    <button
+                      type="button"
+                      aria-label={`Increase quantity for ${item.product.name}`}
+                      onClick={() => updateQty(item.id, item.quantity + 1)}
+                    >
+                      <Plus size={15} strokeWidth={2.4} />
+                    </button>
+                  </div>
+
+                  <div className="cart-item-total">
+                    {formatPrice(item.product.price * item.quantity)}
+                  </div>
+
                   <button
-                    onClick={() => {
-                      if (item.quantity > 1)
-                        updateQty(item.id, item.quantity - 1);
-                    }}
+                    type="button"
+                    className="cart-item-remove"
+                    aria-label={`Remove ${item.product.name}`}
+                    onClick={() => removeItem(item.id)}
                   >
-                    -
+                    <Trash2 size={17} strokeWidth={1.9} />
                   </button>
-                  <span>{item.quantity}</span>
-                  <button onClick={() => updateQty(item.id, item.quantity + 1)}>
-                    +
-                  </button>
-                </div>
+                </article>
+              ))}
+            </div>
 
-                <div className="cart-item-total">
-                  ₹{item.product.price * item.quantity}
-                </div>
-
-                <button
-                  className="cart-item-remove"
-                  onClick={() => removeItem(item.id)}
-                >
-                  ✕
-                </button>
+            <aside className="cart-summary">
+              <div className="summary-head">
+                <ShieldCheck size={20} strokeWidth={1.8} />
+                <h2>Cart Totals</h2>
               </div>
-            ))}
+
+              <div className="summary-row">
+                <span>Subtotal</span>
+                <span>{formatPrice(subtotal)}</span>
+              </div>
+
+              <div className="summary-total">
+                <span>Total</span>
+                <span>{formatPrice(subtotal)}</span>
+              </div>
+
+              <label className="terms">
+                <input
+                  type="checkbox"
+                  checked={agreed}
+                  onChange={(e) => setAgreed(e.target.checked)}
+                />
+                <span>
+                  I agree to the{" "}
+                  <a
+                    href="/terms"
+                    className="terms-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Terms & Conditions
+                  </a>
+                </span>
+              </label>
+
+              <button
+                type="button"
+                className="checkout-btn"
+                disabled={!agreed}
+                onClick={() => navigate("/checkout/delivery")}
+              >
+                Proceed to Checkout
+                <ArrowRight size={16} strokeWidth={2} />
+              </button>
+            </aside>
           </div>
-
-          <div className="cart-summary">
-            <h2>Cart Totals</h2>
-
-            <div className="summary-row">
-              <span>Subtotal</span>
-              <span>₹{subtotal}</span>
-            </div>
-
-            <div className="summary-total">
-              <span>Total</span>
-              <span>₹{subtotal}</span>
-            </div>
-
-            <label className="terms">
-              <input
-                type="checkbox"
-                checked={agreed}
-                onChange={(e) => setAgreed(e.target.checked)}
-              />
-              <span>
-                I agree to the{" "}
-                <a
-                  href="/terms"
-                  className="terms-link"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Terms & Conditions
-                </a>
-              </span>
-            </label>
-
-            <button
-              className="checkout-btn"
-              disabled={!agreed}
-              onClick={() => navigate("/checkout/delivery")}
-            >
-              Proceed to Checkout
-            </button>
-          </div>
-        </div>
-      )}
+        )}
+      </section>
     </div>
   );
 }
