@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { sendPasswordResetEmail, onAuthStateChanged, signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, KeyRound, LogOut, Mail, UserRound } from "lucide-react";
+import { Check, ChevronRight, KeyRound, Loader2, LogOut, Mail, UserRound } from "lucide-react";
 import { auth } from "../firebase";
 import { PageLoader } from "../components/Skeleton";
 import "../styles/profile.css";
@@ -9,6 +9,7 @@ import "../styles/profile.css";
 function Profile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [resetState, setResetState] = useState("idle");
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (currentUser) => {
@@ -23,12 +24,15 @@ function Profile() {
   }, [navigate]);
 
   const handlePasswordReset = async () => {
-    if (!user?.email) return;
+    if (!user?.email || resetState === "sending") return;
 
     try {
+      setResetState("sending");
       await sendPasswordResetEmail(auth, user.email);
-      alert("Password reset email sent (check spam too)");
+      setResetState("sent");
+      window.setTimeout(() => setResetState("idle"), 3000);
     } catch (err) {
+      setResetState("idle");
       alert(err.message);
     }
   };
@@ -77,10 +81,25 @@ function Profile() {
         <section className="profile-section">
           <h2>Account</h2>
 
-          <button type="button" className="profile-row clickable" onClick={handlePasswordReset}>
+          <button
+            type="button"
+            className="profile-row clickable"
+            onClick={handlePasswordReset}
+            disabled={resetState === "sending"}
+          >
             <span className="profile-row-label">
-              <KeyRound size={17} strokeWidth={1.8} />
-              Change Password
+              {resetState === "sending" ? (
+                <Loader2 size={17} strokeWidth={1.8} className="profile-spin" />
+              ) : resetState === "sent" ? (
+                <Check size={17} strokeWidth={2} />
+              ) : (
+                <KeyRound size={17} strokeWidth={1.8} />
+              )}
+              {resetState === "sending"
+                ? "Sending reset link"
+                : resetState === "sent"
+                  ? "Reset link sent"
+                  : "Change Password"}
             </span>
             <ChevronRight size={18} strokeWidth={1.8} />
           </button>

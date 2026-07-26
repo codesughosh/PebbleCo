@@ -10,17 +10,20 @@
 }
 
 .profile-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin-bottom: 24px;
   text-align: center;
 }
 
 .profile-avatar {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 58px;
   height: 58px;
-  margin-bottom: 12px;
+  margin: 0 auto 12px;
   border: 1px solid rgba(255, 255, 255, 0.68);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.5);
@@ -34,6 +37,7 @@
   display: inline-flex;
   min-height: 28px;
   align-items: center;
+  justify-content: center;
   padding: 5px 12px;
   border: 1px solid rgba(255, 255, 255, 0.62);
   border-radius: var(--ios-pill);
@@ -120,6 +124,15 @@
   background: rgba(252, 234, 228, 0.68);
 }
 
+.profile-row.clickable:disabled {
+  cursor: wait;
+  opacity: 0.82;
+}
+
+.profile-spin {
+  animation: profile-spin 0.9s linear infinite;
+}
+
 .profile-row.logout,
 .profile-row.logout .profile-row-label {
   color: #c0392b;
@@ -145,6 +158,12 @@
   -webkit-backdrop-filter: saturate(170%) blur(20px);
 }
 
+@keyframes profile-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 560px) {
   .profile-page {
     padding: 32px 0 58px;
@@ -167,5 +186,11 @@
 
   .profile-row-value {
     text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-spin {
+    animation: none;
   }
 }

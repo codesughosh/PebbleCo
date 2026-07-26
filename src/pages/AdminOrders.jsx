@@ -1,41 +1,19 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase";
 import { PageLoader } from "../components/Skeleton";
 import "../styles/adminOrders.css";
+
+const API_BASE = import.meta.env.VITE_BACKEND_URL;
 
 function AdminOrders() {
   const [user, setUser] = useState(null);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [unauthorized, setUnauthorized] = useState(false);
+  const [adminError, setAdminError] = useState("");
 
-  const API_BASE = import.meta.env.VITE_BACKEND_URL;
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
-      if (!u) {
-        setUnauthorized(true);
-        setLoading(false);
-        return;
-      }
-
-      const tokenResult = await u.getIdTokenResult(true);
-
-      if (!tokenResult.claims.admin) {
-        setUnauthorized(true);
-        setLoading(false);
-        return;
-      }
-
-      setUser(u);
-      fetchOrders(u);
-    });
-
-    return () => unsub();
-  }, []);
-
-  const fetchOrders = async (u) => {
+  const fetchOrders = useCallback(async (u) => {
     if (!u) return;
 
     const token = await u.getIdToken();
@@ -47,9 +25,47 @@ function AdminOrders() {
     });
 
     const data = await res.json();
+
+    if (!res.ok) {
+      setAdminError(data.error || "Could not load admin orders.");
+      setUnauthorized(res.status === 401 || res.status === 403);
+      setLoading(false);
+      return;
+    }
+
     setOrders(data || []);
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      try {
+        if (!u) {
+          setUnauthorized(true);
+          setLoading(false);
+          return;
+        }
+
+        const tokenResult = await u.getIdTokenResult(true);
+
+        if (!tokenResult.claims.admin) {
+          setUnauthorized(true);
+          setLoading(false);
+          return;
+        }
+
+        setUser(u);
+        fetchOrders(u);
+      } catch (err) {
+        console.error("Admin auth check failed:", err);
+        setAdminError("Could not verify admin access.");
+        setUnauthorized(true);
+        setLoading(false);
+      }
+    });
+
+    return () => unsub();
+  }, [fetchOrders]);
 
   const updateOrder = async (orderId, updates) => {
     const token = await user.getIdToken();
@@ -82,7 +98,16 @@ function AdminOrders() {
 
   if (loading) return <PageLoader label="Loading admin panel..." />;
 
-  if (unauthorized) return <p style={{ padding: 40 }}>Access denied</p>;
+  if (unauthorized) {
+    return (
+      <div className="admin-state">
+        <div className="admin-state-card">
+          <p>Access denied</p>
+          {adminError && <span>{adminError}</span>}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-orders">

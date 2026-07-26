@@ -1,4 +1,4 @@
-import { Mail, MessageCircle } from "lucide-react";
+import { Instagram, Mail, MessageCircle } from "lucide-react";
 
 function Contact() {
   return (
@@ -18,6 +18,22 @@ function Contact() {
         <div>
           <span>Email</span>
           <a href="mailto:pebbleco.team@gmail.com">pebbleco.team@gmail.com</a>
+        </div>
+      </div>
+
+      <div className="contact-card">
+        <div className="contact-icon">
+          <Instagram size={20} strokeWidth={1.8} />
+        </div>
+        <div>
+          <span>Instagram</span>
+          <a
+            href="https://www.instagram.com/pebbleco.store"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            @pebbleco.store
+          </a>
         </div>
       </div>
 
