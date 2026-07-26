@@ -1,28 +1,28 @@
-import { useEffect, useState, useRef } from "react";
-import ProductCard from "../components/ProductCard";
-import { products } from "../data/products";
+import { useEffect, useRef, useState } from "react";
 import WhyPebbleCo from "../components/WhyPebbleCo";
 import TopSellers from "../components/TopSellers";
-
 import "../styles/home.css";
 import { useNavigate } from "react-router-dom";
-
 import slide1 from "../assets/slider/1.jpg";
 import slide2 from "../assets/slider/2.jpg";
 import slide3 from "../assets/slider/3.jpg";
-
 import PebbleBackground from "../components/PebbleBackground";
 
 const slides = [slide1, slide2, slide3];
+const collections = [
+  { label: "Flower Bracelets", path: "/category/flower-bracelet" },
+  { label: "Charms", path: "/category/charms" },
+  { label: "Bead Bracelets", path: "/category/bead-bracelet" },
+  { label: "Necklaces", path: "/category/necklace" },
+  { label: "Crochets", path: "/category/crochet" },
+];
 
 function Home() {
-  const [index, setIndex] = useState(1); // start from first real slide
+  const [index, setIndex] = useState(1);
   const trackRef = useRef(null);
+  const collectionsRef = useRef(null);
   const navigate = useNavigate();
-  
-const collectionsRef = useRef(null);
 
-  // auto slide
   useEffect(() => {
     const interval = setInterval(() => {
       setIndex((prev) => prev + 1);
@@ -31,7 +31,6 @@ const collectionsRef = useRef(null);
     return () => clearInterval(interval);
   }, []);
 
-  // handle infinite loop jump
   useEffect(() => {
     const track = trackRef.current;
     if (!track) return;
@@ -51,107 +50,108 @@ const collectionsRef = useRef(null);
     };
 
     track.addEventListener("transitionend", handleTransitionEnd);
-    return () =>
+    return () => {
       track.removeEventListener("transitionend", handleTransitionEnd);
+    };
   }, [index]);
 
-  // apply transform
   useEffect(() => {
     const track = trackRef.current;
     if (!track) return;
 
-    track.style.transition = "transform 0.6s ease-in-out";
+    track.style.transition = "transform 0.72s var(--ios-ease)";
     track.style.transform = `translateX(-${index * 100}%)`;
   }, [index]);
 
+  const scrollToCollections = () => {
+    collectionsRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
+  const handleHeroKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      scrollToCollections();
+    }
+  };
+
   return (
     <PebbleBackground>
-      <div className="home px-4 md:px-8 lg:px-12">
-        {/* HERO SLIDER */}
+      <div className="home">
         <section
           className="hero-slider"
-          onClick={() =>
-            collectionsRef.current?.scrollIntoView({
-              behavior: "smooth",
-              block: "start",
-            })
-          }
+          onClick={scrollToCollections}
+          onKeyDown={handleHeroKeyDown}
+          role="button"
+          tabIndex={0}
+          aria-label="Scroll to shop by collection"
         >
           <div className="slider-viewport">
             <div className="slider-track" ref={trackRef}>
-              {/* clone last */}
-              <img src={slides[slides.length - 1]} className="hero-image" />
+              <img
+                src={slides[slides.length - 1]}
+                className="hero-image"
+                alt=""
+                aria-hidden="true"
+              />
 
-              {/* real slides */}
               {slides.map((img, i) => (
-                <img key={i} src={img} className="hero-image" />
+                <img
+                  key={i}
+                  src={img}
+                  className="hero-image"
+                  alt={`PebbleCo featured collection ${i + 1}`}
+                />
               ))}
 
-              {/* clone first */}
-              <img src={slides[0]} className="hero-image" />
+              <img
+                src={slides[0]}
+                className="hero-image"
+                alt=""
+                aria-hidden="true"
+              />
             </div>
           </div>
 
           <div className="dots">
             {slides.map((_, i) => (
-              <span
+              <button
+                type="button"
                 key={i}
                 className={index - 1 === i ? "dot active" : "dot"}
-                onClick={() => setIndex(i + 1)}
+                aria-label={`Show slide ${i + 1}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setIndex(i + 1);
+                }}
               />
             ))}
           </div>
         </section>
 
-        {/* TOP SELLERS */}
         <section className="top-sellers">
-          <h2>Top Sellers</h2>
+          <h2 className="section-title">Top Sellers</h2>
           <TopSellers />
         </section>
 
-        {/* COLLECTIONS */}
         <section className="collections" ref={collectionsRef}>
-          <h2>Shop by Collection</h2>
+          <h2 className="section-title">Shop by Collection</h2>
 
           <div className="collection-grid">
-            <div
-              className="collection-card"
-              onClick={() => navigate("/category/flower-bracelet")}
-            >
-              Flower Bracelets
-            </div>
-
-            <div
-              className="collection-card"
-              onClick={() => navigate("/category/charms")}
-            >
-              Charms
-            </div>
-
-            <div
-              className="collection-card"
-              onClick={() => navigate("/category/bead-bracelet")}
-            >
-              Bead Bracelets
-            </div>
-
-            <div
-              className="collection-card"
-              onClick={() => navigate("/category/necklace")}
-            >
-              Necklaces
-            </div>
-
-            <div className="collection-grid"
-              className="collection-card"
-              onClick={() => navigate("/category/crochet")}
-            >
-              Crochets
-            </div>
+            {collections.map((collection) => (
+              <button
+                type="button"
+                className="collection-card"
+                key={collection.path}
+                onClick={() => navigate(collection.path)}
+              >
+                <span>{collection.label}</span>
+              </button>
+            ))}
           </div>
         </section>
-
-        {/* Hero / Slider */}
 
         <WhyPebbleCo />
       </div>
