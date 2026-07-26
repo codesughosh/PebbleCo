@@ -3,19 +3,11 @@ import { supabase } from "../supabaseClient";
 import ProductCard from "./ProductCard";
 import { auth } from "../firebase";
 import { addToCart } from "../services/cart";
-import CartToast from "../components/CartToast";
 import { ProductGridSkeleton } from "../components/Skeleton";
 
 function TopSellers() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showToast, setShowToast] = useState(false);
-  const [toastKey, setToastKey] = useState(0);
-
-  const triggerCartToast = () => {
-    setToastKey((key) => key + 1);
-    setShowToast(true);
-  };
 
   const handleAddToCart = async (product) => {
     const user = auth.currentUser;
@@ -27,7 +19,6 @@ function TopSellers() {
 
     try {
       await addToCart(user.uid, product.id);
-      triggerCartToast();
       return true;
     } catch (error) {
       console.error("Add to cart error:", error);
@@ -91,7 +82,6 @@ function TopSellers() {
   if (products.length === 0) return null;
 
   return (
-    <>
     <div className="product-grid">
       {products.map((product) => (
         <ProductCard
@@ -101,13 +91,6 @@ function TopSellers() {
         />
       ))}
     </div>
-    
-    <CartToast
-      show={showToast}
-      toastKey={toastKey}
-      onClose={() => setShowToast(false)}
-    />
-      </>
   );
 }
 

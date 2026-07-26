@@ -9,7 +9,6 @@ import {
   ChevronRight,
   X,
 } from "lucide-react";
-import CartToast from "../components/CartToast";
 import { ProductDetailSkeleton } from "../components/Skeleton";
 import { supabase } from "../supabaseClient";
 import "../styles/product.css";
@@ -31,18 +30,11 @@ function Product() {
   const [reviews, setReviews] = useState([]);
   const [reviewImages, setReviewImages] = useState([]);
   const [user, setUser] = useState(null);
-  const [showToast, setShowToast] = useState(false);
-  const [toastKey, setToastKey] = useState(0);
   const [galleryImages, setGalleryImages] = useState([]);
   const [cartButtonState, setCartButtonState] = useState("idle");
   const [reviewSubmitState, setReviewSubmitState] = useState("idle");
   const cartResetTimerRef = useRef(null);
   const reviewResetTimerRef = useRef(null);
-
-  const triggerCartToast = () => {
-    setToastKey((key) => key + 1);
-    setShowToast(true);
-  };
 
   const fetchReviews = useCallback(async () => {
     const { data, error } = await supabase
@@ -251,7 +243,6 @@ function Product() {
         throw new Error("Failed to add to cart");
       }
 
-      triggerCartToast();
       setCartButtonState("added");
 
       if (cartResetTimerRef.current) {
@@ -622,12 +613,6 @@ function Product() {
           </button>
         </div>
       )}
-
-      <CartToast
-        show={showToast}
-        toastKey={toastKey}
-        onClose={() => setShowToast(false)}
-      />
 
       {fullscreenOpen && (
         <div

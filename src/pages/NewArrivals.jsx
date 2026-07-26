@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import ProductCard from "../components/ProductCard";
-import CartToast from "../components/CartToast";
 import { auth } from "../firebase";
 import { addToCart } from "../services/cart";
 import { ProductGridSkeleton } from "../components/Skeleton";
@@ -10,13 +9,6 @@ import "../styles/products.css";
 function NewArrivals() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showToast, setShowToast] = useState(false);
-  const [toastKey, setToastKey] = useState(0);
-
-  const triggerCartToast = () => {
-    setToastKey((key) => key + 1);
-    setShowToast(true);
-  };
 
   const handleAddToCart = async (product) => {
     const user = auth.currentUser;
@@ -28,7 +20,6 @@ function NewArrivals() {
 
     try {
       await addToCart(user.uid, product.id);
-      triggerCartToast();
       return true;
     } catch (error) {
       console.error("Add to cart error:", error);
@@ -67,26 +58,19 @@ function NewArrivals() {
   }
 
   return (
-    <>
-      <div className="products-page">
-        <h1 className="page-title">New Arrivals</h1>
+    <div className="products-page">
+      <h1 className="page-title">New Arrivals</h1>
 
-        <div className="products-grid">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onAddToCart={handleAddToCart}
-            />
-          ))}
-        </div>
+      <div className="products-grid">
+        {products.map((product) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            onAddToCart={handleAddToCart}
+          />
+        ))}
       </div>
-      <CartToast
-        show={showToast}
-        toastKey={toastKey}
-        onClose={() => setShowToast(false)}
-      />
-    </>
+    </div>
   );
 }
 

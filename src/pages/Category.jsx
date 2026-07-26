@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import CartToast from "../components/CartToast";
 import ProductCard from "../components/ProductCard";
 import { supabase } from "../supabaseClient";
 import { auth } from "../firebase";
@@ -21,14 +20,7 @@ function Category() {
   const { slug } = useParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showToast, setShowToast] = useState(false);
-  const [toastKey, setToastKey] = useState(0);
   const title = slug?.replaceAll("-", " ") || "Products";
-
-  const triggerCartToast = () => {
-    setToastKey((key) => key + 1);
-    setShowToast(true);
-  };
 
   const handleAddToCart = async (product) => {
     const user = auth.currentUser;
@@ -40,7 +32,6 @@ function Category() {
 
     try {
       await addToCart(user.uid, product.id);
-      triggerCartToast();
       return true;
     } catch (error) {
       console.error("Add to cart error:", error);
@@ -85,30 +76,23 @@ function Category() {
   }
 
   return (
-    <>
-      <div className="products-page">
-        <h1 className="page-title">{title}</h1>
+    <div className="products-page">
+      <h1 className="page-title">{title}</h1>
 
-        {products.length === 0 ? (
-          <p className="products-empty">No products found.</p>
-        ) : (
-          <div className="products-grid">
-            {products.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={handleAddToCart}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-      <CartToast
-        show={showToast}
-        toastKey={toastKey}
-        onClose={() => setShowToast(false)}
-      />
-    </>
+      {products.length === 0 ? (
+        <p className="products-empty">No products found.</p>
+      ) : (
+        <div className="products-grid">
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onAddToCart={handleAddToCart}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

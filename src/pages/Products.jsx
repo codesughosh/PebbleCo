@@ -4,18 +4,9 @@ import ProductCard from "../components/ProductCard";
 import "../styles/products.css";
 import { auth } from "../firebase";
 import { addToCart } from "../services/cart";
-import CartToast from "../components/CartToast";
 import { ProductGridSkeleton } from "../components/Skeleton";
 
 function Products() {
-  const [showToast, setShowToast] = useState(false);
-  const [toastKey, setToastKey] = useState(0);
-
-  const triggerCartToast = () => {
-    setToastKey((key) => key + 1);
-    setShowToast(true);
-  };
-
   const handleAddToCart = async (product) => {
     const user = auth.currentUser;
 
@@ -26,7 +17,6 @@ function Products() {
 
     try {
       await addToCart(user.uid, product.id);
-      triggerCartToast();
       return true;
     } catch (error) {
       console.error("Add to cart error:", error);
@@ -57,24 +47,17 @@ function Products() {
   }
 
   return (
-    <>
-      <div className="products-page">
-        <div className="products-grid">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onAddToCart={handleAddToCart}
-            />
-          ))}
-        </div>
+    <div className="products-page">
+      <div className="products-grid">
+        {products.map((product) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            onAddToCart={handleAddToCart}
+          />
+        ))}
       </div>
-      <CartToast
-        show={showToast}
-        toastKey={toastKey}
-        onClose={() => setShowToast(false)}
-      />
-    </>
+    </div>
   );
 }
 
