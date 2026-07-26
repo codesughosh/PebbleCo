@@ -12,14 +12,17 @@ router.get("/invoice/:orderId", verifyUser, async (req, res) => {
   const { data: order, error } = await supabase
     .from("orders")
     .select(
-      "id, payment_id, total, delivery_type, shipping_address, customer_name, customer_phone",
+      "id, user_id, payment_id, total, delivery_type, shipping_address, customer_email, customer_name, customer_phone",
     )
     .eq("id", orderId)
-    .eq("user_id", userId)
     .single();
 
   if (error || !order) {
     return res.status(404).json({ error: "Order not found" });
+  }
+
+  if (order.user_id !== userId && !req.user.admin) {
+    return res.status(403).json({ error: "Not allowed" });
   }
 
   const { data: items, error: itemsError } = await supabase
@@ -40,7 +43,7 @@ router.get("/invoice/:orderId", verifyUser, async (req, res) => {
   const doc = generateInvoicePDF({
     orderId: order.id,
     paymentId: order.payment_id || "N/A",
-    userEmail: order.shipping_address?.email || "N/A",
+    userEmail: order.customer_email || "N/A",
     items: formattedItems,
     total: order.total,
     deliveryType: order.delivery_type,

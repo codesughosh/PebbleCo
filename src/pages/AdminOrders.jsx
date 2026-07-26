@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Download, Loader2 } from "lucide-react";
 import { auth } from "../firebase";
 import { PageLoader } from "../components/Skeleton";
 import "../styles/adminOrders.css";
@@ -162,8 +162,51 @@ function AdminOrders() {
     }
   };
 
+  const downloadReceipt = async (orderId) => {
+    const feedbackKey = `${orderId}:receipt`;
+    setFeedbackForAction(feedbackKey, "loading");
+
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`${API_BASE}/api/invoice/${orderId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error("Could not download receipt");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `PebbleCo-Receipt-${orderId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      setFeedbackForAction(feedbackKey, "success");
+    } catch (error) {
+      console.error("Admin receipt download failed:", error);
+      setFeedbackForAction(feedbackKey, "idle");
+      alert("Could not download receipt");
+    }
+  };
+
   const formatEmpty = (value) => value || "--";
-  const formatPrice = (value) => `\u20B9${value}`;
+  const formatPrice = (value) =>
+    value === null || value === undefined ? "--" : `\u20B9${value}`;
+  const formatDateTime = (value) =>
+    value
+      ? new Date(value).toLocaleString("en-IN", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })
+      : "--";
+  const getOrderItemName = (item) =>
+    item.product_name || item.products?.name || item.name || "Product";
 
   if (loading) return <PageLoader label="Loading admin panel..." />;
 
@@ -193,6 +236,9 @@ function AdminOrders() {
             <b>User ID:</b> {o.user_id}
           </p>
           <p>
+            <b>Date & Time:</b> {formatDateTime(o.created_at)}
+          </p>
+          <p>
             <b>Customer Name:</b> {formatEmpty(o.customer_name)}
           </p>
           <p>
@@ -207,11 +253,9 @@ function AdminOrders() {
           <p>
             <b>Payment:</b> {formatEmpty(o.payment_status)}
           </p>
-          {o.payment_status === "pending_verification" && (
-            <p className="admin-upi-id">
-              <b>UPI Transaction ID:</b> {formatEmpty(o.payment_id)}
-            </p>
-          )}
+          <p className="admin-upi-id">
+            <b>Transaction ID:</b> {formatEmpty(o.payment_id)}
+          </p>
           <p>
             <b>Delivery:</b> {o.delivery_type}
           </p>
@@ -245,7 +289,38 @@ function AdminOrders() {
             </>
           )}
 
+          <div className="admin-order-items">
+            <b>Ordered Items:</b>
+            {o.order_items?.length ? (
+              <div className="admin-order-items-list">
+                {o.order_items.map((item) => (
+                  <div className="admin-order-item" key={item.id}>
+                    <span>{getOrderItemName(item)}</span>
+                    <span>
+                      x {item.quantity} · {formatPrice(item.price_at_purchase)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p>No items found.</p>
+            )}
+          </div>
+
           <div className="admin-actions">
+            <div className="admin-action-field">
+              <button
+                type="button"
+                className="admin-receipt-btn"
+                disabled={getFeedbackForAction(o.id, "receipt") === "loading"}
+                onClick={() => downloadReceipt(o.id)}
+              >
+                <Download size={15} strokeWidth={2} />
+                Receipt
+              </button>
+              {renderActionFeedback(o.id, "receipt")}
+            </div>
+
             <div className="admin-action-field">
               <select
                 value={o.payment_status || "pending"}
