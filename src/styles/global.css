@@ -107,3 +107,210 @@ main {
   margin-bottom: 14px;
 }
 
+/* =========================
+   IOS-LIKE FOUNDATION
+========================= */
+
+body {
+  background-color: var(--pebble-bg);
+}
+
+main {
+  position: relative;
+  transition: background-color var(--ios-duration) var(--ios-ease);
+}
+
+::selection {
+  background: var(--pebble-primary);
+  color: var(--pebble-text-strong);
+}
+
+:is(
+  .about-card,
+  .admin-order-card,
+  .auth-card,
+  .cart-item,
+  .cart-summary,
+  .cart-toast,
+  .collection-card,
+  .delivery-card,
+  .inhand-box,
+  .order-card,
+  .order-success-card,
+  .payment-card,
+  .payment-status-card,
+  .policy-page,
+  .product-card,
+  .profile-section,
+  .tracking-card,
+  .why-card
+) {
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  box-shadow: var(--ios-shadow-soft), var(--ios-inset-highlight);
+  transition:
+    transform var(--ios-duration) var(--ios-ease),
+    box-shadow var(--ios-duration) var(--ios-ease),
+    border-color var(--ios-duration) var(--ios-ease),
+    background-color var(--ios-duration) var(--ios-ease),
+    opacity var(--ios-duration) var(--ios-ease);
+}
+
+:is(
+  .about-card,
+  .auth-card,
+  .cart-summary,
+  .delivery-card,
+  .inhand-box,
+  .order-card,
+  .order-success-card,
+  .payment-card,
+  .payment-status-card,
+  .policy-page,
+  .profile-section,
+  .tracking-card
+) {
+  backdrop-filter: saturate(145%) blur(18px);
+  -webkit-backdrop-filter: saturate(145%) blur(18px);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :is(
+    .admin-order-card,
+    .auth-card,
+    .cart-item,
+    .cart-summary,
+    .collection-card,
+    .delivery-card,
+    .order-card,
+    .order-success-card,
+    .payment-card,
+    .payment-status-card,
+    .policy-page,
+    .product-card,
+    .profile-section,
+    .tracking-card,
+    .why-card
+  ):hover {
+    box-shadow: var(--ios-shadow-lift), var(--ios-inset-highlight);
+  }
+}
+
+:is(
+  .auth-card input:not([type="checkbox"]):not([type="radio"]),
+  .address-form input,
+  .inhand-box input,
+  .track-box input,
+  textarea,
+  select
+) {
+  min-height: 44px;
+  border-radius: var(--ios-radius-md);
+  transition:
+    border-color var(--ios-duration) var(--ios-ease),
+    box-shadow var(--ios-duration) var(--ios-ease),
+    background-color var(--ios-duration) var(--ios-ease),
+    transform var(--ios-duration-fast) var(--ios-ease);
+}
+
+:is(
+  .auth-card input:not([type="checkbox"]):not([type="radio"]),
+  .address-form input,
+  .inhand-box input,
+  .track-box input,
+  textarea,
+  select
+):focus {
+  outline: none;
+}
+
+:is(
+  .auth-card input:not([type="checkbox"]):not([type="radio"]),
+  .address-form input,
+  .inhand-box input,
+  .track-box input,
+  textarea,
+  select
+):focus-visible {
+  border-color: var(--pebble-primary-deep);
+  box-shadow: 0 0 0 4px rgba(214, 107, 125, 0.14);
+}
+
+:is(
+  .card-btn,
+  .checkout-btn,
+  .checkout-continue,
+  .continue-btn,
+  .order-success-btn,
+  .payment-actions button,
+  .fail-actions button,
+  .product-card button,
+  .toast-btn,
+  .track-box button,
+  .auth-card button
+) {
+  min-height: 44px;
+  border-radius: var(--ios-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 500;
+  box-shadow: 0 10px 24px rgba(196, 138, 154, 0.18);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :is(
+    .card-btn,
+    .checkout-btn,
+    .checkout-continue,
+    .continue-btn,
+    .order-success-btn,
+    .payment-actions button,
+    .fail-actions button,
+    .product-card button,
+    .toast-btn,
+    .track-box button,
+    .auth-card button
+  ):hover {
+    transform: translateY(-1px);
+  }
+}
+
+:is(
+  .card-btn,
+  .checkout-btn,
+  .checkout-continue,
+  .continue-btn,
+  .order-success-btn,
+  .payment-actions button,
+  .fail-actions button,
+  .product-card button,
+  .toast-btn,
+  .track-box button,
+  .auth-card button
+):active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 640px) {
+  main {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  :is(
+    .about-card,
+    .auth-card,
+    .cart-summary,
+    .delivery-card,
+    .order-success-card,
+    .payment-card,
+    .payment-status-card,
+    .policy-page,
+    .profile-section,
+    .tracking-card
+  ) {
+    border-radius: var(--ios-radius-lg);
+  }
+}
+

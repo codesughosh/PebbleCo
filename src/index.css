@@ -2,6 +2,46 @@
    GLOBAL RESET (ONE TIME)
 ========================= */
 
+:root {
+  font-family: "Poppins", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* Existing PebbleCo palette, centralized for consistency. */
+  --pebble-bg: #fceae4;
+  --pebble-bg-soft: #fff5f3;
+  --pebble-header: #ffd6de;
+  --pebble-primary: #fdd2dc;
+  --pebble-primary-hover: #fbc1cf;
+  --pebble-primary-strong: #c48a9a;
+  --pebble-primary-deep: #d66b7d;
+  --pebble-surface: #ffffff;
+  --pebble-surface-soft: #fff7f9;
+  --pebble-text: #3b2b2f;
+  --pebble-text-strong: #5a2a36;
+  --pebble-text-muted: #6d4c55;
+  --pebble-text-rose: #7a3b4a;
+  --pebble-border: #f1d7dc;
+
+  --ios-radius-sm: 12px;
+  --ios-radius-md: 16px;
+  --ios-radius-lg: 20px;
+  --ios-radius-xl: 24px;
+  --ios-radius-2xl: 28px;
+  --ios-pill: 999px;
+
+  --ios-shadow-soft: 0 16px 40px rgba(0, 0, 0, 0.08);
+  --ios-shadow-lift: 0 22px 54px rgba(0, 0, 0, 0.12);
+  --ios-shadow-rose: 0 18px 44px rgba(196, 138, 154, 0.2);
+  --ios-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+
+  --ios-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ios-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ios-duration-fast: 160ms;
+  --ios-duration: 260ms;
+  --ios-duration-slow: 420ms;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -13,35 +53,84 @@ body {
   width: 100%;
   min-height: 100vh;
   font-family: "Poppins", sans-serif;
-  background-color: #fceae4; /* PebbleCo pastel */
-  color: #3b2b2f; /* soft dark, NOT black */
+  background-color: var(--pebble-bg);
+  color: var(--pebble-text);
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Remove Vite defaults */
-:root {
-  font-family: "Poppins", sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+html {
+  scroll-behavior: smooth;
 }
 
-/* Links – neutral by default */
 a {
   color: inherit;
   text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 a:hover {
   text-decoration: underline;
 }
 
-/* Buttons – let components style them */
 button {
   font-family: inherit;
   background: none;
   border: none;
+  color: inherit;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform var(--ios-duration-fast) var(--ios-ease),
+    opacity var(--ios-duration-fast) var(--ios-ease),
+    box-shadow var(--ios-duration) var(--ios-ease),
+    background-color var(--ios-duration) var(--ios-ease),
+    border-color var(--ios-duration) var(--ios-ease),
+    color var(--ios-duration) var(--ios-ease);
 }
 
 button:focus {
   outline: none;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+input,
+textarea,
+select {
+  color: inherit;
+  font: inherit;
+}
+
+img,
+svg {
+  flex-shrink: 0;
+}
+
+img {
+  max-width: 100%;
+}
+
+:focus-visible {
+  outline: 3px solid rgba(214, 107, 125, 0.22);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
 }
