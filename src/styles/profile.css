@@ -129,6 +129,19 @@
   opacity: 0.82;
 }
 
+.profile-row.clickable.feedback-action.is-success,
+.profile-row.clickable.feedback-action.is-success .profile-row-label {
+  color: #fff;
+}
+
+.profile-row.clickable.feedback-action.is-success:hover {
+  background: #43a047 !important;
+}
+
+.profile-row.clickable.feedback-action.is-success:disabled {
+  cursor: default;
+}
+
 .profile-spin {
   animation: profile-spin 0.9s linear infinite;
 }

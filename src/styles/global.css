@@ -177,6 +177,13 @@ main {
   text-decoration: none;
 }
 
+.contact-card a.tap-feedback {
+  display: inline-flex;
+  margin: -2px -4px;
+  padding: 2px 4px;
+  border-radius: 8px;
+}
+
 .contact-card a:hover {
   text-decoration: underline;
 }
@@ -471,17 +478,21 @@ main {
   transform: scale(0.98);
 }
 
-.add-cart-action {
+.add-cart-action,
+.feedback-action,
+.tap-feedback {
   position: relative;
   overflow: hidden;
   white-space: nowrap;
 }
 
-.add-cart-action:disabled {
-  opacity: 1;
+.add-cart-action:disabled,
+.feedback-action:disabled {
+  opacity: 1 !important;
 }
 
-.add-cart-spinner {
+.add-cart-spinner,
+.feedback-spinner {
   width: 15px;
   height: 15px;
   border: 2px solid currentColor;
@@ -490,11 +501,13 @@ main {
   animation: addCartSpin 0.72s linear infinite;
 }
 
-.add-cart-action.is-loading {
+.add-cart-action.is-loading,
+.feedback-action.is-loading {
   cursor: wait;
 }
 
-.add-cart-action.is-added {
+.add-cart-action.is-added,
+.feedback-action.is-success {
   color: #fff !important;
   border-color: rgba(67, 160, 71, 0.52) !important;
   background: #43a047 !important;
@@ -502,6 +515,35 @@ main {
     0 16px 34px rgba(67, 160, 71, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.36) !important;
   animation: addCartAddedPulse 760ms var(--ios-ease) both;
+}
+
+.feedback-action.is-success * {
+  color: inherit;
+}
+
+.tap-feedback::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    110deg,
+    transparent,
+    rgba(255, 255, 255, 0.42),
+    transparent
+  );
+  opacity: 0;
+  transform: translateX(-130%) skewX(-14deg);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tap-feedback:hover::after {
+    animation: tapFeedbackSweep 760ms var(--ios-ease) both;
+  }
+}
+
+.tap-feedback:active::after {
+  animation: tapFeedbackSweep 520ms var(--ios-ease) both;
 }
 
 @keyframes addCartSpin {
@@ -521,6 +563,22 @@ main {
 
   100% {
     transform: scale(1);
+  }
+}
+
+@keyframes tapFeedbackSweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-130%) skewX(-14deg);
+  }
+
+  36% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(130%) skewX(-14deg);
   }
 }
 

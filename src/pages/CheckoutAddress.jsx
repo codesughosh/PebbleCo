@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Loader2, MapPin } from "lucide-react";
+import { ArrowRight, Check, Loader2, MapPin } from "lucide-react";
 import { auth } from "../firebase";
 import "../styles/checkout.css";
 
@@ -8,6 +8,7 @@ function CheckoutAddress() {
   const navigate = useNavigate();
   const deliveryType = localStorage.getItem("deliveryType");
   const [verifying, setVerifying] = useState(false);
+  const [continueState, setContinueState] = useState("idle");
 
   const [address, setAddress] = useState({
     name: auth.currentUser?.displayName || "",
@@ -55,12 +56,14 @@ function CheckoutAddress() {
         city: postOffice.District,
         state: postOffice.State,
       };
-    } catch (err) {
+    } catch {
       return null;
     }
   };
 
   const handleContinue = async () => {
+    if (continueState !== "idle" || verifying) return;
+
     if (deliveryType === "shipping") {
       const { name, phone, line1, city, state, pincode } = address;
 
@@ -119,7 +122,12 @@ function CheckoutAddress() {
       localStorage.setItem("inhandDetails", JSON.stringify({ name, phone }));
     }
 
-    navigate("/checkout/summary");
+    setContinueState("loading");
+
+    window.setTimeout(() => {
+      setContinueState("success");
+      window.setTimeout(() => navigate("/checkout/summary"), 420);
+    }, 220);
   };
 
   return (
@@ -234,14 +242,28 @@ function CheckoutAddress() {
         <div className="checkout-actions">
           <button
             type="button"
-            className="checkout-continue"
+            className={`checkout-continue feedback-action is-${
+              continueState === "success" ? "success" : continueState
+            }`}
             onClick={handleContinue}
-            disabled={verifying}
+            disabled={verifying || continueState !== "idle"}
+            aria-busy={verifying || continueState === "loading"}
+            aria-live="polite"
           >
             {verifying ? (
               <>
                 <Loader2 size={16} className="spin" />
                 Verifying address
+              </>
+            ) : continueState === "loading" ? (
+              <>
+                <span className="feedback-spinner" aria-hidden="true" />
+                Saving
+              </>
+            ) : continueState === "success" ? (
+              <>
+                <Check size={16} strokeWidth={2.2} />
+                Saved
               </>
             ) : (
               <>

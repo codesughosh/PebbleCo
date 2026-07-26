@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { sendPasswordResetEmail, onAuthStateChanged, signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import { Check, ChevronRight, KeyRound, Loader2, LogOut, Mail, UserRound } from "lucide-react";
+import { Check, ChevronRight, KeyRound, LogOut, Mail, UserRound } from "lucide-react";
 import { auth } from "../firebase";
 import { PageLoader } from "../components/Skeleton";
 import "../styles/profile.css";
@@ -24,7 +24,7 @@ function Profile() {
   }, [navigate]);
 
   const handlePasswordReset = async () => {
-    if (!user?.email || resetState === "sending") return;
+    if (!user?.email || resetState !== "idle") return;
 
     try {
       setResetState("sending");
@@ -83,13 +83,21 @@ function Profile() {
 
           <button
             type="button"
-            className="profile-row clickable"
+            className={`profile-row clickable feedback-action is-${
+              resetState === "sent"
+                ? "success"
+                : resetState === "sending"
+                  ? "loading"
+                  : "idle"
+            }`}
             onClick={handlePasswordReset}
-            disabled={resetState === "sending"}
+            disabled={resetState !== "idle"}
+            aria-busy={resetState === "sending"}
+            aria-live="polite"
           >
             <span className="profile-row-label">
               {resetState === "sending" ? (
-                <Loader2 size={17} strokeWidth={1.8} className="profile-spin" />
+                <span className="feedback-spinner" aria-hidden="true" />
               ) : resetState === "sent" ? (
                 <Check size={17} strokeWidth={2} />
               ) : (

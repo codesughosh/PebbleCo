@@ -7,7 +7,15 @@ import {
   signInWithPopup,
   updateProfile,
 } from "firebase/auth";
-import { Eye, EyeOff, LockKeyhole, Mail, UserRound, UserPlus } from "lucide-react";
+import {
+  Check,
+  Eye,
+  EyeOff,
+  LockKeyhole,
+  Mail,
+  UserRound,
+  UserPlus,
+} from "lucide-react";
 import { auth } from "../firebase";
 import "../styles/auth.css";
 
@@ -20,9 +28,14 @@ function Signup() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [emailSignupState, setEmailSignupState] = useState("idle");
+  const [googleSignupState, setGoogleSignupState] = useState("idle");
+  const authBusy = emailSignupState !== "idle" || googleSignupState !== "idle";
 
   const handleSignup = async (e) => {
     e.preventDefault();
+    if (authBusy) return;
+
     setError("");
 
     if (password !== confirmPassword) {
@@ -31,6 +44,7 @@ function Signup() {
     }
 
     try {
+      setEmailSignupState("loading");
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -41,31 +55,38 @@ function Signup() {
         displayName: name,
       });
 
-      navigate("/");
+      setEmailSignupState("success");
+      window.setTimeout(() => navigate("/"), 520);
     } catch (err) {
       setError(err.message);
+      setEmailSignupState("idle");
     }
   };
 
   const handleGoogleSignup = async () => {
+    if (authBusy) return;
+
     try {
+      setGoogleSignupState("loading");
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      navigate("/");
+      setGoogleSignupState("success");
+      window.setTimeout(() => navigate("/"), 520);
     } catch (err) {
       setError(err.message);
+      setGoogleSignupState("idle");
     }
   };
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
+      if (currentUser && !authBusy) {
         navigate("/profile");
       }
     });
 
     return () => unsub();
-  }, [navigate]);
+  }, [authBusy, navigate]);
 
   return (
     <div className="auth-page">
@@ -137,9 +158,31 @@ function Signup() {
 
           {error && <p className="auth-error">{error}</p>}
 
-          <button type="submit" className="primary-btn">
-            <UserPlus size={16} strokeWidth={2} />
-            Sign up
+          <button
+            type="submit"
+            className={`primary-btn feedback-action is-${
+              emailSignupState === "success" ? "success" : emailSignupState
+            }`}
+            disabled={authBusy}
+            aria-busy={emailSignupState === "loading"}
+            aria-live="polite"
+          >
+            {emailSignupState === "loading" ? (
+              <>
+                <span className="feedback-spinner" aria-hidden="true" />
+                Creating
+              </>
+            ) : emailSignupState === "success" ? (
+              <>
+                <Check size={16} strokeWidth={2.2} />
+                Created!
+              </>
+            ) : (
+              <>
+                <UserPlus size={16} strokeWidth={2} />
+                Sign up
+              </>
+            )}
           </button>
         </form>
 
@@ -147,8 +190,29 @@ function Signup() {
           <span>or</span>
         </div>
 
-        <button type="button" className="google-btn" onClick={handleGoogleSignup}>
-          Continue with Google
+        <button
+          type="button"
+          className={`google-btn feedback-action is-${
+            googleSignupState === "success" ? "success" : googleSignupState
+          }`}
+          onClick={handleGoogleSignup}
+          disabled={authBusy}
+          aria-busy={googleSignupState === "loading"}
+          aria-live="polite"
+        >
+          {googleSignupState === "loading" ? (
+            <>
+              <span className="feedback-spinner" aria-hidden="true" />
+              Connecting
+            </>
+          ) : googleSignupState === "success" ? (
+            <>
+              <Check size={16} strokeWidth={2.2} />
+              Connected!
+            </>
+          ) : (
+            "Continue with Google"
+          )}
         </button>
 
         <p className="switch-auth">

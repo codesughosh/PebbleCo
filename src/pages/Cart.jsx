@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   ArrowRight,
+  Check,
   Loader2,
   Minus,
   Plus,
@@ -20,6 +21,8 @@ function Cart() {
   const [authReady, setAuthReady] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [activeCartItem, setActiveCartItem] = useState(null);
+  const [successCartItem, setSuccessCartItem] = useState(null);
+  const [checkoutState, setCheckoutState] = useState("idle");
   const [agreed, setAgreed] = useState(false);
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
@@ -99,6 +102,8 @@ function Cart() {
       }
 
       await fetchCart();
+      setSuccessCartItem(cartId);
+      window.setTimeout(() => setSuccessCartItem(null), 760);
     } catch (err) {
       console.error("Update cart quantity error:", err);
       alert("Could not update cart. Please try again.");
@@ -140,6 +145,17 @@ function Cart() {
   );
 
   const formatPrice = (value) => `\u20B9${value}`;
+
+  const handleProceedToCheckout = () => {
+    if (!agreed || refreshing || checkoutState !== "idle") return;
+
+    setCheckoutState("loading");
+
+    window.setTimeout(() => {
+      setCheckoutState("success");
+      window.setTimeout(() => navigate("/checkout/delivery"), 420);
+    }, 220);
+  };
 
   if (!authReady || loading) {
     return <CartSkeleton />;
@@ -189,10 +205,13 @@ function Cart() {
             <div className="cart-items">
               {cartItems.map((item) => {
                 const isItemLoading = activeCartItem === item.id;
+                const isItemSuccess = successCartItem === item.id;
 
                 return (
                   <article
-                    className={`cart-item ${isItemLoading ? "updating" : ""}`}
+                    className={`cart-item ${
+                      isItemLoading || isItemSuccess ? "updating" : ""
+                    } ${isItemSuccess ? "updated" : ""}`}
                     key={item.id}
                   >
                     <img
@@ -244,10 +263,20 @@ function Cart() {
                       <Trash2 size={17} strokeWidth={1.9} />
                     </button>
 
-                    {isItemLoading && (
-                      <div className="cart-item-loading" role="status" aria-live="polite">
-                        <Loader2 size={18} className="cart-spin" />
-                        <span>Updating</span>
+                    {(isItemLoading || isItemSuccess) && (
+                      <div
+                        className={`cart-item-loading ${
+                          isItemSuccess ? "success" : ""
+                        }`}
+                        role="status"
+                        aria-live="polite"
+                      >
+                        {isItemSuccess ? (
+                          <Check size={18} strokeWidth={2.2} />
+                        ) : (
+                          <Loader2 size={18} className="cart-spin" />
+                        )}
+                        <span>{isItemSuccess ? "Updated" : "Updating"}</span>
                       </div>
                     )}
                   </article>
@@ -292,14 +321,28 @@ function Cart() {
 
               <button
                 type="button"
-                className="checkout-btn"
-                disabled={!agreed || refreshing}
-                onClick={() => navigate("/checkout/delivery")}
+                className={`checkout-btn feedback-action is-${
+                  checkoutState === "success" ? "success" : checkoutState
+                }`}
+                disabled={!agreed || refreshing || checkoutState !== "idle"}
+                onClick={handleProceedToCheckout}
+                aria-busy={refreshing || checkoutState === "loading"}
+                aria-live="polite"
               >
                 {refreshing ? (
                   <>
                     <Loader2 size={16} className="cart-spin" />
                     Updating Cart
+                  </>
+                ) : checkoutState === "loading" ? (
+                  <>
+                    <span className="feedback-spinner" aria-hidden="true" />
+                    Opening checkout
+                  </>
+                ) : checkoutState === "success" ? (
+                  <>
+                    <Check size={16} strokeWidth={2.2} />
+                    Ready
                   </>
                 ) : (
                   <>

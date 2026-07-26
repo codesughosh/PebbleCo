@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Check,
   Copy,
   ExternalLink,
-  Loader2,
   PackageCheck,
   QrCode,
   ShieldCheck,
@@ -29,13 +28,44 @@ function CheckoutSummary() {
 
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitState, setSubmitState] = useState("idle");
   const [upiTransactionId, setUpiTransactionId] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const deliveryType = localStorage.getItem("deliveryType");
-  const address = JSON.parse(localStorage.getItem("shippingAddress"));
-  const inhandDetails = JSON.parse(localStorage.getItem("inhandDetails"));
+  const deliveryType = useMemo(() => localStorage.getItem("deliveryType"), []);
+  const address = useMemo(
+    () => JSON.parse(localStorage.getItem("shippingAddress")),
+    [],
+  );
+  const inhandDetails = useMemo(
+    () => JSON.parse(localStorage.getItem("inhandDetails")),
+    [],
+  );
+
+  const fetchCart = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("cart")
+      .select(
+        `
+        id,
+        quantity,
+        product:products (
+          id,
+          name,
+          price
+        )
+      `,
+      )
+      .eq("user_id", user.uid);
+
+    if (error) {
+      console.error(error);
+    } else {
+      setCartItems(data);
+    }
+
+    setLoading(false);
+  }, [user]);
 
   useEffect(() => {
     const savedDeliveryType = localStorage.getItem("deliveryType");
@@ -66,32 +96,7 @@ function CheckoutSummary() {
     }
 
     fetchCart();
-  }, []);
-
-  const fetchCart = async () => {
-    const { data, error } = await supabase
-      .from("cart")
-      .select(
-        `
-        id,
-        quantity,
-        product:products (
-          id,
-          name,
-          price
-        )
-      `,
-      )
-      .eq("user_id", user.uid);
-
-    if (error) {
-      console.error(error);
-    } else {
-      setCartItems(data);
-    }
-
-    setLoading(false);
-  };
+  }, [address, deliveryType, fetchCart, navigate, user]);
 
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
@@ -129,7 +134,7 @@ function CheckoutSummary() {
   };
 
   const handleManualUpiSubmit = async () => {
-    if (isSubmitting) return;
+    if (submitState !== "idle") return;
 
     const transactionId = upiTransactionId.trim();
 
@@ -144,7 +149,7 @@ function CheckoutSummary() {
     }
 
     try {
-      setIsSubmitting(true);
+      setSubmitState("loading");
       const token = await user.getIdToken();
 
       const res = await fetch(`${BACKEND_URL}/api/manual-upi-order`, {
@@ -175,11 +180,12 @@ function CheckoutSummary() {
         throw new Error(data.error || "Could not create order");
       }
 
-      navigate(`/order-success/${data.dbOrderId}`);
+      setSubmitState("success");
+      window.setTimeout(() => navigate(`/order-success/${data.dbOrderId}`), 520);
     } catch (err) {
       console.error(err);
       alert(err.message || "Could not submit payment details");
-      setIsSubmitting(false);
+      setSubmitState("idle");
     }
   };
 
@@ -249,13 +255,13 @@ function CheckoutSummary() {
 
               <div className="upi-id-row">
                 <span>{UPI_ID}</span>
-                <button type="button" onClick={copyUpiId}>
+                <button type="button" className="tap-feedback" onClick={copyUpiId}>
                   {copied ? <Check size={15} /> : <Copy size={15} />}
                   {copied ? "Copied" : "Copy"}
                 </button>
               </div>
 
-              <a className="upi-open-link" href={upiUri}>
+              <a className="upi-open-link tap-feedback" href={upiUri}>
                 <ExternalLink size={16} strokeWidth={2} />
                 Open UPI App
               </a>
@@ -294,14 +300,23 @@ function CheckoutSummary() {
 
           <button
             type="button"
-            className="checkout-continue"
+            className={`checkout-continue feedback-action is-${
+              submitState === "success" ? "success" : submitState
+            }`}
             onClick={handleManualUpiSubmit}
-            disabled={isSubmitting}
+            disabled={submitState !== "idle"}
+            aria-busy={submitState === "loading"}
+            aria-live="polite"
           >
-            {isSubmitting ? (
+            {submitState === "loading" ? (
               <>
-                <Loader2 size={16} className="spin" />
+                <span className="feedback-spinner" aria-hidden="true" />
                 Submitting
+              </>
+            ) : submitState === "success" ? (
+              <>
+                <Check size={16} strokeWidth={2.2} />
+                Submitted!
               </>
             ) : (
               <>

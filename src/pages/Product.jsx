@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
   Camera,
+  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -34,7 +35,9 @@ function Product() {
   const [toastKey, setToastKey] = useState(0);
   const [galleryImages, setGalleryImages] = useState([]);
   const [cartButtonState, setCartButtonState] = useState("idle");
+  const [reviewSubmitState, setReviewSubmitState] = useState("idle");
   const cartResetTimerRef = useRef(null);
+  const reviewResetTimerRef = useRef(null);
 
   const triggerCartToast = () => {
     setToastKey((key) => key + 1);
@@ -86,6 +89,10 @@ function Product() {
       if (cartResetTimerRef.current) {
         window.clearTimeout(cartResetTimerRef.current);
       }
+
+      if (reviewResetTimerRef.current) {
+        window.clearTimeout(reviewResetTimerRef.current);
+      }
     };
   }, []);
 
@@ -136,6 +143,8 @@ function Product() {
   };
 
   const submitReview = async () => {
+    if (reviewSubmitState !== "idle") return;
+
     if (!user) {
       alert("Please log in to submit a review");
       return;
@@ -146,33 +155,49 @@ function Product() {
       return;
     }
 
-    const token = await user.getIdToken();
-    const formData = new FormData();
-    formData.append("product_id", product.id);
-    formData.append("rating", rating);
-    formData.append("comment", reviewText);
+    setReviewSubmitState("loading");
 
-    reviewImages.forEach((img) => {
-      formData.append("images", img);
-    });
+    try {
+      const token = await user.getIdToken();
+      const formData = new FormData();
+      formData.append("product_id", product.id);
+      formData.append("rating", rating);
+      formData.append("comment", reviewText);
 
-    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reviews`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    });
+      reviewImages.forEach((img) => {
+        formData.append("images", img);
+      });
 
-    if (!res.ok) {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reviews`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to submit review");
+      }
+
+      setRating(0);
+      setReviewText("");
+      setReviewImages([]);
+      await fetchReviews();
+      setReviewSubmitState("success");
+
+      if (reviewResetTimerRef.current) {
+        window.clearTimeout(reviewResetTimerRef.current);
+      }
+
+      reviewResetTimerRef.current = window.setTimeout(() => {
+        setReviewSubmitState("idle");
+      }, 1300);
+    } catch (error) {
+      console.error("Submit review error:", error);
       alert("Failed to submit review");
-      return;
+      setReviewSubmitState("idle");
     }
-
-    setRating(0);
-    setReviewText("");
-    setReviewImages([]);
-    fetchReviews();
   };
 
   const deleteReview = async (reviewId) => {
@@ -474,10 +499,27 @@ function Product() {
 
               <button
                 type="button"
-                className="review-submit-btn"
+                className={`review-submit-btn feedback-action is-${
+                  reviewSubmitState === "success" ? "success" : reviewSubmitState
+                }`}
                 onClick={submitReview}
+                disabled={reviewSubmitState !== "idle"}
+                aria-busy={reviewSubmitState === "loading"}
+                aria-live="polite"
               >
-                Submit Review
+                {reviewSubmitState === "loading" ? (
+                  <>
+                    <span className="feedback-spinner" aria-hidden="true" />
+                    Submitting
+                  </>
+                ) : reviewSubmitState === "success" ? (
+                  <>
+                    <Check size={16} strokeWidth={2.2} />
+                    Posted!
+                  </>
+                ) : (
+                  "Submit Review"
+                )}
               </button>
             </div>
 

@@ -17,7 +17,9 @@ function Contact() {
         </div>
         <div>
           <span>Email</span>
-          <a href="mailto:pebbleco.team@gmail.com">pebbleco.team@gmail.com</a>
+          <a className="tap-feedback" href="mailto:pebbleco.team@gmail.com">
+            pebbleco.team@gmail.com
+          </a>
         </div>
       </div>
 
@@ -28,6 +30,7 @@ function Contact() {
         <div>
           <span>Instagram</span>
           <a
+            className="tap-feedback"
             href="https://www.instagram.com/pebbleco.store"
             target="_blank"
             rel="noopener noreferrer"

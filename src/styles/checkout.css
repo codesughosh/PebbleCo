@@ -82,6 +82,11 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.78);
 }
 
+.delivery-card:disabled {
+  cursor: wait;
+  opacity: 1;
+}
+
 .delivery-card.selected {
   border-color: rgba(244, 166, 184, 0.58);
   background:

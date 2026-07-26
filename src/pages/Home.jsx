@@ -167,7 +167,7 @@ function Home() {
 
             <div className="instagram-actions">
               <a
-                className="instagram-primary"
+                className="instagram-primary tap-feedback"
                 href="https://www.instagram.com/pebbleco.store"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -177,7 +177,7 @@ function Home() {
               </a>
 
               <a
-                className="instagram-secondary"
+                className="instagram-secondary tap-feedback"
                 href="https://ig.me/m/pebbleco.store"
                 target="_blank"
                 rel="noopener noreferrer"

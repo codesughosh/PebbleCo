@@ -1,17 +1,23 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, GraduationCap, Truck } from "lucide-react";
+import { ArrowRight, Check, GraduationCap, Truck } from "lucide-react";
 import "../styles/checkout.css";
 
 function CheckoutDelivery() {
   const [deliveryType, setDeliveryType] = useState(null);
+  const [continueState, setContinueState] = useState("idle");
   const navigate = useNavigate();
 
   const handleContinue = () => {
-    if (!deliveryType) return;
+    if (!deliveryType || continueState !== "idle") return;
 
+    setContinueState("loading");
     localStorage.setItem("deliveryType", deliveryType);
-    navigate("/checkout/address");
+
+    window.setTimeout(() => {
+      setContinueState("success");
+      window.setTimeout(() => navigate("/checkout/address"), 420);
+    }, 220);
   };
 
   return (
@@ -28,6 +34,7 @@ function CheckoutDelivery() {
             type="button"
             className={`delivery-card ${deliveryType === "shipping" ? "selected" : ""}`}
             onClick={() => setDeliveryType("shipping")}
+            disabled={continueState !== "idle"}
           >
             <span className="delivery-icon">
               <Truck size={22} strokeWidth={2} />
@@ -41,6 +48,7 @@ function CheckoutDelivery() {
             type="button"
             className={`delivery-card ${deliveryType === "inhand" ? "selected" : ""}`}
             onClick={() => setDeliveryType("inhand")}
+            disabled={continueState !== "idle"}
           >
             <span className="delivery-icon">
               <GraduationCap size={22} strokeWidth={2} />
@@ -54,12 +62,30 @@ function CheckoutDelivery() {
         <div className="checkout-actions">
           <button
             type="button"
-            className="checkout-continue"
-            disabled={!deliveryType}
+            className={`checkout-continue feedback-action is-${
+              continueState === "success" ? "success" : continueState
+            }`}
+            disabled={!deliveryType || continueState !== "idle"}
             onClick={handleContinue}
+            aria-busy={continueState === "loading"}
+            aria-live="polite"
           >
-            Continue
-            <ArrowRight size={16} strokeWidth={2} />
+            {continueState === "loading" ? (
+              <>
+                <span className="feedback-spinner" aria-hidden="true" />
+                Saving
+              </>
+            ) : continueState === "success" ? (
+              <>
+                <Check size={16} strokeWidth={2.2} />
+                Saved
+              </>
+            ) : (
+              <>
+                Continue
+                <ArrowRight size={16} strokeWidth={2} />
+              </>
+            )}
           </button>
         </div>
       </section>

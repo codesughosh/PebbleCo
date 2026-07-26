@@ -7,7 +7,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
 } from "firebase/auth";
-import { Eye, EyeOff, LockKeyhole, LogIn, Mail } from "lucide-react";
+import { Check, Eye, EyeOff, LockKeyhole, LogIn, Mail } from "lucide-react";
 import { auth } from "../firebase";
 import "../styles/auth.css";
 
@@ -17,52 +17,71 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [emailAuthState, setEmailAuthState] = useState("idle");
+  const [googleAuthState, setGoogleAuthState] = useState("idle");
+  const [resetState, setResetState] = useState("idle");
+  const authBusy = emailAuthState !== "idle" || googleAuthState !== "idle";
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (authBusy) return;
+
     setError("");
+    setEmailAuthState("loading");
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate("/");
+      setEmailAuthState("success");
+      window.setTimeout(() => navigate("/"), 520);
     } catch (err) {
       setError(err.message);
+      setEmailAuthState("idle");
     }
   };
 
   const handleForgotPassword = async () => {
+    if (resetState !== "idle") return;
+
     if (!email) {
       setError("Please enter your email first");
       return;
     }
 
     try {
+      setResetState("loading");
       await sendPasswordResetEmail(auth, email);
-      alert("Password reset email sent");
+      setResetState("success");
+      window.setTimeout(() => setResetState("idle"), 1800);
     } catch (err) {
       setError(err.message);
+      setResetState("idle");
     }
   };
 
   const handleGoogleLogin = async () => {
+    if (authBusy) return;
+
     try {
+      setGoogleAuthState("loading");
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      navigate("/");
+      setGoogleAuthState("success");
+      window.setTimeout(() => navigate("/"), 520);
     } catch (err) {
       setError(err.message);
+      setGoogleAuthState("idle");
     }
   };
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
+      if (currentUser && !authBusy) {
         navigate("/profile");
       }
     });
 
     return () => unsub();
-  }, [navigate]);
+  }, [authBusy, navigate]);
 
   return (
     <div className="auth-page">
@@ -108,16 +127,50 @@ function Login() {
               <span>Remember me</span>
             </label>
 
-            <button type="button" className="forgot-link" onClick={handleForgotPassword}>
-              Forgot password?
+            <button
+              type="button"
+              className={`forgot-link feedback-action is-${
+                resetState === "success" ? "success" : resetState
+              }`}
+              onClick={handleForgotPassword}
+              disabled={resetState !== "idle"}
+              aria-busy={resetState === "loading"}
+            >
+              {resetState === "loading"
+                ? "Sending..."
+                : resetState === "success"
+                  ? "Sent!"
+                  : "Forgot password?"}
             </button>
           </div>
 
           {error && <p className="auth-error">{error}</p>}
 
-          <button type="submit" className="primary-btn">
-            <LogIn size={16} strokeWidth={2} />
-            Login
+          <button
+            type="submit"
+            className={`primary-btn feedback-action is-${
+              emailAuthState === "success" ? "success" : emailAuthState
+            }`}
+            disabled={authBusy}
+            aria-busy={emailAuthState === "loading"}
+            aria-live="polite"
+          >
+            {emailAuthState === "loading" ? (
+              <>
+                <span className="feedback-spinner" aria-hidden="true" />
+                Logging in
+              </>
+            ) : emailAuthState === "success" ? (
+              <>
+                <Check size={16} strokeWidth={2.2} />
+                Logged in!
+              </>
+            ) : (
+              <>
+                <LogIn size={16} strokeWidth={2} />
+                Login
+              </>
+            )}
           </button>
         </form>
 
@@ -125,8 +178,29 @@ function Login() {
           <span>or</span>
         </div>
 
-        <button type="button" className="google-btn" onClick={handleGoogleLogin}>
-          Continue with Google
+        <button
+          type="button"
+          className={`google-btn feedback-action is-${
+            googleAuthState === "success" ? "success" : googleAuthState
+          }`}
+          onClick={handleGoogleLogin}
+          disabled={authBusy}
+          aria-busy={googleAuthState === "loading"}
+          aria-live="polite"
+        >
+          {googleAuthState === "loading" ? (
+            <>
+              <span className="feedback-spinner" aria-hidden="true" />
+              Connecting
+            </>
+          ) : googleAuthState === "success" ? (
+            <>
+              <Check size={16} strokeWidth={2.2} />
+              Connected!
+            </>
+          ) : (
+            "Continue with Google"
+          )}
         </button>
 
         <p className="switch-auth">

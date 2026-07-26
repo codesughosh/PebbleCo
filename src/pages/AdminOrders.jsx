@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
+import { Check, Loader2 } from "lucide-react";
 import { auth } from "../firebase";
 import { PageLoader } from "../components/Skeleton";
 import "../styles/adminOrders.css";
@@ -12,6 +13,8 @@ function AdminOrders() {
   const [loading, setLoading] = useState(true);
   const [unauthorized, setUnauthorized] = useState(false);
   const [adminError, setAdminError] = useState("");
+  const [actionFeedback, setActionFeedback] = useState({});
+  const feedbackTimersRef = useRef({});
 
   const fetchOrders = useCallback(async (u) => {
     if (!u) return;
@@ -67,30 +70,96 @@ function AdminOrders() {
     return () => unsub();
   }, [fetchOrders]);
 
-  const updateOrder = async (orderId, updates) => {
-    const token = await user.getIdToken();
+  useEffect(() => {
+    const timers = feedbackTimersRef.current;
 
-    const res = await fetch(`${API_BASE}/api/admin/orders/${orderId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(updates),
-    });
+    return () => {
+      Object.values(timers).forEach((timer) => window.clearTimeout(timer));
+    };
+  }, []);
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      alert(data.error || "Failed to update order");
-      return;
+  const setFeedbackForAction = (feedbackKey, status) => {
+    if (feedbackTimersRef.current[feedbackKey]) {
+      window.clearTimeout(feedbackTimersRef.current[feedbackKey]);
     }
 
-    if (data.confirmationEmailError) {
-      alert(data.confirmationEmailError);
-    }
+    setActionFeedback((current) => ({
+      ...current,
+      [feedbackKey]: status,
+    }));
 
-    fetchOrders(user);
+    if (status === "success") {
+      feedbackTimersRef.current[feedbackKey] = window.setTimeout(() => {
+        setActionFeedback((current) => {
+          const next = { ...current };
+          delete next[feedbackKey];
+          return next;
+        });
+      }, 1600);
+    }
+  };
+
+  const getFeedbackForAction = (orderId, actionName) =>
+    actionFeedback[`${orderId}:${actionName}`] || "idle";
+
+  const renderActionFeedback = (orderId, actionName) => {
+    const status = getFeedbackForAction(orderId, actionName);
+
+    if (status === "idle") return null;
+
+    return (
+      <span
+        className={`admin-action-feedback ${
+          status === "success" ? "success" : "loading"
+        }`}
+        role="status"
+        aria-live="polite"
+      >
+        {status === "success" ? (
+          <Check size={14} strokeWidth={2.2} />
+        ) : (
+          <Loader2 size={14} strokeWidth={2} className="admin-spin" />
+        )}
+        {status === "success" ? "Saved" : "Saving"}
+      </span>
+    );
+  };
+
+  const updateOrder = async (orderId, updates, actionName) => {
+    const feedbackKey = `${orderId}:${actionName}`;
+    setFeedbackForAction(feedbackKey, "loading");
+
+    try {
+      const token = await user.getIdToken();
+
+      const res = await fetch(`${API_BASE}/api/admin/orders/${orderId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updates),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setFeedbackForAction(feedbackKey, "idle");
+        alert(data.error || "Failed to update order");
+        return;
+      }
+
+      if (data.confirmationEmailError) {
+        alert(data.confirmationEmailError);
+      }
+
+      await fetchOrders(user);
+      setFeedbackForAction(feedbackKey, "success");
+    } catch (error) {
+      console.error("Admin order update failed:", error);
+      setFeedbackForAction(feedbackKey, "idle");
+      alert("Failed to update order");
+    }
   };
 
   const formatEmpty = (value) => value || "--";
@@ -177,46 +246,68 @@ function AdminOrders() {
           )}
 
           <div className="admin-actions">
-            <select
-              value={o.payment_status || "pending"}
-              onChange={(e) => {
-                const paymentStatus = e.target.value;
-                updateOrder(o.id, {
-                  payment_status: paymentStatus,
-                  ...(paymentStatus === "success" ? { status: "paid" } : {}),
-                });
-              }}
-            >
-              <option value="pending">Payment pending</option>
-              <option value="pending_verification">Pending verification</option>
-              <option value="success">Paid</option>
-              <option value="rejected">Rejected</option>
-            </select>
-
-            <select
-              value={o.status || "pending"}
-              onChange={(e) => updateOrder(o.id, { status: e.target.value })}
-            >
-              <option value="pending">Pending</option>
-              <option value="paid">Paid</option>
-              <option value="packed">Packed</option>
-              <option value="shipped">Shipped</option>
-              <option value="delivered">Delivered</option>
-            </select>
-
-            {o.delivery_type === "shipping" && (
+            <div className="admin-action-field">
               <select
-                value={o.shipment_status || ""}
+                value={o.payment_status || "pending"}
+                disabled={getFeedbackForAction(o.id, "payment") === "loading"}
+                onChange={(e) => {
+                  const paymentStatus = e.target.value;
+                  updateOrder(
+                    o.id,
+                    {
+                      payment_status: paymentStatus,
+                      ...(paymentStatus === "success" ? { status: "paid" } : {}),
+                    },
+                    "payment",
+                  );
+                }}
+              >
+                <option value="pending">Payment pending</option>
+                <option value="pending_verification">Pending verification</option>
+                <option value="success">Paid</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              {renderActionFeedback(o.id, "payment")}
+            </div>
+
+            <div className="admin-action-field">
+              <select
+                value={o.status || "pending"}
+                disabled={getFeedbackForAction(o.id, "status") === "loading"}
                 onChange={(e) =>
-                  updateOrder(o.id, { shipment_status: e.target.value })
+                  updateOrder(o.id, { status: e.target.value }, "status")
                 }
               >
-                <option value="">Shipment status</option>
-                <option value="created">Created</option>
-                <option value="picked">Picked</option>
-                <option value="in_transit">In Transit</option>
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+                <option value="packed">Packed</option>
+                <option value="shipped">Shipped</option>
                 <option value="delivered">Delivered</option>
               </select>
+              {renderActionFeedback(o.id, "status")}
+            </div>
+
+            {o.delivery_type === "shipping" && (
+              <div className="admin-action-field">
+                <select
+                  value={o.shipment_status || ""}
+                  disabled={getFeedbackForAction(o.id, "shipment") === "loading"}
+                  onChange={(e) =>
+                    updateOrder(
+                      o.id,
+                      { shipment_status: e.target.value },
+                      "shipment",
+                    )
+                  }
+                >
+                  <option value="">Shipment status</option>
+                  <option value="created">Created</option>
+                  <option value="picked">Picked</option>
+                  <option value="in_transit">In Transit</option>
+                  <option value="delivered">Delivered</option>
+                </select>
+                {renderActionFeedback(o.id, "shipment")}
+              </div>
             )}
           </div>
         </div>

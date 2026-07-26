@@ -161,8 +161,9 @@
   display: inline-flex;
   width: auto;
   min-height: auto;
-  padding: 0;
+  padding: 2px 8px;
   border: none;
+  border-radius: var(--ios-pill);
   background: transparent;
   color: #b5475b;
   font-size: 13px;
@@ -176,6 +177,16 @@
 .forgot-link:hover {
   color: #8f3445;
   text-decoration: underline;
+}
+
+.forgot-link.feedback-action.is-success:hover {
+  color: #fff;
+  text-decoration: none;
+}
+
+.primary-btn.feedback-action.is-success:hover,
+.google-btn.feedback-action.is-success:hover {
+  transform: none;
 }
 
 .auth-error {
