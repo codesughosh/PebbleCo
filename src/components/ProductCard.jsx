@@ -1,8 +1,19 @@
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/product-card.css";
 
 function ProductCard({ product, onAddToCart }) {
   const navigate = useNavigate();
+  const [cartState, setCartState] = useState("idle");
+  const resetTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (resetTimerRef.current) {
+        window.clearTimeout(resetTimerRef.current);
+      }
+    };
+  }, []);
 
   const goToProduct = () => {
     navigate(`/product/${product.id}`);
@@ -15,6 +26,36 @@ function ProductCard({ product, onAddToCart }) {
             100,
         )
       : null;
+
+  const handleAddClick = async (event) => {
+    event.stopPropagation();
+
+    if (!onAddToCart || cartState !== "idle") return;
+
+    setCartState("loading");
+
+    try {
+      const added = await onAddToCart(product);
+
+      if (added === false) {
+        setCartState("idle");
+        return;
+      }
+
+      setCartState("added");
+
+      if (resetTimerRef.current) {
+        window.clearTimeout(resetTimerRef.current);
+      }
+
+      resetTimerRef.current = window.setTimeout(() => {
+        setCartState("idle");
+      }, 1300);
+    } catch (error) {
+      console.error("Add to cart error:", error);
+      setCartState("idle");
+    }
+  };
 
   return (
     <article className="product-card" onClick={goToProduct}>
@@ -52,13 +93,23 @@ function ProductCard({ product, onAddToCart }) {
 
       <button
         type="button"
-        className="product-add-btn"
-        onClick={(event) => {
-          event.stopPropagation();
-          onAddToCart && onAddToCart(product);
-        }}
+        className={`product-add-btn add-cart-action is-${cartState}`}
+        onClick={handleAddClick}
+        disabled={!onAddToCart}
+        aria-disabled={!onAddToCart || cartState !== "idle"}
+        aria-busy={cartState === "loading"}
+        aria-live="polite"
       >
-        Add to Cart
+        {cartState === "loading" && (
+          <span className="add-cart-spinner" aria-hidden="true" />
+        )}
+        <span>
+          {cartState === "added"
+            ? "Added!"
+            : cartState === "loading"
+              ? "Adding"
+              : "Add to Cart"}
+        </span>
       </button>
     </article>
   );

@@ -21,11 +21,18 @@ function Products() {
 
     if (!user) {
       alert("Please login to add items to cart");
-      return;
+      return false;
     }
 
-    await addToCart(user.uid, product.id);
-    triggerCartToast();
+    try {
+      await addToCart(user.uid, product.id);
+      triggerCartToast();
+      return true;
+    } catch (error) {
+      console.error("Add to cart error:", error);
+      alert("Could not add item to cart. Please try again.");
+      return false;
+    }
   };
 
   const [products, setProducts] = useState([]);

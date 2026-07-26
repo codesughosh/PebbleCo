@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import ProductCard from "../components/ProductCard";
+import CartToast from "../components/CartToast";
+import { auth } from "../firebase";
+import { addToCart } from "../services/cart";
 import { ProductGridSkeleton } from "../components/Skeleton";
 import { supabase } from "../supabaseClient";
 import "../styles/products.css";
@@ -7,26 +10,52 @@ import "../styles/products.css";
 function NewArrivals() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showToast, setShowToast] = useState(false);
+  const [toastKey, setToastKey] = useState(0);
 
-  useEffect(() => {
-    fetchNewArrivals();
-  }, []);
+  const triggerCartToast = () => {
+    setToastKey((key) => key + 1);
+    setShowToast(true);
+  };
 
-  const fetchNewArrivals = async () => {
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(6);
+  const handleAddToCart = async (product) => {
+    const user = auth.currentUser;
 
-    if (!error) {
-      setProducts(data);
-    } else {
-      console.error(error);
+    if (!user) {
+      alert("Please login to add items to cart");
+      return false;
     }
 
-    setLoading(false);
+    try {
+      await addToCart(user.uid, product.id);
+      triggerCartToast();
+      return true;
+    } catch (error) {
+      console.error("Add to cart error:", error);
+      alert("Could not add item to cart. Please try again.");
+      return false;
+    }
   };
+
+  useEffect(() => {
+    const fetchNewArrivals = async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(6);
+
+      if (!error) {
+        setProducts(data);
+      } else {
+        console.error(error);
+      }
+
+      setLoading(false);
+    };
+
+    fetchNewArrivals();
+  }, []);
 
   if (loading) {
     return (
@@ -38,15 +67,26 @@ function NewArrivals() {
   }
 
   return (
-    <div className="products-page">
-      <h1 className="page-title">New Arrivals</h1>
+    <>
+      <div className="products-page">
+        <h1 className="page-title">New Arrivals</h1>
 
-      <div className="products-grid">
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
+        <div className="products-grid">
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onAddToCart={handleAddToCart}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+      <CartToast
+        show={showToast}
+        toastKey={toastKey}
+        onClose={() => setShowToast(false)}
+      />
+    </>
   );
 }
 

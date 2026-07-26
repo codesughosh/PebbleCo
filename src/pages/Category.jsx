@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import CartToast from "../components/CartToast";
+import ProductCard from "../components/ProductCard";
 import { supabase } from "../supabaseClient";
+import { auth } from "../firebase";
+import { addToCart } from "../services/cart";
 import { ProductGridSkeleton } from "../components/Skeleton";
 import "../styles/product-card.css";
 import "../styles/products.css";
@@ -17,32 +21,59 @@ function Category() {
   const { slug } = useParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showToast, setShowToast] = useState(false);
+  const [toastKey, setToastKey] = useState(0);
   const title = slug?.replaceAll("-", " ") || "Products";
 
+  const triggerCartToast = () => {
+    setToastKey((key) => key + 1);
+    setShowToast(true);
+  };
+
+  const handleAddToCart = async (product) => {
+    const user = auth.currentUser;
+
+    if (!user) {
+      alert("Please login to add items to cart");
+      return false;
+    }
+
+    try {
+      await addToCart(user.uid, product.id);
+      triggerCartToast();
+      return true;
+    } catch (error) {
+      console.error("Add to cart error:", error);
+      alert("Could not add item to cart. Please try again.");
+      return false;
+    }
+  };
+
   useEffect(() => {
+    const fetchCategoryProducts = async () => {
+      setLoading(true);
+      const category = slugToCategory[slug];
+
+      if (!category) {
+        setProducts([]);
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("category", category);
+
+      if (!error) {
+        setProducts(data);
+      }
+
+      setLoading(false);
+    };
+
     fetchCategoryProducts();
   }, [slug]);
-
-  const fetchCategoryProducts = async () => {
-    const category = slugToCategory[slug];
-
-    if (!category) {
-      setProducts([]);
-      setLoading(false);
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .eq("category", category);
-
-    if (!error) {
-      setProducts(data);
-    }
-
-    setLoading(false);
-  };
 
   if (loading) {
     return (
@@ -54,64 +85,30 @@ function Category() {
   }
 
   return (
-    <div className="products-page">
-      <h1 className="page-title">{title}</h1>
+    <>
+      <div className="products-page">
+        <h1 className="page-title">{title}</h1>
 
-      {products.length === 0 ? (
-        <p className="products-empty">No products found.</p>
-      ) : (
-        <div className="products-grid">
-          {products.map((product) => {
-            const discount =
-              product.original_price && product.original_price > product.price
-                ? Math.round(
-                    ((product.original_price - product.price) /
-                      product.original_price) *
-                      100,
-                  )
-                : null;
-
-            return (
-              <Link
+        {products.length === 0 ? (
+          <p className="products-empty">No products found.</p>
+        ) : (
+          <div className="products-grid">
+            {products.map((product) => (
+              <ProductCard
                 key={product.id}
-                to={`/product/${product.id}`}
-                className="product-card category-product-card"
-              >
-                <div className="product-media">
-                  <img
-                    src={product.images?.[0]}
-                    alt={product.name}
-                    className="product-image"
-                  />
-
-                  {discount && (
-                    <span className="discount-badge">{discount}% OFF</span>
-                  )}
-                </div>
-
-                <div className="product-info">
-                  <h3 className="product-name">{product.name}</h3>
-
-                  <p className="price-row">
-                    {product.original_price && (
-                      <span className="original-price">
-                        {"\u20B9"}
-                        {product.original_price}
-                      </span>
-                    )}
-
-                    <span className="current-price">
-                      {"\u20B9"}
-                      {product.price}
-                    </span>
-                  </p>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </div>
+                product={product}
+                onAddToCart={handleAddToCart}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+      <CartToast
+        show={showToast}
+        toastKey={toastKey}
+        onClose={() => setShowToast(false)}
+      />
+    </>
   );
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
@@ -33,13 +33,15 @@ function Product() {
   const [showToast, setShowToast] = useState(false);
   const [toastKey, setToastKey] = useState(0);
   const [galleryImages, setGalleryImages] = useState([]);
+  const [cartButtonState, setCartButtonState] = useState("idle");
+  const cartResetTimerRef = useRef(null);
 
   const triggerCartToast = () => {
     setToastKey((key) => key + 1);
     setShowToast(true);
   };
 
-  async function fetchReviews() {
+  const fetchReviews = useCallback(async () => {
     const { data, error } = await supabase
       .from("reviews")
       .select("*")
@@ -49,9 +51,9 @@ function Product() {
     if (!error) {
       setReviews(data);
     }
-  }
+  }, [id]);
 
-  async function fetchProduct() {
+  const fetchProduct = useCallback(async () => {
     setLoading(true);
     setProduct(null);
 
@@ -68,7 +70,7 @@ function Product() {
     }
 
     setLoading(false);
-  }
+  }, [fetchReviews, id]);
 
   useEffect(() => {
     const auth = getAuth();
@@ -80,6 +82,14 @@ function Product() {
   }, []);
 
   useEffect(() => {
+    return () => {
+      if (cartResetTimerRef.current) {
+        window.clearTimeout(cartResetTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 768);
     checkMobile();
     window.addEventListener("resize", checkMobile);
@@ -88,7 +98,7 @@ function Product() {
 
   useEffect(() => {
     fetchProduct();
-  }, [id]);
+  }, [fetchProduct]);
 
   const productImages = product?.images?.length
     ? product.images
@@ -189,30 +199,48 @@ function Product() {
   };
 
   const addToCart = async () => {
+    if (cartButtonState !== "idle") return;
+
     if (!user) {
       alert("Please login to add items to cart");
       return;
     }
 
-    const token = await user.getIdToken();
-    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/cart`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        product_id: product.id,
-        quantity,
-      }),
-    });
+    setCartButtonState("loading");
 
-    if (!res.ok) {
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/cart`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          product_id: product.id,
+          quantity,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to add to cart");
+      }
+
+      triggerCartToast();
+      setCartButtonState("added");
+
+      if (cartResetTimerRef.current) {
+        window.clearTimeout(cartResetTimerRef.current);
+      }
+
+      cartResetTimerRef.current = window.setTimeout(() => {
+        setCartButtonState("idle");
+      }, 1300);
+    } catch (error) {
+      console.error("Add to cart error:", error);
       alert("Failed to add to cart");
-      return;
+      setCartButtonState("idle");
     }
-
-    triggerCartToast();
   };
 
   const handleTouchStart = (event) => {
@@ -361,10 +389,22 @@ function Product() {
 
             <button
               type="button"
-              className="product-primary-btn"
+              className={`product-primary-btn add-cart-action is-${cartButtonState}`}
               onClick={addToCart}
+              disabled={cartButtonState !== "idle"}
+              aria-busy={cartButtonState === "loading"}
+              aria-live="polite"
             >
-              Add to Cart
+              {cartButtonState === "loading" && (
+                <span className="add-cart-spinner" aria-hidden="true" />
+              )}
+              <span>
+                {cartButtonState === "added"
+                  ? "Added!"
+                  : cartButtonState === "loading"
+                    ? "Adding"
+                    : "Add to Cart"}
+              </span>
             </button>
 
             <p className="product-short-desc">{product.description}</p>
@@ -519,8 +559,24 @@ function Product() {
             {"\u20B9"}
             {product.price * quantity}
           </strong>
-          <button type="button" onClick={addToCart}>
-            Add to Cart
+          <button
+            type="button"
+            className={`add-cart-action is-${cartButtonState}`}
+            onClick={addToCart}
+            disabled={cartButtonState !== "idle"}
+            aria-busy={cartButtonState === "loading"}
+            aria-live="polite"
+          >
+            {cartButtonState === "loading" && (
+              <span className="add-cart-spinner" aria-hidden="true" />
+            )}
+            <span>
+              {cartButtonState === "added"
+                ? "Added!"
+                : cartButtonState === "loading"
+                  ? "Adding"
+                  : "Add to Cart"}
+            </span>
           </button>
         </div>
       )}

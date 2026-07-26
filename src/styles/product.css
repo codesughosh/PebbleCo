@@ -218,6 +218,10 @@
 .product-sticky-cart button {
   width: 100%;
   min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   color: #fff;
   font-size: 15px;
   font-weight: 600;

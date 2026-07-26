@@ -471,6 +471,59 @@ main {
   transform: scale(0.98);
 }
 
+.add-cart-action {
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.add-cart-action:disabled {
+  opacity: 1;
+}
+
+.add-cart-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: addCartSpin 0.72s linear infinite;
+}
+
+.add-cart-action.is-loading {
+  cursor: wait;
+}
+
+.add-cart-action.is-added {
+  color: #fff !important;
+  border-color: rgba(67, 160, 71, 0.52) !important;
+  background: #43a047 !important;
+  box-shadow:
+    0 16px 34px rgba(67, 160, 71, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.36) !important;
+  animation: addCartAddedPulse 760ms var(--ios-ease) both;
+}
+
+@keyframes addCartSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes addCartAddedPulse {
+  0% {
+    transform: scale(0.98);
+  }
+
+  48% {
+    transform: scale(1.025);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
 @media (max-width: 640px) {
   main {
     padding-left: 16px;
@@ -493,3 +546,15 @@ main {
   }
 }
 
+@media (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    font-size: inherit;
+  }
+}
