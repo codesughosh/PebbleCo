@@ -3,19 +3,24 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/cart-toast.css";
 
-function CartToast({ show, onClose }) {
+function CartToast({ show, onClose, toastKey = 0 }) {
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!show) return;
     const timer = setTimeout(onClose, 3000);
     return () => clearTimeout(timer);
-  }, [show, onClose]);
+  }, [show, onClose, toastKey]);
 
   if (!show) return null;
 
   return (
-    <div className="cart-toast" role="status" aria-live="polite">
+    <div
+      key={toastKey}
+      className="cart-toast"
+      role="status"
+      aria-live="polite"
+    >
       <div className="toast-left">
         <span className="toast-icon-wrap">
           <CheckCircle size={20} className="toast-icon" />
@@ -27,6 +32,7 @@ function CartToast({ show, onClose }) {
       </div>
 
       <button
+        type="button"
         className="toast-btn"
         onClick={() => navigate("/cart")}
       >

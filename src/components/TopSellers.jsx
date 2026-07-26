@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import ProductCard from "./ProductCard";
 import { auth } from "../firebase";
@@ -10,6 +10,12 @@ function TopSellers() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showToast, setShowToast] = useState(false);
+  const [toastKey, setToastKey] = useState(0);
+
+  const triggerCartToast = () => {
+    setToastKey((key) => key + 1);
+    setShowToast(true);
+  };
 
   const handleAddToCart = async (product) => {
     const user = auth.currentUser;
@@ -20,14 +26,10 @@ function TopSellers() {
     }
 
     await addToCart(user.uid, product.id);
-    setShowToast(true);
+    triggerCartToast();
   };
 
-  useEffect(() => {
-    fetchTopSellers();
-  }, []);
-
-  const fetchTopSellers = async () => {
+  const fetchTopSellers = useCallback(async () => {
     // 🔹 Check if any product is sold yet
     const { count } = await supabase
       .from("order_items")
@@ -65,7 +67,15 @@ function TopSellers() {
     }
 
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      fetchTopSellers();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [fetchTopSellers]);
 
   if (loading) {
     return <ProductGridSkeleton count={3} className="product-grid" />;
@@ -85,7 +95,11 @@ function TopSellers() {
       ))}
     </div>
     
-    <CartToast show={showToast} onClose={() => setShowToast(false)} />
+    <CartToast
+      show={showToast}
+      toastKey={toastKey}
+      onClose={() => setShowToast(false)}
+    />
       </>
   );
 }

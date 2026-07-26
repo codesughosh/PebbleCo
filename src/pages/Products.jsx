@@ -9,6 +9,12 @@ import { ProductGridSkeleton } from "../components/Skeleton";
 
 function Products() {
   const [showToast, setShowToast] = useState(false);
+  const [toastKey, setToastKey] = useState(0);
+
+  const triggerCartToast = () => {
+    setToastKey((key) => key + 1);
+    setShowToast(true);
+  };
 
   const handleAddToCart = async (product) => {
     const user = auth.currentUser;
@@ -19,7 +25,7 @@ function Products() {
     }
 
     await addToCart(user.uid, product.id);
-    setShowToast(true);
+    triggerCartToast();
   };
 
   const [products, setProducts] = useState([]);
@@ -56,7 +62,11 @@ function Products() {
           ))}
         </div>
       </div>
-      <CartToast show={showToast} onClose={() => setShowToast(false)} />
+      <CartToast
+        show={showToast}
+        toastKey={toastKey}
+        onClose={() => setShowToast(false)}
+      />
     </>
   );
 }

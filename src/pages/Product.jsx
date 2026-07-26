@@ -31,7 +31,13 @@ function Product() {
   const [reviewImages, setReviewImages] = useState([]);
   const [user, setUser] = useState(null);
   const [showToast, setShowToast] = useState(false);
+  const [toastKey, setToastKey] = useState(0);
   const [galleryImages, setGalleryImages] = useState([]);
+
+  const triggerCartToast = () => {
+    setToastKey((key) => key + 1);
+    setShowToast(true);
+  };
 
   async function fetchReviews() {
     const { data, error } = await supabase
@@ -206,7 +212,7 @@ function Product() {
       return;
     }
 
-    setShowToast(true);
+    triggerCartToast();
   };
 
   const handleTouchStart = (event) => {
@@ -519,7 +525,11 @@ function Product() {
         </div>
       )}
 
-      <CartToast show={showToast} onClose={() => setShowToast(false)} />
+      <CartToast
+        show={showToast}
+        toastKey={toastKey}
+        onClose={() => setShowToast(false)}
+      />
 
       {fullscreenOpen && (
         <div
