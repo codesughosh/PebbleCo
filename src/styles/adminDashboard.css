@@ -1,0 +1,533 @@
+.admin-erp {
+  width: min(1180px, 100%);
+  margin: 22px auto 70px;
+  color: #3b2b2f;
+}
+
+.admin-erp-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.admin-erp-kicker {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 5px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: var(--ios-pill);
+  background: rgba(255, 255, 255, 0.48);
+  color: #7a3b4a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-erp-head h1 {
+  margin: 10px 0 4px;
+  color: #3b2b2f;
+  font-size: clamp(30px, 4vw, 46px);
+  font-weight: 800;
+}
+
+.admin-erp-head p,
+.admin-card-title p,
+.admin-muted {
+  margin: 0;
+  color: #6d4c55;
+}
+
+.admin-erp-link,
+.admin-erp-tabs button,
+.expense-submit,
+.expense-row button {
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  border-radius: var(--ios-pill);
+  background: rgba(255, 255, 255, 0.62);
+  color: #5a2a36;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  box-shadow:
+    0 12px 28px rgba(90, 42, 54, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.74);
+}
+
+.admin-erp-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  text-decoration: none;
+}
+
+.admin-erp-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 18px 0 20px;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  border-radius: var(--ios-pill);
+  background: rgba(255, 255, 255, 0.42);
+  width: fit-content;
+}
+
+.admin-erp-tabs button {
+  min-height: 38px;
+  padding: 0 16px;
+  box-shadow: none;
+}
+
+.admin-erp-tabs button.active {
+  background: #f8b8ca;
+  color: #5a2a36;
+}
+
+.admin-erp-error,
+.admin-erp-warning {
+  padding: 12px 14px;
+  border: 1px solid rgba(196, 138, 154, 0.35);
+  border-radius: 16px;
+  background: #fff3f6;
+  color: #5a2a36;
+  font-weight: 700;
+}
+
+.admin-erp-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.admin-erp-card {
+  border: 1px solid var(--ios-glass-border);
+  border-radius: var(--ios-radius-xl);
+  background: var(--ios-glass-white);
+  box-shadow:
+    var(--ios-glass-shadow),
+    var(--ios-inset-highlight);
+  backdrop-filter: var(--ios-glass-blur);
+  -webkit-backdrop-filter: var(--ios-glass-blur);
+}
+
+.admin-erp-card.metric {
+  padding: 18px;
+}
+
+.metric-icon {
+  display: inline-flex;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 243, 246, 0.82);
+  color: #7a3b4a;
+}
+
+.metric p {
+  margin: 14px 0 4px;
+  color: #7a5962;
+  font-weight: 700;
+}
+
+.metric strong {
+  display: block;
+  color: #3b2b2f;
+  font-size: clamp(24px, 3vw, 34px);
+  font-weight: 800;
+}
+
+.metric small {
+  color: #8a6a73;
+  font-weight: 600;
+}
+
+.admin-erp-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.8fr);
+  gap: 16px;
+}
+
+.chart-card,
+.category-card,
+.admin-table-card,
+.expense-form-card,
+.expenses-list-card {
+  padding: 20px;
+}
+
+.admin-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.admin-card-title.spaced {
+  justify-content: space-between;
+}
+
+.admin-card-title h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.admin-card-title > span {
+  color: #7a3b4a;
+  font-weight: 800;
+}
+
+.finance-chart {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(48px, 1fr));
+  gap: 14px;
+  height: 250px;
+  align-items: end;
+  padding: 10px 4px 0;
+}
+
+.finance-chart-group {
+  display: grid;
+  gap: 8px;
+  text-align: center;
+}
+
+.finance-bars {
+  display: flex;
+  height: 210px;
+  align-items: end;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px;
+  border-radius: 16px;
+  background: rgba(255, 243, 246, 0.58);
+}
+
+.finance-bar {
+  display: block;
+  width: 12px;
+  min-height: 4px;
+  border-radius: 99px;
+}
+
+.finance-bar.bookings,
+.chart-legend .bookings::before {
+  background: #f8b8ca;
+}
+
+.finance-bar.income,
+.chart-legend .income::before {
+  background: #43a047;
+}
+
+.finance-bar.expenses,
+.chart-legend .expenses::before {
+  background: #c48a9a;
+}
+
+.finance-chart-group > span,
+.chart-legend,
+.category-row,
+.expense-row,
+.admin-erp-table {
+  color: #6d4c55;
+  font-size: 13px;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.chart-legend span::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.category-bars {
+  display: grid;
+  gap: 14px;
+}
+
+.category-row {
+  display: grid;
+  gap: 7px;
+}
+
+.category-row div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.category-row span,
+.category-row strong {
+  font-weight: 700;
+}
+
+.category-track {
+  display: block;
+  height: 9px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(196, 138, 154, 0.14);
+}
+
+.category-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #c48a9a;
+}
+
+.admin-erp-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-erp-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+}
+
+.admin-erp-table th,
+.admin-erp-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(241, 215, 220, 0.76);
+  text-align: left;
+  vertical-align: top;
+}
+
+.admin-erp-table th {
+  color: #7a3b4a;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.admin-erp-table td strong,
+.admin-erp-table td span {
+  display: block;
+}
+
+.payment-pill {
+  width: fit-content;
+  margin-bottom: 4px;
+  padding: 4px 8px;
+  border-radius: var(--ios-pill);
+  background: rgba(255, 243, 246, 0.8);
+  color: #7a3b4a;
+  font-weight: 800;
+}
+
+.payment-pill.success {
+  background: rgba(67, 160, 71, 0.14);
+  color: #2f7d32;
+}
+
+.payment-pill.pending_verification,
+.payment-pill.pending {
+  background: rgba(248, 184, 202, 0.44);
+}
+
+.expenses-grid {
+  grid-template-columns: minmax(320px, 0.78fr) minmax(0, 1fr);
+}
+
+.expense-form {
+  display: grid;
+  gap: 12px;
+}
+
+.expense-form label {
+  display: grid;
+  gap: 6px;
+  color: #6d4c55;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.expense-form input,
+.expense-form select,
+.expense-form textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  border-radius: var(--ios-radius-md);
+  background: rgba(255, 255, 255, 0.62);
+  color: #3b2b2f;
+  font: inherit;
+}
+
+.expense-form textarea {
+  min-height: 86px;
+  resize: vertical;
+}
+
+.expense-note {
+  grid-column: 1 / -1;
+}
+
+.expense-submit {
+  min-height: 46px;
+  justify-content: center;
+  margin-top: 4px;
+  background: #f8b8ca;
+}
+
+.expense-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.expense-list {
+  display: grid;
+  gap: 10px;
+}
+
+.expense-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px;
+  border-radius: 16px;
+  background: rgba(255, 243, 246, 0.58);
+}
+
+.expense-row strong,
+.expense-row span,
+.expense-row small,
+.expense-row b {
+  display: block;
+}
+
+.expense-row strong {
+  color: #3b2b2f;
+  font-size: 15px;
+}
+
+.expense-row small {
+  margin-top: 4px;
+  color: #8a6a73;
+}
+
+.expense-row > div:last-child {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
+.expense-row button {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: #7a3b4a;
+}
+
+.admin-erp-state {
+  display: flex;
+  min-height: 58vh;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-erp-state-card {
+  width: min(360px, 100%);
+  padding: 26px;
+  border: 1px solid var(--ios-glass-border);
+  border-radius: var(--ios-radius-xl);
+  background: var(--ios-glass-white);
+  text-align: center;
+  box-shadow: var(--ios-glass-shadow);
+}
+
+.admin-erp-spin {
+  animation: admin-erp-spin 0.8s linear infinite;
+}
+
+@keyframes admin-erp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 920px) {
+  .admin-erp-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-erp-metrics,
+  .admin-erp-grid,
+  .expenses-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .chart-card {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 680px) {
+  .admin-erp {
+    margin-top: 8px;
+  }
+
+  .admin-erp-tabs {
+    width: 100%;
+  }
+
+  .admin-erp-tabs button {
+    flex: 1;
+    padding: 0 10px;
+  }
+
+  .admin-erp-metrics,
+  .admin-erp-grid,
+  .expenses-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .finance-chart {
+    grid-template-columns: repeat(6, minmax(40px, 1fr));
+    gap: 8px;
+    overflow-x: auto;
+  }
+
+  .finance-bars {
+    height: 170px;
+  }
+
+  .expense-row {
+    flex-direction: column;
+  }
+
+  .expense-row > div:last-child {
+    align-items: center;
+    justify-items: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-erp-spin {
+    animation: none;
+  }
+}

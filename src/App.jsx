@@ -35,20 +35,17 @@ import PaymentFailed from "./pages/PaymentFailed";
 import Product from "./pages/Product";
 import Category from "./pages/Category";
 
+import AdminDashboard from "./pages/AdminDashboard";
 import AdminOrders from "./pages/AdminOrders";
 import ScrollToTop from "./components/ScrollToTop";
 function App() {
   const [loading, setLoading] = useState(true);
   const [fadeOut, setFadeOut] = useState(false);
 
-  const [cart, setCart] = useState(() => {
+  const [cart] = useState(() => {
     const savedCart = localStorage.getItem("pebbleco-cart");
     return savedCart ? JSON.parse(savedCart) : [];
   });
-
-  const addToCart = (product) => {
-    setCart([...cart, product]);
-  };
 
   useEffect(() => {
     localStorage.setItem("pebbleco-cart", JSON.stringify(cart));
@@ -98,6 +95,7 @@ function App() {
               <Route path="/orders" element={<Orders />} />
               <Route path="/product/:id" element={<Product />} />
               <Route path="/category/:slug" element={<Category />} />
+              <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/orders" element={<AdminOrders />} />
               <Route path="/new-arrivals" element={<NewArrivals />} />
               <Route path="/track" element={<TrackOrder />} />

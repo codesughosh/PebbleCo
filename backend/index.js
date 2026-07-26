@@ -7,6 +7,7 @@ import paymentRoutes from "./routes/payment.js";
 import verifyRoutes from "./routes/verify.js";
 import billingInvoiceRoutes from "./routes/billingInvoice.js";
 import adminOrdersRoutes from "./routes/adminOrders.js";
+import adminFinanceRoutes from "./routes/adminFinance.js";
 import { sendOrderEmail } from "./utils/sendOrderEmail.js";
 import trackingRoutes from "./routes/tracking.js";
 import { createClient } from "@supabase/supabase-js";
@@ -77,6 +78,7 @@ app.use("/api", paymentRoutes);
 app.use("/api", verifyRoutes);
 app.use("/api", billingInvoiceRoutes);
 app.use("/api/admin", adminOrdersRoutes);
+app.use("/api/admin", adminFinanceRoutes);
 app.use("/api", trackingRoutes);
 app.post(
   "/api/reviews",
