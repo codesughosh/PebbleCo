@@ -1,16 +1,15 @@
-import { Link } from "react-router-dom";
-import "../styles/auth.css";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
-  signInWithEmailAndPassword,
   GoogleAuthProvider,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
   signInWithPopup,
 } from "firebase/auth";
+import { Eye, EyeOff, LockKeyhole, LogIn, Mail } from "lucide-react";
 import { auth } from "../firebase";
-import { sendPasswordResetEmail } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
-import { onAuthStateChanged } from "firebase/auth";
-import { Eye, EyeOff } from "lucide-react";
+import "../styles/auth.css";
 
 function Login() {
   const navigate = useNavigate();
@@ -18,6 +17,7 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -53,6 +53,7 @@ function Login() {
       setError(err.message);
     }
   };
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
@@ -66,31 +67,40 @@ function Login() {
   return (
     <div className="auth-page">
       <div className="auth-card">
+        <span className="auth-kicker">Account</span>
         <h1 className="auth-title">Welcome back</h1>
         <p className="auth-subtitle">Login to PebbleCo</p>
 
-        <form className="auth-form">
-          <input
-            type="email"
-            placeholder="Email address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+        <form className="auth-form" onSubmit={handleLogin}>
+          <label className="auth-input">
+            <Mail size={17} strokeWidth={1.8} />
+            <input
+              type="email"
+              placeholder="Email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </label>
 
-          <div className="password-field">
+          <label className="auth-input password-field">
+            <LockKeyhole size={17} strokeWidth={1.8} />
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              required
             />
-            <span
+            <button
+              type="button"
               className="eye-btn"
+              aria-label={showPassword ? "Hide password" : "Show password"}
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
-            </span>
-          </div>
+            </button>
+          </label>
 
           <div className="auth-row">
             <label className="remember">
@@ -98,24 +108,26 @@ function Login() {
               <span>Remember me</span>
             </label>
 
-            <span
-  className="forgot-link"
-  onClick={handleForgotPassword}
->
-  Forgot password?
-</span>
-
+            <button type="button" className="forgot-link" onClick={handleForgotPassword}>
+              Forgot password?
+            </button>
           </div>
+
           {error && <p className="auth-error">{error}</p>}
 
-          <button onClick={handleLogin}>Login</button>
+          <button type="submit" className="primary-btn">
+            <LogIn size={16} strokeWidth={2} />
+            Login
+          </button>
         </form>
 
         <div className="divider">
           <span>or</span>
         </div>
 
-        <button onClick={handleGoogleLogin}>Continue with Google</button>
+        <button type="button" className="google-btn" onClick={handleGoogleLogin}>
+          Continue with Google
+        </button>
 
         <p className="switch-auth">
           New to PebbleCo? <Link to="/signup">Create an account</Link>

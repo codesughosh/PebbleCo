@@ -1,6 +1,7 @@
 function Terms() {
   return (
     <div className="policy-page">
+      <span className="info-kicker">Policy</span>
       <h1>Terms & Conditions</h1>
 
       <p>

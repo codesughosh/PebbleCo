@@ -1,6 +1,7 @@
 function PrivacyPolicy() {
   return (
     <div className="policy-page">
+      <span className="info-kicker">Policy</span>
       <h1>Privacy Policy</h1>
 
       <p>

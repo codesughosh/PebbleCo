@@ -1,6 +1,7 @@
 function ShippingPolicy() {
   return (
     <div className="policy-page">
+      <span className="info-kicker">Policy</span>
       <h1>Shipping Policy</h1>
 
       <p>
@@ -10,7 +11,7 @@ function ShippingPolicy() {
 
       <h2>Shipping Time</h2>
       <p>
-        Orders are usually processed within 2–4 business days. Delivery timelines
+        Orders are usually processed within 2-4 business days. Delivery timelines
         may vary based on location.
       </p>
 

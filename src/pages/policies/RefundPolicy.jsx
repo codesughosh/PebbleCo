@@ -1,6 +1,7 @@
 function RefundPolicy() {
   return (
     <div className="policy-page">
+      <span className="info-kicker">Policy</span>
       <h1>Refund & Cancellation Policy</h1>
 
       <p>
@@ -9,9 +10,7 @@ function RefundPolicy() {
       </p>
 
       <h2>Order Cancellation</h2>
-      <p>
-        Once an order is placed, it cannot be cancelled.
-      </p>
+      <p>Once an order is placed, it cannot be cancelled.</p>
 
       <h2>Refunds</h2>
       <p>
@@ -22,7 +21,7 @@ function RefundPolicy() {
       <h2>Refund Process</h2>
       <p>
         Approved refunds will be processed to the original payment method within
-        7–10 business days.
+        7-10 business days.
       </p>
 
       <h2>Contact</h2>

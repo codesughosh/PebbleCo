@@ -41,70 +41,174 @@ main {
 }
 
 
+.policy-page,
+.about-card {
+  width: min(900px, 100%);
+  margin: 0 auto;
+  padding: 44px 38px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 28px;
+  background:
+    linear-gradient(150deg, rgba(255, 255, 255, 0.78), rgba(255, 247, 249, 0.52)),
+    rgba(255, 255, 255, 0.62);
+  box-shadow:
+    0 20px 52px rgba(90, 42, 54, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.74);
+  backdrop-filter: saturate(170%) blur(22px);
+  -webkit-backdrop-filter: saturate(170%) blur(22px);
+}
+
 .policy-page {
-  max-width: 900px;
-  margin: 60px auto;
-  padding: 48px 40px;
-
-  background: #ffffff;
-  border-radius: 22px;
-
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+  margin-top: 46px;
+  margin-bottom: 72px;
 }
 
-/* Headings */
-.policy-page h1 {
-  font-size: 30px;
-  margin-bottom: 20px;
+.info-kicker {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 5px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: var(--ios-pill);
+  background: rgba(255, 255, 255, 0.48);
+  color: #7a3b4a;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.policy-page h1,
+.about-card h1 {
+  margin: 10px 0 20px;
   color: #3b2b2f;
+  font-size: 34px;
+  font-weight: 700;
 }
 
-/* Text */
-.policy-page p {
+.policy-page h2 {
+  margin: 26px 0 8px;
+  color: #5a2a36;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.policy-page p,
+.about-card p {
+  margin: 0 0 14px;
+  color: #6b4c55;
   font-size: 15px;
   line-height: 1.75;
-  color: #6b4c55;
-  margin-bottom: 14px;
 }
 
-/* Wrapper for all info/policy pages */
+.policy-page strong {
+  color: #5a2a36;
+  font-weight: 700;
+}
+
 .policy-wrapper {
   padding: 40px 0;
 }
 
-/* =========================
-   ABOUT PAGE (ISOLATED)
-========================= */
-
 .about-page {
-  min-height: 100vh;
-  background: #fceae4;
   display: flex;
-  justify-content: center;
+  min-height: 100vh;
   align-items: flex-start;
-  padding: 80px 20px;
+  justify-content: center;
+  padding: 46px 16px 72px;
+  background: transparent;
 }
 
-.about-card {
-  max-width: 900px;
-  width: 100%;
-  background: #ffffff;
-  border-radius: 26px;
-  padding: 56px 48px;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.12);
+.about-points {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 28px;
 }
 
-.about-card h1 {
-  font-size: 32px;
-  margin-bottom: 24px;
-  color: #3b2b2f;
+.about-point,
+.contact-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.56);
+  border-radius: 18px;
+  background: rgba(252, 234, 228, 0.5);
+  color: #5a2a36;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.62);
 }
 
-.about-card p {
-  font-size: 15px;
-  line-height: 1.8;
-  color: #6b4c55;
-  margin-bottom: 14px;
+.contact-page {
+  max-width: 720px;
+}
+
+.contact-card {
+  margin-top: 14px;
+  align-items: flex-start;
+}
+
+.contact-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.64);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.54);
+  color: #7a3b4a;
+}
+
+.contact-card span {
+  display: block;
+  margin-bottom: 4px;
+  color: #8a6a73;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.contact-card a {
+  color: #5a2a36;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.contact-card a:hover {
+  text-decoration: underline;
+}
+
+.contact-card p {
+  margin: 0;
+}
+
+@media (max-width: 680px) {
+  .policy-page,
+  .about-card {
+    padding: 30px 20px;
+    border-radius: 24px;
+  }
+
+  .policy-page {
+    margin-top: 32px;
+    margin-bottom: 58px;
+  }
+
+  .policy-page h1,
+  .about-card h1 {
+    font-size: 28px;
+  }
+
+  .about-page {
+    padding: 32px 0 58px;
+  }
+
+  .about-points {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* =========================
