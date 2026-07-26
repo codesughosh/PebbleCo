@@ -333,6 +333,7 @@
   min-height: 210px;
   aspect-ratio: 3 / 4;
   overflow: hidden;
+  position: relative;
   border: 1px solid rgba(255, 255, 255, 0.64);
   border-radius: var(--ios-radius-xl);
   background: rgba(252, 234, 228, 0.58);
@@ -345,16 +346,85 @@
   transform: translateY(16px);
 }
 
-.instagram-tile img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-  transition: transform var(--ios-duration-slow) var(--ios-ease);
+.instagram-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: rgba(255, 255, 255, 0.76);
+  opacity: 0;
+  pointer-events: none;
+  animation: instagramWhiteFade 2s var(--ios-ease) infinite;
 }
 
-.instagram-promo:hover .instagram-tile img {
+.instagram-slide-image {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  display: block;
+  object-fit: cover;
+  opacity: 0;
+  transition: transform var(--ios-duration-slow) var(--ios-ease);
+  animation: instagramImageFade 12s linear infinite;
+  will-change: opacity, transform;
+}
+
+.instagram-slide-image:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.instagram-slide-image:nth-child(2) {
+  animation-delay: 2s;
+}
+
+.instagram-slide-image:nth-child(3) {
+  animation-delay: 4s;
+}
+
+.instagram-slide-image:nth-child(4) {
+  animation-delay: 6s;
+}
+
+.instagram-slide-image:nth-child(5) {
+  animation-delay: 8s;
+}
+
+.instagram-slide-image:nth-child(6) {
+  animation-delay: 10s;
+}
+
+.instagram-promo:hover .instagram-slide-image {
   transform: scale(1.035);
+}
+
+@keyframes instagramImageFade {
+  0%,
+  16.66%,
+  100% {
+    opacity: 0;
+  }
+
+  2.2%,
+  14.4% {
+    opacity: 1;
+  }
+}
+
+@keyframes instagramWhiteFade {
+  0%,
+  100% {
+    opacity: 0.76;
+  }
+
+  12%,
+  76% {
+    opacity: 0;
+  }
+
+  88% {
+    opacity: 0.66;
+  }
 }
 
 /* =========================
@@ -526,5 +596,14 @@
 
   .slider-track {
     transition: none;
+  }
+
+  .instagram-tile::after,
+  .instagram-slide-image {
+    animation: none;
+  }
+
+  .instagram-slide-image:first-child {
+    opacity: 1;
   }
 }
