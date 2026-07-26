@@ -12,6 +12,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { supabase } from "../supabaseClient";
+import { CheckoutSummarySkeleton } from "../components/Skeleton";
 import "../styles/checkout.css";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -185,14 +186,7 @@ function CheckoutSummary() {
   };
 
   if (loading) {
-    return (
-      <div className="checkout-state">
-        <div className="checkout-state-card">
-          <Loader2 size={20} className="spin" />
-          <p>Loading summary...</p>
-        </div>
-      </div>
-    );
+    return <CheckoutSummarySkeleton />;
   }
 
   return (

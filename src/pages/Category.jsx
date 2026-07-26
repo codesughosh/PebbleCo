@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import { ProductGridSkeleton } from "../components/Skeleton";
 import "../styles/product-card.css";
 import "../styles/products.css";
 
@@ -16,6 +17,7 @@ function Category() {
   const { slug } = useParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const title = slug?.replaceAll("-", " ") || "Products";
 
   useEffect(() => {
     fetchCategoryProducts();
@@ -43,12 +45,17 @@ function Category() {
   };
 
   if (loading) {
-    return <p className="products-loading">Loading products...</p>;
+    return (
+      <div className="products-page">
+        <h1 className="page-title">{title}</h1>
+        <ProductGridSkeleton count={6} />
+      </div>
+    );
   }
 
   return (
     <div className="products-page">
-      <h1 className="page-title">{slug.replace("-", " ")}</h1>
+      <h1 className="page-title">{title}</h1>
 
       {products.length === 0 ? (
         <p className="products-empty">No products found.</p>

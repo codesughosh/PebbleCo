@@ -9,6 +9,7 @@ import {
   X,
 } from "lucide-react";
 import CartToast from "../components/CartToast";
+import { ProductDetailSkeleton } from "../components/Skeleton";
 import { supabase } from "../supabaseClient";
 import "../styles/product.css";
 
@@ -229,7 +230,7 @@ function Product() {
   };
 
   if (loading) {
-    return <p className="product-state">Loading product...</p>;
+    return <ProductDetailSkeleton />;
   }
 
   if (!product) {

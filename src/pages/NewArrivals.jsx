@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ProductCard from "../components/ProductCard";
+import { ProductGridSkeleton } from "../components/Skeleton";
 import { supabase } from "../supabaseClient";
 import "../styles/products.css";
 
@@ -28,7 +29,12 @@ function NewArrivals() {
   };
 
   if (loading) {
-    return <p className="products-loading">Loading new arrivals...</p>;
+    return (
+      <div className="products-page">
+        <h1 className="page-title">New Arrivals</h1>
+        <ProductGridSkeleton count={6} />
+      </div>
+    );
   }
 
   return (

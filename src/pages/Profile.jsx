@@ -3,6 +3,7 @@ import { sendPasswordResetEmail, onAuthStateChanged, signOut } from "firebase/au
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, KeyRound, LogOut, Mail, UserRound } from "lucide-react";
 import { auth } from "../firebase";
+import { PageLoader } from "../components/Skeleton";
 import "../styles/profile.css";
 
 function Profile() {
@@ -38,11 +39,7 @@ function Profile() {
   };
 
   if (!user) {
-    return (
-      <div className="profile-state">
-        <div className="profile-state-card">Loading account...</div>
-      </div>
-    );
+    return <PageLoader label="Loading account..." />;
   }
 
   return (

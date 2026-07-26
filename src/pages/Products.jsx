@@ -5,6 +5,7 @@ import "../styles/products.css";
 import { auth } from "../firebase";
 import { addToCart } from "../services/cart";
 import CartToast from "../components/CartToast";
+import { ProductGridSkeleton } from "../components/Skeleton";
 
 function Products() {
   const [showToast, setShowToast] = useState(false);
@@ -35,7 +36,11 @@ function Products() {
   }, []);
 
   if (loading) {
-    return <p className="products-loading">Loading products...</p>;
+    return (
+      <div className="products-page">
+        <ProductGridSkeleton count={6} />
+      </div>
+    );
   }
 
   return (

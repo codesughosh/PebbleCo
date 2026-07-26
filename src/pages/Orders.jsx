@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { CalendarDays, PackageCheck, ReceiptText, ShoppingBag, Truck } from "lucide-react";
+import { CalendarDays, ReceiptText, ShoppingBag, Truck } from "lucide-react";
 import { auth } from "../firebase";
+import { OrderListSkeleton } from "../components/Skeleton";
 import "../styles/orders.css";
 
 function Orders() {
@@ -49,14 +50,7 @@ function Orders() {
   };
 
   if (loading) {
-    return (
-      <div className="orders-state">
-        <div className="orders-state-card">
-          <PackageCheck size={24} strokeWidth={1.8} />
-          <p>Loading orders...</p>
-        </div>
-      </div>
-    );
+    return <OrderListSkeleton />;
   }
 
   if (!user) {

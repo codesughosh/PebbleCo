@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AlertCircle, Loader2, PackageSearch, Search, Truck } from "lucide-react";
 import OrderTimeline from "../components/OrderTimeline";
+import { TrackingSkeleton } from "../components/Skeleton";
 import "../styles/trackOrder.css";
 import "../styles/orderTimeline.css";
 
@@ -109,6 +110,8 @@ export default function TrackOrder() {
             {error}
           </p>
         )}
+
+        {loading && <TrackingSkeleton />}
 
         {tracking && (
           <div className="tracking-card">

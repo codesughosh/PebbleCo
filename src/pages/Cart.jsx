@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import { ArrowRight, Minus, Plus, ShieldCheck, ShoppingBag, Trash2 } from "lucide-react";
 import { auth } from "../firebase";
+import { CartSkeleton } from "../components/Skeleton";
 import "../styles/cart.css";
 
 function Cart() {
@@ -84,14 +85,7 @@ function Cart() {
   const formatPrice = (value) => `\u20B9${value}`;
 
   if (loading) {
-    return (
-      <div className="cart-state">
-        <div className="cart-state-card">
-          <ShoppingBag size={24} strokeWidth={1.8} />
-          <p>Loading cart...</p>
-        </div>
-      </div>
-    );
+    return <CartSkeleton />;
   }
 
   if (!user) {

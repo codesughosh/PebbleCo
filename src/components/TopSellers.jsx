@@ -4,6 +4,7 @@ import ProductCard from "./ProductCard";
 import { auth } from "../firebase";
 import { addToCart } from "../services/cart";
 import CartToast from "../components/CartToast";
+import { ProductGridSkeleton } from "../components/Skeleton";
 
 function TopSellers() {
   const [products, setProducts] = useState([]);
@@ -66,7 +67,11 @@ function TopSellers() {
     setLoading(false);
   };
 
-  if (loading || products.length === 0) return null;
+  if (loading) {
+    return <ProductGridSkeleton count={3} className="product-grid" />;
+  }
+
+  if (products.length === 0) return null;
 
   return (
     <>

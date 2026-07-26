@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase";
+import { PageLoader } from "../components/Skeleton";
 import "../styles/adminOrders.css";
 
 function AdminOrders() {
@@ -68,7 +69,7 @@ function AdminOrders() {
   const formatEmpty = (value) => value || "--";
   const formatPrice = (value) => `\u20B9${value}`;
 
-  if (loading) return <p style={{ padding: 40 }}>Loading admin panel...</p>;
+  if (loading) return <PageLoader label="Loading admin panel..." />;
 
   if (unauthorized) return <p style={{ padding: 40 }}>Access denied</p>;
 

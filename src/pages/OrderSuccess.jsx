@@ -4,10 +4,10 @@ import {
   CheckCircle2,
   Clock3,
   Download,
-  Loader2,
   ReceiptText,
   XCircle,
 } from "lucide-react";
+import { PageLoader } from "../components/Skeleton";
 import "../styles/orderSuccess.css";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -41,14 +41,7 @@ function OrderSuccess() {
   }, [orderId]);
 
   if (!order) {
-    return (
-      <div className="order-loading-top">
-        <div className="order-loading-card">
-          <Loader2 className="order-loading-icon" />
-          <p className="order-loading-text">Loading your order...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader label="Loading your order..." />;
   }
 
   const pendingVerification = order.payment_status === "pending_verification";
