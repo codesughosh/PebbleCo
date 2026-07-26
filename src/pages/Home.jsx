@@ -7,46 +7,24 @@ import { Instagram, MessageCircle } from "lucide-react";
 import slide1 from "../assets/slider/1.jpg";
 import slide2 from "../assets/slider/2.jpg";
 import slide3 from "../assets/slider/3.jpg";
-import promoFlowerBracelet from "../assets/products/fb1.jpg";
 import promoFlowerBraceletAlt from "../assets/products/fb2.jpg";
-import promoBeadBracelet from "../assets/products/bb1.jpg";
-import promoBeadBraceletAlt from "../assets/products/bb2.jpg";
-import promoCharm from "../assets/products/c1.jpg";
 import promoCharmAlt from "../assets/products/c2.jpg";
 import PebbleBackground from "../components/PebbleBackground";
 
 const slides = [slide1, slide2, slide3];
-const instagramSlideshow = [
-  promoFlowerBracelet,
-  promoBeadBracelet,
-  promoCharm,
-  promoFlowerBraceletAlt,
-  promoBeadBraceletAlt,
-  promoCharmAlt,
-];
 const instagramTiles = [
-  { images: instagramSlideshow, label: "Flower bracelet" },
   {
-    images: [
-      promoBeadBracelet,
-      promoCharm,
-      promoFlowerBraceletAlt,
-      promoBeadBraceletAlt,
-      promoCharmAlt,
-      promoFlowerBracelet,
-    ],
-    label: "Bead bracelet",
+    src: promoFlowerBraceletAlt,
+    label: "Ocean floral bracelet",
   },
   {
-    images: [
-      promoCharm,
-      promoFlowerBraceletAlt,
-      promoBeadBraceletAlt,
-      promoCharmAlt,
-      promoFlowerBracelet,
-      promoBeadBracelet,
-    ],
-    label: "Charm preview",
+    src: "/logo.png",
+    label: "PebbleCo logo",
+    variant: "logo",
+  },
+  {
+    src: promoCharmAlt,
+    label: "Star charm necklace",
   },
 ];
 const collections = [
@@ -212,16 +190,13 @@ function Home() {
 
           <div className="instagram-preview" aria-label="PebbleCo Instagram previews">
             {instagramTiles.map((tile) => (
-              <div className="instagram-tile" key={tile.label} aria-label={tile.label}>
-                {tile.images.map((image, imageIndex) => (
-                  <img
-                    className="instagram-slide-image"
-                    key={`${tile.label}-${imageIndex}`}
-                    src={image}
-                    alt={imageIndex === 0 ? tile.label : ""}
-                    aria-hidden={imageIndex === 0 ? undefined : "true"}
-                  />
-                ))}
+              <div
+                className={`instagram-tile${
+                  tile.variant === "logo" ? " instagram-logo-tile" : ""
+                }`}
+                key={tile.label}
+              >
+                <img src={tile.src} alt={tile.label} />
               </div>
             ))}
           </div>
