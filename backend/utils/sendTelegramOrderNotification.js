@@ -1,8 +1,14 @@
+/* global process */
 const TELEGRAM_API_BASE = "https://api.telegram.org";
+const ADMIN_BASE_URL = process.env.ADMIN_BASE_URL || "https://pebbleco.shop/admin";
 const ADMIN_ORDERS_URL =
-  process.env.ADMIN_ORDERS_URL || "https://pebbleco.shop/admin/orders";
+  process.env.ADMIN_ORDERS_URL || `${ADMIN_BASE_URL}/orders`;
+const ADMIN_INCOME_URL =
+  process.env.ADMIN_INCOME_URL || `${ADMIN_BASE_URL}?tab=income`;
+const ADMIN_EXPENSES_URL =
+  process.env.ADMIN_EXPENSES_URL || `${ADMIN_BASE_URL}?tab=expenses`;
 
-function getTelegramChatIds() {
+export function getTelegramChatIds() {
   return String(
     process.env.TELEGRAM_CHAT_IDS || process.env.TELEGRAM_CHAT_ID || "",
   )
@@ -11,13 +17,17 @@ function getTelegramChatIds() {
     .filter(Boolean);
 }
 
-function formatMoney(value) {
+export function isAuthorizedTelegramChat(chatId) {
+  return getTelegramChatIds().includes(String(chatId || ""));
+}
+
+export function formatTelegramMoney(value) {
   return `Rs. ${Number(value || 0).toLocaleString("en-IN", {
     maximumFractionDigits: 2,
   })}`;
 }
 
-function escapeHtml(value) {
+export function escapeTelegramHtml(value) {
   return String(value || "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -37,7 +47,7 @@ function formatItems(items = []) {
         "Product";
       const quantity = Number(item.quantity || 0) || 1;
 
-      return `- ${escapeHtml(name)} x${quantity}`;
+      return `- ${escapeTelegramHtml(name)} x${quantity}`;
     })
     .join("\n");
 }
@@ -53,19 +63,19 @@ function buildOrderMessage({ order, items, paymentLabel }) {
     "<b>PebbleCo</b>",
     "<b>New handmade order</b>",
     "",
-    `<b>Name:</b> ${escapeHtml(order.customer_name || "Customer")}`,
-    `<b>Phone:</b> ${escapeHtml(order.customer_phone || "N/A")}`,
-    `<b>Email:</b> ${escapeHtml(order.customer_email || "N/A")}`,
-    `<b>Total:</b> ${formatMoney(order.total)}`,
-    `<b>Delivery:</b> ${escapeHtml(formatDelivery(order))}`,
-    `<b>Payment:</b> ${escapeHtml(
+    `<b>Name:</b> ${escapeTelegramHtml(order.customer_name || "Customer")}`,
+    `<b>Phone:</b> ${escapeTelegramHtml(order.customer_phone || "N/A")}`,
+    `<b>Email:</b> ${escapeTelegramHtml(order.customer_email || "N/A")}`,
+    `<b>Total:</b> ${formatTelegramMoney(order.total)}`,
+    `<b>Delivery:</b> ${escapeTelegramHtml(formatDelivery(order))}`,
+    `<b>Payment:</b> ${escapeTelegramHtml(
       paymentLabel || order.payment_status || "Pending",
     )}`,
   ];
 
   if (order.payment_id) {
     lines.push(
-      `<b>Transaction ID:</b> <code>${escapeHtml(order.payment_id)}</code>`,
+      `<b>Transaction ID:</b> <code>${escapeTelegramHtml(order.payment_id)}</code>`,
     );
   }
 
@@ -74,10 +84,25 @@ function buildOrderMessage({ order, items, paymentLabel }) {
     "<b>Items</b>",
     formatItems(items),
     "",
-    `<b>Order ID:</b> <code>${escapeHtml(order.id)}</code>`,
+    `<b>Order ID:</b> <code>${escapeTelegramHtml(order.id)}</code>`,
   );
 
   return lines.join("\n");
+}
+
+export function buildAdminLinksKeyboard() {
+  return {
+    inline_keyboard: [
+      [
+        { text: "Open ERP", url: ADMIN_BASE_URL },
+        { text: "Orders", url: ADMIN_ORDERS_URL },
+      ],
+      [
+        { text: "Income", url: ADMIN_INCOME_URL },
+        { text: "Expenses", url: ADMIN_EXPENSES_URL },
+      ],
+    ],
+  };
 }
 
 function buildReplyMarkup({ order, includeVerifyButton }) {
@@ -92,7 +117,7 @@ function buildReplyMarkup({ order, includeVerifyButton }) {
     ]);
   }
 
-  rows.push([{ text: "Open admin orders", url: ADMIN_ORDERS_URL }]);
+  rows.push(...buildAdminLinksKeyboard().inline_keyboard);
 
   return { inline_keyboard: rows };
 }
@@ -123,12 +148,26 @@ export function buildVerifiedOrderMessage(order) {
     "<b>PebbleCo</b>",
     "<b>Payment verified</b>",
     "",
-    `<b>Name:</b> ${escapeHtml(order.customer_name || "Customer")}`,
-    `<b>Total:</b> ${formatMoney(order.total)}`,
-    `<b>Order ID:</b> <code>${escapeHtml(order.id)}</code>`,
+    `<b>Name:</b> ${escapeTelegramHtml(order.customer_name || "Customer")}`,
+    `<b>Total:</b> ${formatTelegramMoney(order.total)}`,
+    `<b>Order ID:</b> <code>${escapeTelegramHtml(order.id)}</code>`,
     "",
-    "Confirmation email sent with Brevo.",
+    "Marked paid and confirmation email sent with Brevo.",
   ].join("\n");
+}
+
+export async function sendTelegramMessage({ chatId, text, replyMarkup }) {
+  if (!process.env.TELEGRAM_BOT_TOKEN || !chatId) {
+    return { skipped: true };
+  }
+
+  return sendTelegramRequest("sendMessage", {
+    chat_id: chatId,
+    text,
+    parse_mode: "HTML",
+    disable_web_page_preview: true,
+    ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+  });
 }
 
 export async function sendTelegramOrderNotification({
@@ -146,12 +185,10 @@ export async function sendTelegramOrderNotification({
   const text = buildOrderMessage({ order, items, paymentLabel });
   const results = await Promise.allSettled(
     chatIds.map((chatId) =>
-      sendTelegramRequest("sendMessage", {
-        chat_id: chatId,
+      sendTelegramMessage({
+        chatId,
         text,
-        parse_mode: "HTML",
-        disable_web_page_preview: true,
-        reply_markup: buildReplyMarkup({ order, includeVerifyButton }),
+        replyMarkup: buildReplyMarkup({ order, includeVerifyButton }),
       }),
     ),
   );
@@ -183,13 +220,11 @@ export async function removeTelegramInlineKeyboard({ chatId, messageId }) {
   return sendTelegramRequest("editMessageReplyMarkup", {
     chat_id: chatId,
     message_id: messageId,
-    reply_markup: {
-      inline_keyboard: [[{ text: "Open admin orders", url: ADMIN_ORDERS_URL }]],
-    },
+    reply_markup: buildAdminLinksKeyboard(),
   });
 }
 
-export async function sendTelegramAdminMessage(text) {
+export async function sendTelegramAdminMessage(text, replyMarkup) {
   const chatIds = getTelegramChatIds();
 
   if (!process.env.TELEGRAM_BOT_TOKEN || chatIds.length === 0) {
@@ -198,11 +233,10 @@ export async function sendTelegramAdminMessage(text) {
 
   const results = await Promise.allSettled(
     chatIds.map((chatId) =>
-      sendTelegramRequest("sendMessage", {
-        chat_id: chatId,
+      sendTelegramMessage({
+        chatId,
         text,
-        parse_mode: "HTML",
-        disable_web_page_preview: true,
+        replyMarkup,
       }),
     ),
   );

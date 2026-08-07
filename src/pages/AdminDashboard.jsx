@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   BarChart3,
@@ -30,6 +30,13 @@ const EXPENSE_SLICE_COLORS = [
   "#f8b8ca",
   "#7a3b4a",
 ];
+const ADMIN_TABS = [
+  ["overview", "Overview"],
+  ["bookings", "Bookings"],
+  ["income", "Income"],
+  ["expenses", "Expenses"],
+];
+const VALID_ADMIN_TABS = new Set(ADMIN_TABS.map(([key]) => key));
 
 const emptyFinance = {
   totals: {
@@ -85,10 +92,15 @@ function buildAreaPath(points, baseline) {
 }
 
 function AdminDashboard() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [unauthorized, setUnauthorized] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(() => {
+    const requestedTab = searchParams.get("tab");
+
+    return VALID_ADMIN_TABS.has(requestedTab) ? requestedTab : "overview";
+  });
   const [finance, setFinance] = useState(emptyFinance);
   const [error, setError] = useState("");
   const [incomeState, setIncomeState] = useState("idle");
@@ -142,6 +154,31 @@ function AdminDashboard() {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    const requestedTab = searchParams.get("tab");
+    const nextTab = VALID_ADMIN_TABS.has(requestedTab)
+      ? requestedTab
+      : "overview";
+
+    setActiveTab((currentTab) =>
+      currentTab === nextTab ? currentTab : nextTab,
+    );
+  }, [searchParams]);
+
+  const handleTabChange = useCallback(
+    (key) => {
+      setActiveTab(key);
+
+      if (key === "overview") {
+        setSearchParams({});
+        return;
+      }
+
+      setSearchParams({ tab: key });
+    },
+    [setSearchParams],
+  );
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -445,17 +482,12 @@ function AdminDashboard() {
       </header>
 
       <nav className="admin-erp-tabs" aria-label="Admin dashboard tabs">
-        {[
-          ["overview", "Overview"],
-          ["bookings", "Bookings"],
-          ["income", "Income"],
-          ["expenses", "Expenses"],
-        ].map(([key, label]) => (
+        {ADMIN_TABS.map(([key, label]) => (
           <button
             key={key}
             type="button"
             className={activeTab === key ? "active" : ""}
-            onClick={() => setActiveTab(key)}
+            onClick={() => handleTabChange(key)}
           >
             {label}
           </button>

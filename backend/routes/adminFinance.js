@@ -27,6 +27,27 @@ const INCOME_SOURCES = new Set([
 ]);
 
 const RAZORPAY_FEE_RATE = 0.02;
+const ORDER_FINANCE_SELECT = `
+  id,
+  total,
+  payment_status,
+  status,
+  payment_id,
+  payment_source,
+  razorpay_order_id,
+  delivery_type,
+  customer_name,
+  customer_phone,
+  customer_email,
+  created_at,
+  order_items (
+    id,
+    product_name,
+    quantity,
+    price_at_purchase,
+    products ( name )
+  )
+`;
 
 function normalizeText(value, maxLength = 160) {
   return String(value || "").trim().slice(0, maxLength);
@@ -247,6 +268,30 @@ function buildReport(orders, expenses, incomeEntries) {
   };
 }
 
+export async function fetchAdminFinanceReport() {
+  const { data: orders, error: ordersError } = await supabase
+    .from("orders")
+    .select(ORDER_FINANCE_SELECT)
+    .order("created_at", { ascending: false });
+
+  if (ordersError) {
+    throw new Error("Could not load orders");
+  }
+
+  const [{ expenses, tableReady }, { incomeEntries, tableReady: incomeReady }] =
+    await Promise.all([fetchExpenses(), fetchIncome()]);
+  const report = buildReport(orders || [], expenses, incomeEntries);
+
+  return {
+    expenseTableReady: tableReady,
+    incomeTableReady: incomeReady,
+    categories: Array.from(EXPENSE_CATEGORIES),
+    incomeSourceOptions: Array.from(INCOME_SOURCES),
+    razorpayFeeRate: RAZORPAY_FEE_RATE,
+    ...report,
+  };
+}
+
 async function fetchExpenses() {
   const { data, error } = await supabase
     .from("business_expenses")
@@ -279,48 +324,10 @@ async function fetchIncome() {
 
 router.get("/finance", verifyAdmin, async (req, res) => {
   try {
-    const { data: orders, error: ordersError } = await supabase
-      .from("orders")
-      .select(
-        `
-          id,
-          total,
-          payment_status,
-          status,
-          payment_id,
-          payment_source,
-          razorpay_order_id,
-          delivery_type,
-          customer_name,
-          customer_phone,
-          customer_email,
-          created_at,
-          order_items (
-            id,
-            product_name,
-            quantity,
-            price_at_purchase,
-            products ( name )
-          )
-        `,
-      )
-      .order("created_at", { ascending: false });
-
-    if (ordersError) {
-      return res.status(500).json({ error: "Could not load orders" });
-    }
-
-    const [{ expenses, tableReady }, { incomeEntries, tableReady: incomeReady }] =
-      await Promise.all([fetchExpenses(), fetchIncome()]);
-    const report = buildReport(orders || [], expenses, incomeEntries);
+    const report = await fetchAdminFinanceReport();
 
     res.json({
       success: true,
-      expenseTableReady: tableReady,
-      incomeTableReady: incomeReady,
-      categories: Array.from(EXPENSE_CATEGORIES),
-      incomeSourceOptions: Array.from(INCOME_SOURCES),
-      razorpayFeeRate: RAZORPAY_FEE_RATE,
       ...report,
     });
   } catch (err) {
