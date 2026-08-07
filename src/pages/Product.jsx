@@ -119,6 +119,7 @@ function Product() {
   const hasStock = stock !== null;
   const isOutOfStock = stock === 0;
   const isLowStock = stock > 0 && stock < 7;
+  const showStockMessage = isOutOfStock || isLowStock;
   const showNewBadge = isNewProduct(product?.created_at);
 
   useEffect(() => {
@@ -403,27 +404,23 @@ function Product() {
               )}
             </div>
 
-            {(showNewBadge || hasStock) && (
+            {(showNewBadge || showStockMessage) && (
               <div className="product-status-row">
                 {showNewBadge && (
                   <span className="product-status-badge is-new">New</span>
                 )}
 
-                {hasStock && (
+                {showStockMessage && (
                   <span
                     className={`product-stock-status ${
                       isOutOfStock
                         ? "is-empty"
-                        : isLowStock
-                          ? "is-low"
-                          : "is-available"
+                        : "is-low"
                     }`}
                   >
                     {isOutOfStock
                       ? "Out of stock"
-                      : isLowStock
-                        ? `Hurry only ${stock} left!`
-                        : `${stock} in stock`}
+                      : `Hurry only ${stock} left!`}
                   </span>
                 )}
               </div>

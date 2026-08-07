@@ -8,9 +8,9 @@ function ProductCard({ product, onAddToCart }) {
   const [cartState, setCartState] = useState("idle");
   const resetTimerRef = useRef(null);
   const stock = getStockValue(product.stock);
-  const hasStock = stock !== null;
   const isOutOfStock = stock === 0;
   const isLowStock = stock > 0 && stock < 7;
+  const showStockMessage = isOutOfStock || isLowStock;
   const showNewBadge = isNewProduct(product.created_at);
 
   useEffect(() => {
@@ -100,21 +100,15 @@ function ProductCard({ product, onAddToCart }) {
           </span>
         </div>
 
-        {hasStock && (
+        {showStockMessage && (
           <p
             className={`product-card-stock ${
-              isOutOfStock
-                ? "is-empty"
-                : isLowStock
-                  ? "is-low"
-                  : "is-available"
+              isOutOfStock ? "is-empty" : "is-low"
             }`}
           >
             {isOutOfStock
               ? "Out of stock"
-              : isLowStock
-                ? `Only ${stock} left`
-                : `${stock} in stock`}
+              : `Only ${stock} left`}
           </p>
         )}
       </div>
