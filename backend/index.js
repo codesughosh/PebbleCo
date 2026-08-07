@@ -15,6 +15,7 @@ import { verifyFirebaseUser } from "./middleware/auth.js";
 import cartRoutes from "./routes/cart.js";
 import ordersRoutes from "./routes/orders.js";
 import razorpayWebhook from "./routes/razorpayWebhook.js";
+import telegramWebhookRoutes from "./routes/telegramWebhook.js";
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
@@ -77,6 +78,7 @@ app.use("/api/orders", ordersRoutes);
 app.use("/api", paymentRoutes);
 app.use("/api", verifyRoutes);
 app.use("/api", billingInvoiceRoutes);
+app.use("/api", telegramWebhookRoutes);
 app.use("/api/admin", adminOrdersRoutes);
 app.use("/api/admin", adminFinanceRoutes);
 app.use("/api", trackingRoutes);

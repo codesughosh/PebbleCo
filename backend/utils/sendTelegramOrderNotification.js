@@ -1,4 +1,6 @@
 const TELEGRAM_API_BASE = "https://api.telegram.org";
+const ADMIN_ORDERS_URL =
+  process.env.ADMIN_ORDERS_URL || "https://pebbleco.shop/admin/orders";
 
 function getTelegramChatIds() {
   return String(
@@ -10,9 +12,17 @@ function getTelegramChatIds() {
 }
 
 function formatMoney(value) {
-  return `₹${Number(value || 0).toLocaleString("en-IN", {
+  return `Rs. ${Number(value || 0).toLocaleString("en-IN", {
     maximumFractionDigits: 2,
   })}`;
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function formatItems(items = []) {
@@ -27,7 +37,7 @@ function formatItems(items = []) {
         "Product";
       const quantity = Number(item.quantity || 0) || 1;
 
-      return `• ${name} x${quantity}`;
+      return `- ${escapeHtml(name)} x${quantity}`;
     })
     .join("\n");
 }
@@ -40,53 +50,108 @@ function formatDelivery(order) {
 
 function buildOrderMessage({ order, items, paymentLabel }) {
   const lines = [
-    "New PebbleCo Order",
+    "<b>PebbleCo</b>",
+    "<b>New handmade order</b>",
     "",
-    `Name: ${order.customer_name || "Customer"}`,
-    `Phone: ${order.customer_phone || "N/A"}`,
-    `Email: ${order.customer_email || "N/A"}`,
-    `Total: ${formatMoney(order.total)}`,
-    `Delivery: ${formatDelivery(order)}`,
-    `Payment: ${paymentLabel || order.payment_status || "Pending"}`,
+    `<b>Name:</b> ${escapeHtml(order.customer_name || "Customer")}`,
+    `<b>Phone:</b> ${escapeHtml(order.customer_phone || "N/A")}`,
+    `<b>Email:</b> ${escapeHtml(order.customer_email || "N/A")}`,
+    `<b>Total:</b> ${formatMoney(order.total)}`,
+    `<b>Delivery:</b> ${escapeHtml(formatDelivery(order))}`,
+    `<b>Payment:</b> ${escapeHtml(
+      paymentLabel || order.payment_status || "Pending",
+    )}`,
   ];
 
   if (order.payment_id) {
-    lines.push(`Transaction ID: ${order.payment_id}`);
+    lines.push(
+      `<b>Transaction ID:</b> <code>${escapeHtml(order.payment_id)}</code>`,
+    );
   }
 
-  lines.push("", "Items:", formatItems(items), "", `Order ID: ${order.id}`);
+  lines.push(
+    "",
+    "<b>Items</b>",
+    formatItems(items),
+    "",
+    `<b>Order ID:</b> <code>${escapeHtml(order.id)}</code>`,
+  );
 
   return lines.join("\n");
+}
+
+function buildReplyMarkup({ order, includeVerifyButton }) {
+  const rows = [];
+
+  if (includeVerifyButton) {
+    rows.push([
+      {
+        text: "Verify UPI payment",
+        callback_data: `verify_order:${order.id}`,
+      },
+    ]);
+  }
+
+  rows.push([{ text: "Open admin orders", url: ADMIN_ORDERS_URL }]);
+
+  return { inline_keyboard: rows };
+}
+
+async function sendTelegramRequest(method, payload) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+
+  if (!token) {
+    return { skipped: true };
+  }
+
+  const res = await fetch(`${TELEGRAM_API_BASE}/bot${token}/${method}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Telegram ${res.status}: ${errorText}`);
+  }
+
+  return res.json();
+}
+
+export function buildVerifiedOrderMessage(order) {
+  return [
+    "<b>PebbleCo</b>",
+    "<b>Payment verified</b>",
+    "",
+    `<b>Name:</b> ${escapeHtml(order.customer_name || "Customer")}`,
+    `<b>Total:</b> ${formatMoney(order.total)}`,
+    `<b>Order ID:</b> <code>${escapeHtml(order.id)}</code>`,
+    "",
+    "Confirmation email sent with Brevo.",
+  ].join("\n");
 }
 
 export async function sendTelegramOrderNotification({
   order,
   items = [],
   paymentLabel,
+  includeVerifyButton = false,
 }) {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatIds = getTelegramChatIds();
 
-  if (!token || chatIds.length === 0) {
+  if (!process.env.TELEGRAM_BOT_TOKEN || chatIds.length === 0) {
     return { skipped: true };
   }
 
   const text = buildOrderMessage({ order, items, paymentLabel });
   const results = await Promise.allSettled(
     chatIds.map((chatId) =>
-      fetch(`${TELEGRAM_API_BASE}/bot${token}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text,
-          disable_web_page_preview: true,
-        }),
-      }).then(async (res) => {
-        if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(`Telegram ${res.status}: ${errorText}`);
-        }
+      sendTelegramRequest("sendMessage", {
+        chat_id: chatId,
+        text,
+        parse_mode: "HTML",
+        disable_web_page_preview: true,
+        reply_markup: buildReplyMarkup({ order, includeVerifyButton }),
       }),
     ),
   );
@@ -95,6 +160,54 @@ export async function sendTelegramOrderNotification({
   if (failed.length > 0) {
     console.error("Telegram order notification failed:", failed);
   }
+
+  return {
+    sent: results.length - failed.length,
+    failed: failed.length,
+  };
+}
+
+export async function answerTelegramCallback(callbackQueryId, text) {
+  if (!callbackQueryId) return { skipped: true };
+
+  return sendTelegramRequest("answerCallbackQuery", {
+    callback_query_id: callbackQueryId,
+    text,
+    show_alert: false,
+  });
+}
+
+export async function removeTelegramInlineKeyboard({ chatId, messageId }) {
+  if (!chatId || !messageId) return { skipped: true };
+
+  return sendTelegramRequest("editMessageReplyMarkup", {
+    chat_id: chatId,
+    message_id: messageId,
+    reply_markup: {
+      inline_keyboard: [[{ text: "Open admin orders", url: ADMIN_ORDERS_URL }]],
+    },
+  });
+}
+
+export async function sendTelegramAdminMessage(text) {
+  const chatIds = getTelegramChatIds();
+
+  if (!process.env.TELEGRAM_BOT_TOKEN || chatIds.length === 0) {
+    return { skipped: true };
+  }
+
+  const results = await Promise.allSettled(
+    chatIds.map((chatId) =>
+      sendTelegramRequest("sendMessage", {
+        chat_id: chatId,
+        text,
+        parse_mode: "HTML",
+        disable_web_page_preview: true,
+      }),
+    ),
+  );
+
+  const failed = results.filter((result) => result.status === "rejected");
 
   return {
     sent: results.length - failed.length,

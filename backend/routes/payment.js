@@ -164,6 +164,7 @@ router.post("/manual-upi-order", verifyFirebaseUser, async (req, res) => {
         order: dbOrder,
         items: buildOrderItems(dbOrder.id, cartItems),
         paymentLabel: "UPI pending verification",
+        includeVerifyButton: true,
       });
     } catch (notifyError) {
       console.error("Manual UPI Telegram notification failed:", notifyError);
