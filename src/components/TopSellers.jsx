@@ -5,6 +5,40 @@ import { auth } from "../firebase";
 import { addToCart } from "../services/cart";
 import { ProductGridSkeleton } from "../components/Skeleton";
 
+const TOP_SELLERS_LIMIT = 3;
+const FEATURED_TOP_SELLERS = [
+  {
+    matches: (name) => name.includes("diet coke"),
+  },
+  {
+    matches: (name) => name.includes("redbull") || name.includes("red bull"),
+  },
+];
+
+function normalizeProductName(product) {
+  return String(product?.name || "").toLowerCase();
+}
+
+function prioritizeFeaturedProducts(products) {
+  return FEATURED_TOP_SELLERS.map((featured) =>
+    products.find((product) => featured.matches(normalizeProductName(product))),
+  ).filter(Boolean);
+}
+
+function mergeUniqueProducts(...productGroups) {
+  const seen = new Set();
+
+  return productGroups
+    .flat()
+    .filter((product) => {
+      if (!product?.id || seen.has(product.id)) return false;
+
+      seen.add(product.id);
+      return true;
+    })
+    .slice(0, TOP_SELLERS_LIMIT);
+}
+
 function TopSellers() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,12 +62,17 @@ function TopSellers() {
   };
 
   const fetchTopSellers = useCallback(async () => {
-    // 🔹 Check if any product is sold yet
+    const { data: featuredData } = await supabase
+      .from("products")
+      .select("*")
+      .or("name.ilike.%Diet Coke%,name.ilike.%Redbull%,name.ilike.%Red Bull%");
+    const featuredProducts = prioritizeFeaturedProducts(featuredData || []);
+    let rankedProducts = [];
+
     const { count } = await supabase
       .from("order_items")
       .select("*", { count: "exact", head: true });
 
-    // 🔹 CASE 1: Real top sellers
     if (count > 0) {
       const { data, error } = await supabase
         .from("top_selling_products")
@@ -41,29 +80,27 @@ function TopSellers() {
           `
           total_sold,
           products (*)
-        `
+        `,
         )
         .order("total_sold", { ascending: false })
-        .limit(3);
+        .limit(TOP_SELLERS_LIMIT);
 
       if (!error && data) {
-        setProducts(data.map((item) => item.products));
+        rankedProducts = data.map((item) => item.products).filter(Boolean);
       }
-    }
-
-    // 🔹 CASE 2: Fallback (nothing sold yet)
-    else {
+    } else {
       const { data, error } = await supabase
         .from("products")
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(3);
+        .limit(TOP_SELLERS_LIMIT);
 
       if (!error && data) {
-        setProducts(data);
+        rankedProducts = data;
       }
     }
 
+    setProducts(mergeUniqueProducts(featuredProducts, rankedProducts));
     setLoading(false);
   }, []);
 
