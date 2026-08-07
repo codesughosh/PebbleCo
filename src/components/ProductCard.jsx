@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getStockValue, isNewProduct } from "../utils/productStatus";
 import "../styles/product-card.css";
 
 function ProductCard({ product, onAddToCart }) {
   const navigate = useNavigate();
   const [cartState, setCartState] = useState("idle");
   const resetTimerRef = useRef(null);
+  const stock = getStockValue(product.stock);
+  const hasStock = stock !== null;
+  const isOutOfStock = stock === 0;
+  const isLowStock = stock > 0 && stock < 7;
+  const showNewBadge = isNewProduct(product.created_at);
 
   useEffect(() => {
     return () => {
@@ -30,7 +36,7 @@ function ProductCard({ product, onAddToCart }) {
   const handleAddClick = async (event) => {
     event.stopPropagation();
 
-    if (!onAddToCart || cartState !== "idle") return;
+    if (!onAddToCart || isOutOfStock || cartState !== "idle") return;
 
     setCartState("loading");
 
@@ -58,7 +64,10 @@ function ProductCard({ product, onAddToCart }) {
   };
 
   return (
-    <article className="product-card" onClick={goToProduct}>
+    <article
+      className={`product-card${isOutOfStock ? " is-out-of-stock" : ""}`}
+      onClick={goToProduct}
+    >
       <div className="product-media">
         <img
           src={
@@ -71,6 +80,7 @@ function ProductCard({ product, onAddToCart }) {
           className="product-image"
         />
 
+        {showNewBadge && <span className="product-new-badge">New</span>}
         {discount && <span className="discount-badge">{discount}% OFF</span>}
       </div>
 
@@ -89,28 +99,50 @@ function ProductCard({ product, onAddToCart }) {
             {product.price}
           </span>
         </div>
+
+        {hasStock && (
+          <p
+            className={`product-card-stock ${
+              isOutOfStock
+                ? "is-empty"
+                : isLowStock
+                  ? "is-low"
+                  : "is-available"
+            }`}
+          >
+            {isOutOfStock
+              ? "Out of stock"
+              : isLowStock
+                ? `Only ${stock} left`
+                : `${stock} in stock`}
+          </p>
+        )}
       </div>
 
-      <button
-        type="button"
-        className={`product-add-btn add-cart-action is-${cartState}`}
-        onClick={handleAddClick}
-        disabled={!onAddToCart}
-        aria-disabled={!onAddToCart || cartState !== "idle"}
-        aria-busy={cartState === "loading"}
-        aria-live="polite"
-      >
-        {cartState === "loading" && (
-          <span className="add-cart-spinner" aria-hidden="true" />
-        )}
-        <span>
-          {cartState === "added"
-            ? "Added!"
-            : cartState === "loading"
-              ? "Adding"
-              : "Add to Cart"}
-        </span>
-      </button>
+      {isOutOfStock ? (
+        <span className="product-out-stock-pill">Out of stock</span>
+      ) : (
+        <button
+          type="button"
+          className={`product-add-btn add-cart-action is-${cartState}`}
+          onClick={handleAddClick}
+          disabled={!onAddToCart}
+          aria-disabled={!onAddToCart || cartState !== "idle"}
+          aria-busy={cartState === "loading"}
+          aria-live="polite"
+        >
+          {cartState === "loading" && (
+            <span className="add-cart-spinner" aria-hidden="true" />
+          )}
+          <span>
+            {cartState === "added"
+              ? "Added!"
+              : cartState === "loading"
+                ? "Adding"
+                : "Add to Cart"}
+          </span>
+        </button>
+      )}
     </article>
   );
 }

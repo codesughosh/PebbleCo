@@ -14,6 +14,13 @@ function cleanString(value, maxLength = 160) {
   return String(value || "").trim().slice(0, maxLength);
 }
 
+function getStockValue(stock) {
+  if (stock === null || stock === undefined || stock === "") return null;
+
+  const value = Number(stock);
+  return Number.isFinite(value) ? Math.max(0, Math.floor(value)) : null;
+}
+
 function hasValidPhone(phone) {
   return /^\d{10}$/.test(phone);
 }
@@ -98,7 +105,8 @@ export async function fetchCheckoutCart(supabase, userId) {
         product:products (
           id,
           name,
-          price
+          price,
+          stock
         )
       `,
     )
@@ -115,6 +123,7 @@ export async function fetchCheckoutCart(supabase, userId) {
   return data.map((item) => {
     const quantity = Number(item.quantity);
     const price = Number(item.product?.price);
+    const stock = getStockValue(item.product?.stock);
 
     if (
       !item.product?.id ||
@@ -125,6 +134,17 @@ export async function fetchCheckoutCart(supabase, userId) {
       price < 0
     ) {
       throw new CheckoutError("Cart has invalid items");
+    }
+
+    if (stock === 0) {
+      throw new CheckoutError(`${item.product.name || "Product"} is out of stock`, 409);
+    }
+
+    if (stock !== null && quantity > stock) {
+      throw new CheckoutError(
+        `Only ${stock} left for ${item.product.name || "this product"}`,
+        409,
+      );
     }
 
     return {

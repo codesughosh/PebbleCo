@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { ProductDetailSkeleton } from "../components/Skeleton";
 import { supabase } from "../supabaseClient";
+import { getStockValue, isNewProduct } from "../utils/productStatus";
 import "../styles/product.css";
 
 function Product() {
@@ -114,6 +115,17 @@ function Product() {
             100,
         )
       : null;
+  const stock = getStockValue(product?.stock);
+  const hasStock = stock !== null;
+  const isOutOfStock = stock === 0;
+  const isLowStock = stock > 0 && stock < 7;
+  const showNewBadge = isNewProduct(product?.created_at);
+
+  useEffect(() => {
+    if (stock === null || stock === 0) return;
+
+    setQuantity((current) => Math.min(current, stock));
+  }, [stock]);
 
   const formatDate = (dateStr) =>
     new Date(dateStr).toLocaleDateString("en-IN", {
@@ -217,6 +229,14 @@ function Product() {
 
   const addToCart = async () => {
     if (cartButtonState !== "idle") return;
+
+    if (isOutOfStock) return;
+
+    if (stock !== null && quantity > stock) {
+      setQuantity(stock);
+      alert(`Only ${stock} left in stock`);
+      return;
+    }
 
     if (!user) {
       alert("Please login to add items to cart");
@@ -383,45 +403,83 @@ function Product() {
               )}
             </div>
 
-            <div className="product-quantity">
-              <button
-                type="button"
-                onClick={() =>
-                  quantity > 1 && setQuantity((current) => current - 1)
-                }
-                aria-label="Decrease quantity"
-              >
-                -
-              </button>
-              <span>{quantity}</span>
-              <button
-                type="button"
-                onClick={() => setQuantity((current) => current + 1)}
-                aria-label="Increase quantity"
-              >
-                +
-              </button>
-            </div>
+            {(showNewBadge || hasStock) && (
+              <div className="product-status-row">
+                {showNewBadge && (
+                  <span className="product-status-badge is-new">New</span>
+                )}
 
-            <button
-              type="button"
-              className={`product-primary-btn add-cart-action is-${cartButtonState}`}
-              onClick={addToCart}
-              disabled={cartButtonState !== "idle"}
-              aria-busy={cartButtonState === "loading"}
-              aria-live="polite"
-            >
-              {cartButtonState === "loading" && (
-                <span className="add-cart-spinner" aria-hidden="true" />
-              )}
-              <span>
-                {cartButtonState === "added"
-                  ? "Added!"
-                  : cartButtonState === "loading"
-                    ? "Adding"
-                    : "Add to Cart"}
-              </span>
-            </button>
+                {hasStock && (
+                  <span
+                    className={`product-stock-status ${
+                      isOutOfStock
+                        ? "is-empty"
+                        : isLowStock
+                          ? "is-low"
+                          : "is-available"
+                    }`}
+                  >
+                    {isOutOfStock
+                      ? "Out of stock"
+                      : isLowStock
+                        ? `Hurry only ${stock} left!`
+                        : `${stock} in stock`}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {isOutOfStock ? (
+              <p className="product-out-stock-panel">Out of stock</p>
+            ) : (
+              <>
+                <div className="product-quantity">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      quantity > 1 && setQuantity((current) => current - 1)
+                    }
+                    disabled={quantity <= 1}
+                    aria-label="Decrease quantity"
+                  >
+                    -
+                  </button>
+                  <span>{quantity}</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setQuantity((current) =>
+                        hasStock ? Math.min(current + 1, stock) : current + 1,
+                      )
+                    }
+                    disabled={hasStock && quantity >= stock}
+                    aria-label="Increase quantity"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  className={`product-primary-btn add-cart-action is-${cartButtonState}`}
+                  onClick={addToCart}
+                  disabled={cartButtonState !== "idle"}
+                  aria-busy={cartButtonState === "loading"}
+                  aria-live="polite"
+                >
+                  {cartButtonState === "loading" && (
+                    <span className="add-cart-spinner" aria-hidden="true" />
+                  )}
+                  <span>
+                    {cartButtonState === "added"
+                      ? "Added!"
+                      : cartButtonState === "loading"
+                        ? "Adding"
+                        : "Add to Cart"}
+                  </span>
+                </button>
+              </>
+            )}
 
             <p className="product-short-desc">{product.description}</p>
           </div>
@@ -587,30 +645,38 @@ function Product() {
       </div>
 
       {isMobile && (
-        <div className="product-sticky-cart">
+        <div
+          className={`product-sticky-cart${
+            isOutOfStock ? " is-out-of-stock" : ""
+          }`}
+        >
           <strong>
             {"\u20B9"}
             {product.price * quantity}
           </strong>
-          <button
-            type="button"
-            className={`add-cart-action is-${cartButtonState}`}
-            onClick={addToCart}
-            disabled={cartButtonState !== "idle"}
-            aria-busy={cartButtonState === "loading"}
-            aria-live="polite"
-          >
-            {cartButtonState === "loading" && (
-              <span className="add-cart-spinner" aria-hidden="true" />
-            )}
-            <span>
-              {cartButtonState === "added"
-                ? "Added!"
-                : cartButtonState === "loading"
-                  ? "Adding"
-                  : "Add to Cart"}
-            </span>
-          </button>
+          {isOutOfStock ? (
+            <span className="product-sticky-stock-out">Out of stock</span>
+          ) : (
+            <button
+              type="button"
+              className={`add-cart-action is-${cartButtonState}`}
+              onClick={addToCart}
+              disabled={cartButtonState !== "idle"}
+              aria-busy={cartButtonState === "loading"}
+              aria-live="polite"
+            >
+              {cartButtonState === "loading" && (
+                <span className="add-cart-spinner" aria-hidden="true" />
+              )}
+              <span>
+                {cartButtonState === "added"
+                  ? "Added!"
+                  : cartButtonState === "loading"
+                    ? "Adding"
+                    : "Add to Cart"}
+              </span>
+            </button>
+          )}
         </div>
       )}
 
