@@ -11,6 +11,7 @@ import {
   normalizeDeliveryDetails,
   normalizeUpiTransactionId,
 } from "../utils/checkout.js";
+import { sendTelegramOrderNotification } from "../utils/sendTelegramOrderNotification.js";
 
 const router = express.Router();
 
@@ -156,6 +157,16 @@ router.post("/manual-upi-order", verifyFirebaseUser, async (req, res) => {
 
     if (cartError) {
       console.error("Manual UPI cart clear failed:", cartError);
+    }
+
+    try {
+      await sendTelegramOrderNotification({
+        order: dbOrder,
+        items: buildOrderItems(dbOrder.id, cartItems),
+        paymentLabel: "UPI pending verification",
+      });
+    } catch (notifyError) {
+      console.error("Manual UPI Telegram notification failed:", notifyError);
     }
 
     res.json({

@@ -2,6 +2,7 @@ import express from "express";
 import crypto from "crypto";
 import { supabase } from "../supabase.js";
 import { sendOrderEmail } from "../utils/sendOrderEmail.js";
+import { sendTelegramOrderNotification } from "../utils/sendTelegramOrderNotification.js";
 import { createShiprocketOrder } from "../services/createShiprocketOrder.js";
 import { calculateOrderItemsTotal } from "../utils/checkout.js";
 
@@ -63,7 +64,7 @@ const payment = body.payload?.payment?.entity;
 
       const { data: pendingItems, error: pendingError } = await supabase
         .from("pending_order_items")
-        .select("quantity, price_at_purchase, product:products(price)")
+        .select("quantity, price_at_purchase, product:products(name, price)")
         .eq("order_id", order.id);
 
       if (pendingError) {
@@ -115,6 +116,29 @@ const payment = body.payload?.payment?.entity;
           orderId: order.id,
           total: verifiedTotal,
         });
+      }
+
+      const { data: notificationItems } = await supabase
+        .from("order_items")
+        .select("*")
+        .eq("order_id", order.id);
+
+      try {
+        await sendTelegramOrderNotification({
+          order: {
+            ...order,
+            total: verifiedTotal,
+            payment_status: "success",
+            payment_id: payment.id,
+          },
+          items:
+            notificationItems && notificationItems.length > 0
+              ? notificationItems
+              : pendingItems,
+          paymentLabel: "Razorpay paid",
+        });
+      } catch (notifyError) {
+        console.error("Webhook Telegram notification failed:", notifyError);
       }
 
       // Create Shiprocket order (only for shipping)

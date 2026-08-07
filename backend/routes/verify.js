@@ -4,6 +4,7 @@ import { supabase } from "../supabase.js";
 import { verifyFirebaseUser } from "../middleware/auth.js";
 import { createShiprocketOrder } from "../services/createShiprocketOrder.js";
 import { sendOrderEmail } from "../utils/sendOrderEmail.js";
+import { sendTelegramOrderNotification } from "../utils/sendTelegramOrderNotification.js";
 import { calculateOrderItemsTotal } from "../utils/checkout.js";
 
 const router = express.Router();
@@ -75,7 +76,7 @@ router.post("/verify-payment", verifyFirebaseUser, async (req, res) => {
     if (!alreadySuccess) {
       const { data: pendingItems, error: pendingError } = await supabase
         .from("pending_order_items")
-        .select("quantity, price_at_purchase, product:products(price)")
+        .select("quantity, price_at_purchase, product:products(name, price)")
         .eq("order_id", orderId);
 
       if (pendingError) {
@@ -131,6 +132,23 @@ router.post("/verify-payment", verifyFirebaseUser, async (req, res) => {
         orderId: order.id,
         total: confirmedTotal,
       });
+    }
+
+    if (!alreadySuccess) {
+      try {
+        await sendTelegramOrderNotification({
+          order: {
+            ...order,
+            total: confirmedTotal,
+            payment_status: "success",
+            payment_id: razorpay_payment_id,
+          },
+          items: orderItems,
+          paymentLabel: "Razorpay paid",
+        });
+      } catch (notifyError) {
+        console.error("Razorpay Telegram notification failed:", notifyError);
+      }
     }
 
     await supabase
