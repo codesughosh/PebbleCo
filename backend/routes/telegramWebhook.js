@@ -68,24 +68,24 @@ function formatTopRows(rows, labelKey) {
 function buildWelcomeMessage({ chatId, authorized }) {
   if (!authorized) {
     return [
-      "<b>PebbleCo order desk</b>",
+      "🌸 <b>PebbleCo order desk</b>",
       "",
-      "Hi. This bot is private for PebbleCo admin updates.",
+      "Hi hi. This little bot is private for PebbleCo admin updates.",
       "Ask the admin to add this chat ID to <code>TELEGRAM_CHAT_IDS</code>:",
       `<code>${escapeTelegramHtml(chatId)}</code>`,
     ].join("\n");
   }
 
   return [
-    "<b>PebbleCo order desk</b>",
+    "🌸 <b>PebbleCo order desk</b>",
     "",
-    "Hi, welcome in. I can keep the tiny business desk moving while orders come in.",
+    "Hi, welcome in. I keep the tiny handmade business desk tidy while orders come in.",
     "",
-    "<b>What I can do</b>",
+    "✨ <b>What I can do</b>",
     "<code>/stats</code> - complete ERP money snapshot",
     "<code>/help</code> - quick admin links",
     "",
-    "New UPI orders will arrive here with a verify button, and verified payments can trigger the Brevo confirmation email.",
+    "UPI orders will land here with a verify button. Tap it only after checking the payment, and then I send the customer email. 💌",
   ].join("\n");
 }
 
@@ -102,10 +102,10 @@ function buildStatsMessage(report) {
   }
 
   return [
-    "<b>PebbleCo complete ERP stats</b>",
+    "📊 <b>PebbleCo complete ERP stats</b>",
     `<i>All-time totals, refreshed ${escapeTelegramHtml(formatStatsDate())}</i>`,
     "",
-    "<b>Money</b>",
+    "💸 <b>Money</b>",
     `All bookings: <b>${formatTelegramMoney(totals.allBookings)}</b>`,
     `Gross order income: <b>${formatTelegramMoney(totals.grossOrderIncome)}</b>`,
     `Razorpay fees: <b>${formatTelegramMoney(totals.razorpayFees)}</b>`,
@@ -115,7 +115,7 @@ function buildStatsMessage(report) {
     `Expenses: <b>${formatTelegramMoney(totals.expenses)}</b>`,
     `Net profit: <b>${formatTelegramMoney(totals.netProfit)}</b>`,
     "",
-    "<b>Orders</b>",
+    "🛍️ <b>Orders</b>",
     `Active orders: <b>${Number(totals.orderCount || 0)}</b>`,
     `Paid orders: <b>${Number(totals.paidOrderCount || 0)}</b>`,
     `Pending checks: <b>${Number(totals.pendingOrderCount || 0)}</b> worth <b>${formatTelegramMoney(
@@ -123,10 +123,10 @@ function buildStatsMessage(report) {
     )}</b>`,
     `Items booked: <b>${Number(totals.itemCount || 0)}</b>`,
     "",
-    "<b>Top expense types</b>",
+    "💗 <b>Top expense types</b>",
     formatTopRows(report.expenseCategories || [], "category"),
     "",
-    "<b>Income sources</b>",
+    "💚 <b>Income sources</b>",
     formatTopRows(report.incomeSources || [], "source"),
     ...(tableNotes.length ? ["", `<i>${escapeTelegramHtml(tableNotes.join(" "))}</i>`] : []),
   ].join("\n");
@@ -160,9 +160,9 @@ async function handleTelegramMessage(message) {
       await sendTelegramMessage({
         chatId,
         text: [
-          "<b>PebbleCo ERP snapshot</b>",
+          "📊 <b>PebbleCo ERP snapshot</b>",
           "",
-          "I could not fetch the money desk right now. Open the ERP and try again in a bit.",
+          "I could not fetch the money desk right now. The tiny ledger needs a retry.",
         ].join("\n"),
         replyMarkup: buildAdminLinksKeyboard(),
       });
@@ -185,7 +185,7 @@ async function handleTelegramMessage(message) {
   await sendTelegramMessage({
     chatId,
     text: authorized
-      ? "I know <code>/stats</code> and <code>/help</code>. Small desk, useful buttons."
+      ? "I know <code>/stats</code> and <code>/help</code>. Tiny desk, useful buttons. ✨"
       : buildWelcomeMessage({ chatId, authorized }),
     replyMarkup: authorized ? buildAdminLinksKeyboard() : undefined,
   });
@@ -209,7 +209,7 @@ async function verifyManualPayment(orderId) {
       ok: true,
       alreadyVerified: true,
       order,
-      message: "Already verified.",
+      message: "Already verified. 💌",
     };
   }
 
@@ -244,7 +244,7 @@ async function verifyManualPayment(orderId) {
     return {
       ok: true,
       order: { ...order, payment_status: "success" },
-      message: "Verified, but customer email is missing.",
+      message: "Verified, but customer email is missing. 💌",
     };
   }
 
@@ -264,7 +264,7 @@ async function verifyManualPayment(orderId) {
       ok: true,
       emailFailed: true,
       order: { ...order, payment_status: "success" },
-      message: "Payment verified, but confirmation email failed.",
+      message: "Payment verified, but the email had a tiny wobble.",
     };
   }
 
@@ -272,7 +272,7 @@ async function verifyManualPayment(orderId) {
     ok: true,
     emailSent: true,
     order: { ...order, payment_status: "success" },
-    message: "Payment verified. Confirmation email sent.",
+    message: "Payment verified. Confirmation email sent. 💌",
   };
 }
 
@@ -296,13 +296,13 @@ router.post("/telegram-webhook", async (req, res) => {
   }
 
   if (!isAuthorizedTelegramChat(callback.message?.chat?.id)) {
-    await answerTelegramCallback(callback.id, "This PebbleCo action is private.");
+    await answerTelegramCallback(callback.id, "This PebbleCo action is private. 🌸");
     return res.json({ ok: true });
   }
 
   const orderId = getCallbackOrderId(callback.data);
   if (!orderId) {
-    await answerTelegramCallback(callback.id, "Unknown PebbleCo action.");
+    await answerTelegramCallback(callback.id, "Unknown PebbleCo action. ✨");
     return res.json({ ok: true });
   }
 

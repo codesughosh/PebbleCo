@@ -60,31 +60,32 @@ function formatDelivery(order) {
 
 function buildOrderMessage({ order, items, paymentLabel }) {
   const lines = [
-    "<b>PebbleCo</b>",
-    "<b>New handmade order</b>",
+    "🌸 <b>PebbleCo order desk</b>",
+    "🛍️ <b>New handmade order just came in!</b>",
+    "A tiny parcel is waiting for your magic check.",
     "",
-    `<b>Name:</b> ${escapeTelegramHtml(order.customer_name || "Customer")}`,
-    `<b>Phone:</b> ${escapeTelegramHtml(order.customer_phone || "N/A")}`,
-    `<b>Email:</b> ${escapeTelegramHtml(order.customer_email || "N/A")}`,
-    `<b>Total:</b> ${formatTelegramMoney(order.total)}`,
-    `<b>Delivery:</b> ${escapeTelegramHtml(formatDelivery(order))}`,
-    `<b>Payment:</b> ${escapeTelegramHtml(
+    `👤 <b>Name:</b> ${escapeTelegramHtml(order.customer_name || "Customer")}`,
+    `📞 <b>Phone:</b> ${escapeTelegramHtml(order.customer_phone || "N/A")}`,
+    `💌 <b>Email:</b> ${escapeTelegramHtml(order.customer_email || "N/A")}`,
+    `💸 <b>Total:</b> ${formatTelegramMoney(order.total)}`,
+    `📦 <b>Delivery:</b> ${escapeTelegramHtml(formatDelivery(order))}`,
+    `🧾 <b>Payment:</b> ${escapeTelegramHtml(
       paymentLabel || order.payment_status || "Pending",
     )}`,
   ];
 
   if (order.payment_id) {
     lines.push(
-      `<b>Transaction ID:</b> <code>${escapeTelegramHtml(order.payment_id)}</code>`,
+      `🔎 <b>Transaction ID:</b> <code>${escapeTelegramHtml(order.payment_id)}</code>`,
     );
   }
 
   lines.push(
     "",
-    "<b>Items</b>",
+    "🎀 <b>Items</b>",
     formatItems(items),
     "",
-    `<b>Order ID:</b> <code>${escapeTelegramHtml(order.id)}</code>`,
+    `🪄 <b>Order ID:</b> <code>${escapeTelegramHtml(order.id)}</code>`,
   );
 
   return lines.join("\n");
@@ -94,12 +95,12 @@ export function buildAdminLinksKeyboard() {
   return {
     inline_keyboard: [
       [
-        { text: "Open ERP", url: ADMIN_BASE_URL },
-        { text: "Orders", url: ADMIN_ORDERS_URL },
+        { text: "📊 Open ERP", url: ADMIN_BASE_URL },
+        { text: "🧾 Orders", url: ADMIN_ORDERS_URL },
       ],
       [
-        { text: "Income", url: ADMIN_INCOME_URL },
-        { text: "Expenses", url: ADMIN_EXPENSES_URL },
+        { text: "💚 Income", url: ADMIN_INCOME_URL },
+        { text: "💗 Expenses", url: ADMIN_EXPENSES_URL },
       ],
     ],
   };
@@ -111,7 +112,7 @@ function buildReplyMarkup({ order, includeVerifyButton }) {
   if (includeVerifyButton) {
     rows.push([
       {
-        text: "Verify UPI payment",
+        text: "✅ Verify UPI payment",
         callback_data: `verify_order:${order.id}`,
       },
     ]);
@@ -146,13 +147,12 @@ async function sendTelegramRequest(method, payload) {
 export function buildVerifiedOrderMessage(order) {
   return [
     "<b>PebbleCo</b>",
-    "<b>Payment verified</b>",
+    "✅ <b>Payment verified</b>",
+    "The customer confirmation email has been sent. Tiny order desk is happy.",
     "",
-    `<b>Name:</b> ${escapeTelegramHtml(order.customer_name || "Customer")}`,
-    `<b>Total:</b> ${formatTelegramMoney(order.total)}`,
-    `<b>Order ID:</b> <code>${escapeTelegramHtml(order.id)}</code>`,
-    "",
-    "Marked paid and confirmation email sent with Brevo.",
+    `👤 <b>Name:</b> ${escapeTelegramHtml(order.customer_name || "Customer")}`,
+    `💸 <b>Total:</b> ${formatTelegramMoney(order.total)}`,
+    `🪄 <b>Order ID:</b> <code>${escapeTelegramHtml(order.id)}</code>`,
   ].join("\n");
 }
 

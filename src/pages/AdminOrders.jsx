@@ -339,7 +339,9 @@ function AdminOrders() {
               >
                 <option value="pending">Payment pending</option>
                 <option value="pending_verification">Pending verification</option>
-                <option value="success">Paid</option>
+                <option value="success" disabled={o.payment_status !== "success"}>
+                  Paid (Telegram verified)
+                </option>
                 <option value="rejected">Rejected</option>
               </select>
               {renderActionFeedback(o.id, "payment")}
