@@ -1,3 +1,4 @@
+/* global Buffer, process */
 import express from "express";
 import crypto from "crypto";
 import { supabase } from "../supabase.js";
@@ -5,6 +6,10 @@ import { sendOrderEmail } from "../utils/sendOrderEmail.js";
 import { sendTelegramOrderNotification } from "../utils/sendTelegramOrderNotification.js";
 import { createShiprocketOrder } from "../services/createShiprocketOrder.js";
 import { calculateOrderItemsTotal } from "../utils/checkout.js";
+import {
+  applyStockDecrementPlan,
+  createStockDecrementPlan,
+} from "../utils/inventory.js";
 
 const router = express.Router();
 
@@ -40,7 +45,7 @@ router.post("/razorpay-webhook", async (req, res) => {
     }
 
     const event = body.event;
-const payment = body.payload?.payment?.entity;
+    const payment = body.payload?.payment?.entity;
 
     if (event === "payment.captured" && payment) {
       const razorpayOrderId = payment.order_id;
@@ -64,7 +69,9 @@ const payment = body.payload?.payment?.entity;
 
       const { data: pendingItems, error: pendingError } = await supabase
         .from("pending_order_items")
-        .select("quantity, price_at_purchase, product:products(name, price)")
+        .select(
+          "product_id, product_name, quantity, price_at_purchase, product:products(id, name, price)",
+        )
         .eq("order_id", order.id);
 
       if (pendingError) {
@@ -92,8 +99,25 @@ const payment = body.payload?.payment?.entity;
         return res.status(400).send("Payment amount mismatch");
       }
 
+      let stockItems = pendingItems;
+      if (!stockItems || stockItems.length === 0) {
+        const { data: existingItems, error: existingItemsError } = await supabase
+          .from("order_items")
+          .select("product_id, product_name, quantity")
+          .eq("order_id", order.id);
+
+        if (existingItemsError) {
+          console.error("Webhook existing item fetch failed:", existingItemsError);
+          return res.status(500).send("Unable to verify order stock");
+        }
+
+        stockItems = existingItems;
+      }
+
+      const stockPlan = await createStockDecrementPlan(supabase, stockItems);
+
       // Update order
-      await supabase
+      const { data: updatedOrder, error: updateError } = await supabase
         .from("orders")
         .update({
           status: "paid",
@@ -101,7 +125,36 @@ const payment = body.payload?.payment?.entity;
           payment_id: payment.id,
           total: verifiedTotal,
         })
-        .eq("id", order.id);
+        .eq("id", order.id)
+        .neq("payment_status", "success")
+        .select("id")
+        .maybeSingle();
+
+      if (updateError) {
+        console.error("Webhook order status update failed:", updateError);
+        return res.status(500).send("Unable to update order status");
+      }
+
+      if (!updatedOrder) {
+        return res.send("Already processed");
+      }
+
+      try {
+        await applyStockDecrementPlan(supabase, stockPlan);
+      } catch (inventoryError) {
+        await supabase
+          .from("orders")
+          .update({
+            status: "pending",
+            payment_status: "pending",
+            payment_id: null,
+          })
+          .eq("id", order.id)
+          .eq("payment_status", "success")
+          .eq("payment_id", payment.id);
+
+        throw inventoryError;
+      }
 
       // Clear cart for user (in case frontend never returned)
       if (order.user_id) {

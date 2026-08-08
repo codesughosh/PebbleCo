@@ -4,6 +4,11 @@ import { supabase } from "../supabase.js";
 import { sendOrderEmail } from "../utils/sendOrderEmail.js";
 import { fetchAdminFinanceReport } from "./adminFinance.js";
 import {
+  applyStockDecrementPlan,
+  createStockDecrementPlan,
+  InventoryError,
+} from "../utils/inventory.js";
+import {
   answerTelegramCallback,
   buildAdminLinksKeyboard,
   buildVerifiedOrderMessage,
@@ -221,6 +226,31 @@ async function verifyManualPayment(orderId) {
     };
   }
 
+  const { data: orderItems, error: itemsError } = await supabase
+    .from("order_items")
+    .select("product_id, product_name, quantity")
+    .eq("order_id", orderId);
+
+  if (itemsError) {
+    console.error("Telegram verification item fetch failed:", itemsError);
+    throw new Error("Failed to fetch order items");
+  }
+
+  let stockPlan = [];
+  try {
+    stockPlan = await createStockDecrementPlan(supabase, orderItems);
+  } catch (inventoryError) {
+    if (inventoryError instanceof InventoryError) {
+      return {
+        ok: false,
+        order,
+        message: inventoryError.message,
+      };
+    }
+
+    throw inventoryError;
+  }
+
   const { data: updatedOrder, error: updateError } = await supabase
     .from("orders")
     .update({
@@ -238,6 +268,29 @@ async function verifyManualPayment(orderId) {
 
   if (!updatedOrder) {
     return { ok: false, order, message: "Order status changed. Refresh admin." };
+  }
+
+  try {
+    await applyStockDecrementPlan(supabase, stockPlan);
+  } catch (inventoryError) {
+    await supabase
+      .from("orders")
+      .update({
+        status: "pending",
+        payment_status: "pending_verification",
+      })
+      .eq("id", orderId)
+      .eq("payment_status", "success");
+
+    if (inventoryError instanceof InventoryError) {
+      return {
+        ok: false,
+        order,
+        message: inventoryError.message,
+      };
+    }
+
+    throw inventoryError;
   }
 
   if (!order.customer_email) {

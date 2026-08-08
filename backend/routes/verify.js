@@ -1,3 +1,4 @@
+/* global Buffer, process */
 import express from "express";
 import crypto from "crypto";
 import { supabase } from "../supabase.js";
@@ -6,6 +7,10 @@ import { createShiprocketOrder } from "../services/createShiprocketOrder.js";
 import { sendOrderEmail } from "../utils/sendOrderEmail.js";
 import { sendTelegramOrderNotification } from "../utils/sendTelegramOrderNotification.js";
 import { calculateOrderItemsTotal } from "../utils/checkout.js";
+import {
+  applyStockDecrementPlan,
+  createStockDecrementPlan,
+} from "../utils/inventory.js";
 
 const router = express.Router();
 
@@ -70,13 +75,16 @@ router.post("/verify-payment", verifyFirebaseUser, async (req, res) => {
     }
 
     const alreadySuccess = order.payment_status === "success";
+    let shouldRunSuccessEffects = false;
 
     let confirmedTotal = Number(order.total);
 
     if (!alreadySuccess) {
       const { data: pendingItems, error: pendingError } = await supabase
         .from("pending_order_items")
-        .select("quantity, price_at_purchase, product:products(name, price)")
+        .select(
+          "product_id, product_name, quantity, price_at_purchase, product:products(id, name, price)",
+        )
         .eq("order_id", orderId);
 
       if (pendingError) {
@@ -93,8 +101,9 @@ router.post("/verify-payment", verifyFirebaseUser, async (req, res) => {
         order.delivery_type,
       );
       confirmedTotal = computedTotal;
+      const stockPlan = await createStockDecrementPlan(supabase, pendingItems);
 
-      const { error: updateError } = await supabase
+      const { data: updatedOrder, error: updateError } = await supabase
         .from("orders")
         .update({
           status: "paid",
@@ -103,11 +112,35 @@ router.post("/verify-payment", verifyFirebaseUser, async (req, res) => {
           total: computedTotal,
         })
         .eq("id", orderId)
-        .eq("user_id", userId);
+        .eq("user_id", userId)
+        .neq("payment_status", "success")
+        .select("id")
+        .maybeSingle();
 
       if (updateError) {
         console.error("Error updating order status:", updateError);
         throw updateError;
+      }
+
+      if (updatedOrder) {
+        try {
+          await applyStockDecrementPlan(supabase, stockPlan);
+        } catch (inventoryError) {
+          await supabase
+            .from("orders")
+            .update({
+              status: "pending",
+              payment_status: "pending",
+              payment_id: null,
+            })
+            .eq("id", orderId)
+            .eq("payment_status", "success")
+            .eq("payment_id", razorpay_payment_id);
+
+          throw inventoryError;
+        }
+
+        shouldRunSuccessEffects = true;
       }
     }
 
@@ -125,7 +158,7 @@ router.post("/verify-payment", verifyFirebaseUser, async (req, res) => {
       throw new Error("Order items missing after payment");
     }
 
-    if (order.customer_email && !alreadySuccess) {
+    if (order.customer_email && shouldRunSuccessEffects) {
       await sendOrderEmail({
         to: order.customer_email,
         customerName: order.customer_name || "Customer",
@@ -134,7 +167,7 @@ router.post("/verify-payment", verifyFirebaseUser, async (req, res) => {
       });
     }
 
-    if (!alreadySuccess) {
+    if (shouldRunSuccessEffects) {
       try {
         await sendTelegramOrderNotification({
           order: {
