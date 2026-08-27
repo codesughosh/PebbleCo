@@ -13,7 +13,7 @@ const FEATURED_TOP_SELLERS = [
     matches: (name) => name.includes("goth sword"),
   },
   {
-    matches: (name) => name.includes("spider"),
+    matches: (name) => name.includes("spider necklace"),
   },
   {
     matches: (name) => name.includes("diet coke"),
@@ -70,7 +70,9 @@ function TopSellers() {
     const { data: featuredData } = await supabase
       .from("products")
       .select("*")
-      .or("name.ilike.%Goth Sword%,name.ilike.%Spider%,name.ilike.%Diet Coke%");
+      .or(
+        "name.ilike.%Goth Sword%,name.ilike.%Spider Necklace%,name.ilike.%Diet Coke%",
+      );
     const featuredProducts = prioritizeFeaturedProducts(featuredData || []);
     let rankedProducts = [];
 
