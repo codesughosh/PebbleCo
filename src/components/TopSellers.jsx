@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import ProductCard from "./ProductCard";
 import { auth } from "../firebase";
@@ -8,10 +10,13 @@ import { ProductGridSkeleton } from "../components/Skeleton";
 const TOP_SELLERS_LIMIT = 3;
 const FEATURED_TOP_SELLERS = [
   {
-    matches: (name) => name.includes("diet coke"),
+    matches: (name) => name.includes("goth sword"),
   },
   {
-    matches: (name) => name.includes("redbull") || name.includes("red bull"),
+    matches: (name) => name.includes("spider"),
+  },
+  {
+    matches: (name) => name.includes("diet coke"),
   },
 ];
 
@@ -65,7 +70,7 @@ function TopSellers() {
     const { data: featuredData } = await supabase
       .from("products")
       .select("*")
-      .or("name.ilike.%Diet Coke%,name.ilike.%Redbull%,name.ilike.%Red Bull%");
+      .or("name.ilike.%Goth Sword%,name.ilike.%Spider%,name.ilike.%Diet Coke%");
     const featuredProducts = prioritizeFeaturedProducts(featuredData || []);
     let rankedProducts = [];
 
@@ -119,15 +124,24 @@ function TopSellers() {
   if (products.length === 0) return null;
 
   return (
-    <div className="product-grid">
-      {products.map((product) => (
-        <ProductCard
-          key={product.id}
-          product={product}
-          onAddToCart={handleAddToCart}
-        />
-      ))}
-    </div>
+    <>
+      <div className="product-grid">
+        {products.map((product) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            onAddToCart={handleAddToCart}
+          />
+        ))}
+      </div>
+
+      <div className="top-sellers-actions">
+        <Link className="top-sellers-view-all" to="/products">
+          <span>View all</span>
+          <ArrowRight size={17} strokeWidth={2.4} aria-hidden="true" />
+        </Link>
+      </div>
+    </>
   );
 }
 
