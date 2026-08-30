@@ -10,6 +10,7 @@ const categories = [
   { label: "Bead Bracelets", path: "/category/bead-bracelet" },
   { label: "Charms", path: "/category/charms" },
   { label: "Necklaces", path: "/category/necklace" },
+  { label: "Rings", path: "/category/rings" },
   { label: "Crochets", path: "/category/crochet" },
 ];
 

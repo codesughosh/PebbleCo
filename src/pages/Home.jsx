@@ -32,6 +32,7 @@ const collections = [
   { label: "Charms", path: "/category/charms" },
   { label: "Bead Bracelets", path: "/category/bead-bracelet" },
   { label: "Necklaces", path: "/category/necklace" },
+  { label: "Rings", path: "/category/rings" },
   { label: "Crochets", path: "/category/crochet" },
 ];
 

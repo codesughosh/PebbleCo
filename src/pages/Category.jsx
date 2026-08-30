@@ -13,6 +13,7 @@ const slugToCategory = {
   "bead-bracelet": "bead_bracelet",
   charms: "charms",
   necklace: "necklace",
+  rings: "rings",
   crochet: "crochet",
 };
 
